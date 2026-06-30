@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="StreamX — Stream movies, TV shows and anime free. Powered by TMDB.">
+  <meta name="theme-color" content="#0a0a0f">
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content="StreamX — Stream Everything">
+  <meta property="og:description" content="Movies, TV, Anime. Multiple servers. Free.">
+  <meta property="og:type"        content="website">
+
+  <title>StreamX — Movies, TV & Anime</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>▶</text></svg>">
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────── -->
+<nav role="navigation" aria-label="Main navigation">
+  <div class="nav-logo" onclick="App.showPage('home')" role="link" tabindex="0"
+       onkeydown="if(event.key==='Enter')App.showPage('home')" aria-label="StreamX Home">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+    StreamX
+  </div>
+
+  <div class="nav-links" role="list">
+  <button class="nav-link active" onclick="App.showPage('home')">Home</button>
+  <button class="nav-link" onclick="App.openBrowse('trending_movies')">Movies</button>
+  <button class="nav-link" onclick="App.openBrowse('trending_tv')">TV Shows</button>
+  <button class="nav-link" onclick="App.openBrowse('anime')">Anime</button>
+  <button class="nav-link" onclick="App.openBrowse('kdrama')">K-Drama</button>
+
+  <select class="nav-link"
+        onchange="if(this.value){ App.openBrowse(this.value); this.selectedIndex=0; }">
+    <option value="">Indian Cinema ▼</option>
+    <option value="bollywood">Bollywood</option>
+    <option value="tollywood">Tollywood</option>
+    <option value="kollywood">Kollywood</option>
+    <option value="mollywood">Mollywood</option>
+    <option value="sandalwood">Kannada</option>
+  </select>
+</div>
+
+  <div class="nav-right">
+    <div class="search-wrap" role="search">
+      <svg width="13" height="13" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"
+           viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input type="text" id="search-input" placeholder="Search movies, TV, anime…"
+             aria-label="Search" autocomplete="off"
+             oninput="App.onSearchInput(this.value)">
+               <div id="search-history" class="search-history"></div>
+    </div>
+    <button class="wl-nav-btn" onclick="App.showPage('watchlist')" aria-label="My Watchlist">
+      ♡ <span class="wl-count-badge" id="wl-count-badge">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ── HOME PAGE ──────────────────────────────────── -->
+<div id="page-home" class="page" role="main">
+
+  <!-- Hero banner — populated by app.js via TMDB /trending/all/week -->
+  <div id="hero" role="banner" aria-label="Featured content"></div>
+
+  <!-- Continue Watching & Recently Viewed — populated from localStorage -->
+  <div id="history-rows" aria-label="Watch history"></div>
+
+  <!-- Dynamic content rows — each row driven by HOME_ROWS config in config.js
+       All data flows from TMDB API calls in tmdb.js via app.js -->
+  <div id="home-rows" aria-label="Content browsing rows"></div>
+
+</div>
+
+<!-- ── SEARCH PAGE ────────────────────────────────── -->
+<div id="page-search" class="page" style="display:none" role="main" aria-label="Search results">
+  <p id="search-label" style="font-size:13px;color:var(--text3);margin-bottom:16px"></p>
+  <div id="search-grid" class="search-grid"></div>
+</div>
+
+<!-- ── BROWSE PAGE ────────────────────────────────── -->
+<div id="page-browse" class="page" style="display:none" role="main" aria-label="Browse content">
+  <div class="browse-header">
+    <button class="back-btn" onclick="App.showPage('home')" aria-label="Back to home">← Back</button>
+    <h1 id="browse-title"></h1>
+  </div>
+  <div id="browse-grid" class="browse-grid"></div>
+
+<div id="browse-rows"></div>
+</div>
+
+<!-- ── WATCHLIST PAGE ─────────────────────────────── -->
+<div id="page-watchlist" class="page" style="display:none" role="main" aria-label="My Watchlist">
+  <div class="wl-header">
+    <button class="back-btn" onclick="App.showPage('home')" aria-label="Back to home">← Back</button>
+    <h1>My Watchlist</h1>
+    <span id="wl-count"></span>
+  </div>
+  <div id="wl-grid" class="wl-grid"></div>
+</div>
+
+<!-- ── PLAYER MODAL ───────────────────────────────── -->
+<!-- Fully populated at runtime by player.js via TMDB.getDetails()
+     No hard-coded movie/TV data — only a container div lives in HTML -->
+<div id="player-modal-bg" role="dialog" aria-modal="true" aria-label="Content details"></div>
+
+<!-- ── FOOTER ─────────────────────────────────────── -->
+<footer>
+  <p>
+    &copy; 2025 StreamX &mdash; Powered by
+    <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>.
+    All streams &amp; downloads via external providers. Personal use only.
+    &nbsp;|&nbsp;
+    <a href="#" onclick="App.showPage('watchlist')">Watchlist</a>
+  </p>
+  <p style="margin-top:6px;font-size:10px">
+    This product uses the TMDB API but is not endorsed or certified by TMDB.
+  </p>
+</footer>
+
+<!-- ── Scripts — loaded in dependency order ───────── -->
+<script src="js/config.js"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->
+<script src="js/tmdb.js"></script>      <!-- TMDB API layer -->
+<script src="js/watchlist.js"></script> <!-- localStorage watchlist -->
+<script src="js/history.js"></script>   <!-- continue watching / recently viewed -->
+<script src="js/player.js"></script>    <!-- detail modal + server picker -->
+<script src="js/app.js"></script>       <!-- main app controller, boots on DOMContentLoaded -->
+
+</body>
+</html>
