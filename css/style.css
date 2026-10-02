@@ -7059,3 +7059,55 @@ img.loaded {
     -webkit-backdrop-filter: blur(12px) !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════
+   MOBILE CRITICAL FIX v9.0
+   Fix 7: Mobile player modal landscape/fullscreen survival.
+
+   ROOT CAUSE: When a mobile browser enters/exits native fullscreen
+   (e.g. iOS webkitEnterFullscreen, Android Chrome fullscreen),
+   the backdrop-filter on #player-modal-bg causes a GPU rendering
+   glitch where the browser briefly shows the page behind the modal
+   (i.e. the home page) while the GPU repaints the blurred overlay.
+   Audio continues because the <video> element is still active.
+
+   Fix: On mobile, disable backdrop-filter on the player modal
+   background and use a fully-opaque background instead.
+   The player modal content (.player-modal) retains its own glass style.
+
+   Fix 8: Ensure #player-modal-bg.open always has a high z-index on mobile
+   regardless of device orientation (portrait or landscape).
+   When a phone rotates to landscape, width may exceed 767px and the mobile
+   z-index:99999 override from the previous block stops applying.
+   Ensure the open modal always stays on top.
+   ══════════════════════════════════════════════════════ */
+
+/* Global: ensure the open player modal is ALWAYS on top regardless of orientation */
+#player-modal-bg.open {
+  z-index: 99999 !important;
+}
+
+@media (max-width: 900px) {
+  /* FIX 7 — Remove backdrop-filter from the modal BACKGROUND on mobile.
+     The background itself should be opaque to prevent see-through glitches
+     during fullscreen exit. The .player-modal inner dialog keeps its glass. */
+  #player-modal-bg {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* Replace transparent radial-gradient background with solid opaque color
+       so there is zero chance of the home page bleeding through */
+    background: #080b13 !important;
+  }
+
+  /* FIX 8 — When the modal is open on any narrow/medium screen (portrait or
+     landscape), force it to cover the full screen completely with solid bg */
+  #player-modal-bg.open {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    z-index: 99999 !important;
+    background: #080b13 !important;
+  }
+}

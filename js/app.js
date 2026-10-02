@@ -357,6 +357,41 @@ const App = (() => {
       }
     });
 
+    // ── Fullscreen lifecycle: fix body.overflow on fullscreen exit ────────
+    // When browser fullscreen exits (e.g. user presses Escape, or rotates on mobile),
+    // restore body.overflow based on whether the player modal is still open.
+    // This fixes: (1) desktop scroll lock after fullscreen session, and
+    // (2) mobile landscape → home regression caused by stale overflow state.
+    const _onFullscreenChange = () => {
+      const isFullscreen = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+      );
+      const bg = document.getElementById("player-modal-bg");
+      const playerIsOpen = bg && bg.classList.contains("open");
+      if (!isFullscreen) {
+        // Fullscreen exited — restore overflow based on player state
+        document.body.style.overflow = playerIsOpen ? "hidden" : "";
+      }
+      // Do NOT navigate or close anything here — fullscreen state is purely presentational.
+    };
+    document.addEventListener("fullscreenchange", _onFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", _onFullscreenChange);
+    document.addEventListener("mozfullscreenchange", _onFullscreenChange);
+    document.addEventListener("MSFullscreenChange", _onFullscreenChange);
+
+    // iOS Safari: <video> native fullscreen exit (webkitendfullscreen)
+    // iOS fires this on the video element, not document. Delegate via capture.
+    // When native iOS fullscreen exits, ensure body.overflow matches player state.
+    document.addEventListener("webkitendfullscreen", (e) => {
+      const bg = document.getElementById("player-modal-bg");
+      const playerIsOpen = bg && bg.classList.contains("open");
+      // Restore overflow — do NOT navigate or close the player
+      document.body.style.overflow = playerIsOpen ? "hidden" : "";
+    }, true /* capture = true to catch on video element */);
+
     // Close disclaimer modal on backdrop click
     const disclaimerModal = document.getElementById("disclaimer-modal-bg");
     if (disclaimerModal) {
@@ -380,6 +415,7 @@ const App = (() => {
       _showToast("🎉 StreamX installed successfully!");
     });
   }
+
 
   // ── Hero banner (General Entertainment: Movies / Series / Dramas) ─────────
   async function _loadHero() {
