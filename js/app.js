@@ -448,6 +448,7 @@ const App = (() => {
           </button>
         </div>
       </div>
+      ${window.innerWidth > 768 ? `
       <button class="hero-arrow hero-prev" onclick="App.prevHero()" aria-label="Previous featured title">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18L9 12L15 6"/>
@@ -457,7 +458,7 @@ const App = (() => {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 18L15 12L9 6"/>
         </svg>
-      </button>
+      </button>` : ""}
       <div class="hero-dots">
         ${_heroItems.map((_, i) =>
           `<button class="hero-dot${i === _heroIdx ? " active" : ""}"
@@ -592,6 +593,7 @@ const App = (() => {
           </button>
         </div>
       </div>
+      ${window.innerWidth > 768 ? `
       <button class="hero-arrow hero-prev" onclick="App.prevAnimeHero()" aria-label="Previous featured anime">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18L9 12L15 6"/>
@@ -601,7 +603,7 @@ const App = (() => {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 18L15 12L9 6"/>
         </svg>
-      </button>
+      </button>` : ""}
       <div class="hero-dots">
         ${_animeHeroItems.map((_, i) =>
           `<button class="hero-dot${i === _animeHeroIdx ? " active" : ""}"
@@ -2262,7 +2264,7 @@ const App = (() => {
           </div>
         </div>
         <div class="pm-body">
-          <div class="pm-hero" style="background-image:url('${d.backdrop || ""}')">
+          <div class="pm-hero" style="${window.innerWidth <= 768 ? 'display:none!important;' : ''} background-image:url('${d.backdrop || ""}')">
             <div class="pm-hero-overlay"></div>
             <div class="pm-hero-info">
               <h2 class="pm-title">${_esc(d.title)}</h2>
@@ -4971,8 +4973,14 @@ document.addEventListener("DOMContentLoaded", () => App.init());
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("./sw.js")
-      .then(reg => console.log("✅ Service Worker Registered", reg))
+      .register("./sw.js?v=6.0")
+      .then(reg => {
+        reg.update();
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+        console.log("✅ Service Worker Registered & Updated", reg);
+      })
       .catch(err => console.error("❌ Service Worker Error:", err));
   });
 }

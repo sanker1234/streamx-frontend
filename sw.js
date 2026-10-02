@@ -1,27 +1,34 @@
-const CACHE_NAME = "streamx-cinema-v5";
+const CACHE_NAME = "streamx-cinema-v6";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./css/style.css?v=5.0",
-  "./js/config.js?v=5.0",
-  "./js/tmdb.js?v=5.0",
-  "./js/anilist.js?v=5.0",
-  "./js/watchlist.js?v=5.0",
-  "./js/history.js?v=5.0",
-  "./js/player.js?v=5.0",
-  "./js/app.js?v=5.0",
+  "./css/style.css?v=6.0",
+  "./js/config.js?v=6.0",
+  "./js/tmdb.js?v=6.0",
+  "./js/anilist.js?v=6.0",
+  "./js/watchlist.js?v=6.0",
+  "./js/history.js?v=6.0",
+  "./js/player.js?v=6.0",
+  "./js/app.js?v=6.0",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
 
-// Install: Cache core static assets
+self.addEventListener("message", event => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
+// Install: Cache core static assets & skip waiting immediately
 self.addEventListener("install", event => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(CORE_ASSETS);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 

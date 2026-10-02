@@ -133,7 +133,7 @@ const Player = (() => {
 
         <div class="pm-body">
           <!-- Hero backdrop -->
-          <div class="pm-hero" style="background-image:url('${d.backdrop||""}')">
+          <div class="pm-hero" style="${window.innerWidth <= 768 ? 'display:none!important;' : ''} background-image:url('${d.backdrop||""}')">
             <div class="pm-hero-overlay"></div>
             <div class="pm-hero-info">
               <h2 class="pm-title">${_esc(d.title)}</h2>
@@ -166,7 +166,7 @@ const Player = (() => {
 
           <div class="pm-content">
             <!-- Mobile Info Bar (Visible on mobile when hero banner is hidden) -->
-            <div class="pm-mobile-bar">
+            <div class="pm-mobile-bar" style="${window.innerWidth <= 768 ? 'display:flex!important;' : 'display:none;'}">
               <span class="badge badge-${d.media}">${d.media === "movie" ? "MOVIE" : "TV"}</span>
               ${is4k ? '<span class="badge badge-4k">4K</span>' : ""}
               ${d.year ? `<span class="badge badge-year">${d.year}</span>` : ""}
