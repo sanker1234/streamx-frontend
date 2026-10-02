@@ -463,6 +463,39 @@ const App = (() => {
           `<button class="hero-dot${i === _heroIdx ? " active" : ""}"
             onclick="App.goHero(${i})" aria-label="Go to slide ${i + 1}"></button>`).join("")}
       </div>`;
+
+    _setupHeroTouch(hero, prevHero, nextHero);
+  }
+
+  let _touchStartX = 0;
+  function _setupHeroTouch(el, prevFn, nextFn) {
+    if (!el || el._hasTouchBound) return;
+    el._hasTouchBound = true;
+    el.addEventListener("touchstart", e => {
+      if (e.touches && e.touches[0]) _touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    el.addEventListener("touchend", e => {
+      if (e.changedTouches && e.changedTouches[0]) {
+        const diff = e.changedTouches[0].clientX - _touchStartX;
+        if (Math.abs(diff) > 40) {
+          if (diff > 0) prevFn();
+          else nextFn();
+        }
+      }
+    }, { passive: true });
+  }
+
+  function toggleMobileSearch(forceState) {
+    const header = document.getElementById("top-header");
+    if (!header) return;
+    const isNowOpen = typeof forceState === "boolean" ? forceState : !header.classList.contains("mobile-search-open");
+    header.classList.toggle("mobile-search-open", isNowOpen);
+    if (isNowOpen) {
+      setTimeout(() => {
+        const inp = document.getElementById("search-input");
+        if (inp) inp.focus();
+      }, 60);
+    }
   }
 
   function _startHeroRotation() {
@@ -574,6 +607,8 @@ const App = (() => {
           `<button class="hero-dot${i === _animeHeroIdx ? " active" : ""}"
             onclick="App.goAnimeHero(${i})" aria-label="Go to anime slide ${i + 1}"></button>`).join("")}
       </div>`;
+
+    _setupHeroTouch(hero, prevAnimeHero, nextAnimeHero);
   }
 
   function _startAnimeHeroRotation() {
@@ -2245,8 +2280,15 @@ const App = (() => {
             </div>
           </div>
           <div class="pm-content">
-            ${d.overview ? `<p class="pm-overview">${_esc(d.overview)}</p>` : ""}
-            ${genreNames ? `<p class="pm-genres"><span class="pm-label">Genres:</span> ${_esc(genreNames)}</p>` : ""}
+            <!-- Mobile Info Bar (Visible on mobile when hero banner is hidden) -->
+            <div class="pm-mobile-bar">
+              <span class="badge badge-${d.media}">${badgeLabel}</span>
+              ${d.year ? `<span class="badge badge-year">${d.year}</span>` : ""}
+              ${d.episodes ? `<span class="badge badge-meta">${d.episodes} EP</span>` : ""}
+              ${d.status ? `<span class="badge badge-meta">${_esc(d.status)}</span>` : ""}
+              <span class="pm-rating-num" style="margin-left:auto; color:var(--gold); font-weight:700;">★ ${(d.rating || 0).toFixed(1)}</span>
+            </div>
+
             <div class="pm-tabs">
               ${trailerBtn}
             </div>
@@ -2330,6 +2372,9 @@ const App = (() => {
             </div>
             <div id="anime-player-controls" class="anime-player-controls" style="display:none;"></div>
             
+            ${d.overview ? `<p class="pm-overview">${_esc(d.overview)}</p>` : ""}
+            ${genreNames ? `<p class="pm-genres"><span class="pm-label">Genres:</span> ${_esc(genreNames)}</p>` : ""}
+
             <div id="anime-episodes-section">
               <h3 class="pm-section-title">Episodes</h3>
               ${seasonSelectorHTML}
@@ -4861,6 +4906,7 @@ const App = (() => {
     savePlayerPreference,
 
     // Phase 2 Search Helpers
+    toggleMobileSearch,
     setFilter,
     clearFilters,
     selectSearchHistory,
@@ -4918,6 +4964,7 @@ window.openDisclaimerModal = (tab) => App.openDisclaimerModal(tab);
 window.closeDisclaimerModal = () => App.closeDisclaimerModal();
 window.switchDisclaimerTab = (tab) => App.switchDisclaimerTab(tab);
 window.installPWA = () => App.installPWA();
+window.toggleMobileSearch = (force) => App.toggleMobileSearch(force);
 
 // Boot when DOM is ready
 document.addEventListener("DOMContentLoaded", () => App.init());

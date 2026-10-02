@@ -1,17 +1,17 @@
-const CACHE_NAME = "streamx-cinema-v3";
+const CACHE_NAME = "streamx-cinema-v5";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./css/style.css",
-  "./js/config.js",
-  "./js/tmdb.js",
-  "./js/anilist.js",
-  "./js/watchlist.js",
-  "./js/history.js",
-  "./js/player.js",
-  "./js/app.js",
+  "./css/style.css?v=5.0",
+  "./js/config.js?v=5.0",
+  "./js/tmdb.js?v=5.0",
+  "./js/anilist.js?v=5.0",
+  "./js/watchlist.js?v=5.0",
+  "./js/history.js?v=5.0",
+  "./js/player.js?v=5.0",
+  "./js/app.js?v=5.0",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
@@ -55,18 +55,17 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // For static shell assets: Cache-first, fallback to network
+  // For static shell assets: Network-first, fallback to cache
   event.respondWith(
-    caches.match(req).then(cachedResponse => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(req).then(networkResponse => {
-        if (networkResponse && networkResponse.status === 200 && req.url.startsWith(self.location.origin)) {
-          const clone = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
-        }
-        return networkResponse;
-      }).catch(() => {
-        // Offline fallback for navigation requests
+    fetch(req).then(networkResponse => {
+      if (networkResponse && networkResponse.status === 200 && req.url.startsWith(self.location.origin)) {
+        const clone = networkResponse.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
+      }
+      return networkResponse;
+    }).catch(() => {
+      return caches.match(req).then(cachedResponse => {
+        if (cachedResponse) return cachedResponse;
         if (req.mode === "navigate") {
           return caches.match("./index.html");
         }

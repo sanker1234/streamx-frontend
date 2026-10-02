@@ -165,12 +165,15 @@ const Player = (() => {
           </div>
 
           <div class="pm-content">
-            <!-- Overview -->
-            ${d.overview ? `<p class="pm-overview">${_esc(d.overview)}</p>` : ""}
-            ${genreNames ? `<p class="pm-genres"><span class="pm-label">Genres:</span> ${_esc(genreNames)}</p>` : ""}
-
-            <!-- TV season/episode selector -->
-            ${d.media === "tv" ? _renderTVControls() : ""}
+            <!-- Mobile Info Bar (Visible on mobile when hero banner is hidden) -->
+            <div class="pm-mobile-bar">
+              <span class="badge badge-${d.media}">${d.media === "movie" ? "MOVIE" : "TV"}</span>
+              ${is4k ? '<span class="badge badge-4k">4K</span>' : ""}
+              ${d.year ? `<span class="badge badge-year">${d.year}</span>` : ""}
+              ${d.runtime ? `<span class="badge badge-meta">${d.runtime}m</span>` : ""}
+              ${d.seasons ? `<span class="badge badge-meta">${d.seasons} Season${d.seasons>1?"s":""}</span>` : ""}
+              <span class="pm-rating-num" style="margin-left:auto; color:var(--gold); font-weight:700;">★ ${d.rating.toFixed(1)}</span>
+            </div>
 
             <!-- Tabs -->
             <div class="pm-tabs">
@@ -180,24 +183,30 @@ const Player = (() => {
             </div>
 
             <div id="pm-tab-stream" class="pm-tab-content${_tab==="stream"?" active":""}">
+              <div class="pm-player-wrap">
+                  <iframe
+                  id="stream-frame"
+                  width="100%"
+                  height="100%"
+                  style="width:100%; height:100%; aspect-ratio:16/9; border:0; display:block;"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                  allowfullscreen>
+                  </iframe>
+              </div>
 
-            <div class="pm-player-wrap">
-                <iframe
-                id="stream-frame"
-                width="100%"
-                height="100%"
-                style="width:100%; height:100%; aspect-ratio:16/9; border:0; display:block;"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                allowfullscreen>
-                </iframe>
-            </div>
-
-            ${_renderStreamServers()}
+              ${_renderStreamServers()}
             </div>
             <div id="pm-tab-download" class="pm-tab-content${_tab==="download"?" active":""}">
               ${_renderDownloadServers()}
             </div>
+
+            <!-- TV season/episode selector -->
+            ${d.media === "tv" ? _renderTVControls() : ""}
+
+            <!-- Overview -->
+            ${d.overview ? `<p class="pm-overview">${_esc(d.overview)}</p>` : ""}
+            ${genreNames ? `<p class="pm-genres"><span class="pm-label">Genres:</span> ${_esc(genreNames)}</p>` : ""}
 
             <!-- Cast -->
             ${d.cast?.length ? _renderCast(d.cast) : ""}
