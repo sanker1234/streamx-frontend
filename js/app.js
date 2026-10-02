@@ -2298,8 +2298,8 @@ const App = (() => {
                 </div>
 
                 <div id="anime-quality-badge" style="position: absolute; top: 15px; right: 15px; background: rgba(0, 0, 0, 0.75); border: 1px solid rgba(255, 255, 255, 0.15); color: #00ff88; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; z-index: 10; display: none;"></div>
-                <video id="anime-video-player" controls crossorigin="anonymous" width="100%" height="450" style="background:#000; border-radius:8px; display:block;"></video>
-                <iframe id="anime-iframe-player" width="100%" height="450" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" style="background:#000; border-radius:8px; display:none;"></iframe>
+                <video id="anime-video-player" controls playsinline webkit-playsinline crossorigin="anonymous" width="100%" height="100%" style="width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; display:block;"></video>
+                <iframe id="anime-iframe-player" width="100%" height="100%" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" style="width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; display:none; border:0;"></iframe>
                 <button id="skip-intro-btn" class="btn-primary" style="position: absolute; bottom: 60px; left: 20px; z-index: 10; display: none; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer;" onclick="App.skipIntro()">Skip Intro</button>
                 <button id="skip-outro-btn" class="btn-primary" style="position: absolute; bottom: 60px; right: 20px; z-index: 10; display: none; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer;" onclick="App.skipOutro()">Skip Outro</button>
               </div>
@@ -3264,6 +3264,7 @@ const App = (() => {
     if (!playerWrap || !controlsWrap || !video) return;
 
     playerWrap.style.display = "block";
+    playerWrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
     controlsWrap.style.display = "block";
     controlsWrap.innerHTML = `<div class="loader-spinner"></div>`;
 

@@ -185,7 +185,8 @@ const Player = (() => {
                 <iframe
                 id="stream-frame"
                 width="100%"
-                height="500"
+                height="100%"
+                style="width:100%; height:100%; aspect-ratio:16/9; border:0; display:block;"
                 frameborder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                 allowfullscreen>
@@ -217,14 +218,14 @@ const Player = (() => {
       `<option value="${s.season_number}" ${s.season_number===_season?"selected":""}>${_esc(s.name)}</option>`
     ).join("");
     return `
-      <div class="pm-tv-ctrl" style="display: flex; align-items: center; gap: 8px;">
+      <div class="pm-tv-ctrl">
         <select class="ep-sel" id="pm-season-sel" onchange="Player.onSeasonChange(this.value)">
           ${seasonOpts}
         </select>
         <select class="ep-sel" id="pm-episode-sel" onchange="Player.onEpisodeChange(this.value)">
           <option value="1" ${_episode===1?"selected":""}>Episode 1</option>
         </select>
-        <button class="btn-primary" id="pm-next-ep-btn" onclick="Player.playNextEpisode()" style="font-size: 12px; padding: 6px 12px; height: 36px; display: inline-flex; align-items: center; border-radius: 6px;">Next Episode</button>
+        <button class="btn-primary" id="pm-next-ep-btn" onclick="Player.playNextEpisode()">Next Episode</button>
       </div>`;
   }
 
