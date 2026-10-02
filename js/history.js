@@ -19,30 +19,42 @@ const History = (() => {
 
   // ── Continue Watching ─────────────────────────────────────────────────
   // Called when user opens the player modal and picks a server
-  function recordWatch(item, season = null, episode = null) {
+  function recordWatch(item, season = null, episode = null, provider = null, audio = null) {
+    const normAudio = audio ? String(audio).toUpperCase().replace("-", "_") : null;
     const list = _load(WATCH_KEY).filter(
-      i => !(i.id === item.id && i.media === item.media)
+      i => !(i.id === item.id && i.media === item.media && (!normAudio || i.audio === normAudio))
     );
     list.unshift({
-    id        : item.id,
-    media     : item.media,
-    title     : item.title,
-    year      : item.year,
-    poster    : item.poster,
-    rating    : item.rating,
+      id        : item.id,
+      animeId   : item.id,
+      media     : item.media,
+      title     : item.title,
+      year      : item.year,
+      poster    : item.poster,
+      rating    : item.rating,
 
-    season,
-    episode,
+      season,
+      episode,
+      provider  : provider || null,
+      audio     : normAudio,
 
-    progress  : 0,      // watched seconds
-    duration  : 0,      // total seconds
+      progress  : 0,      // watched seconds
+      position  : 0,      // standardized position
+      duration  : 0,      // total seconds
 
-    watchedAt : Date.now(),
-});
+      watchedAt : Date.now(),
+    });
     _save(WATCH_KEY, list);
   }
 
-  function getWatchHistory()     { return _load(WATCH_KEY); }
+  function _cleanList(list) {
+    return (list || []).filter(i => {
+      const m = (i.media || "").toLowerCase();
+      return m !== "manga" && m !== "manhwa" && m !== "manhua";
+    });
+  }
+
+  function getWatchHistory()     { return _cleanList(_load(WATCH_KEY)); }
   function clearWatchHistory()   { _save(WATCH_KEY, []); }
 
   function removeFromWatch(id, media) {
@@ -66,13 +78,41 @@ const History = (() => {
     _save(RECENT_KEY, list);
   }
 
-  function getRecentlyViewed()  { return _load(RECENT_KEY); }
+  function getRecentlyViewed()  { return _cleanList(_load(RECENT_KEY)); }
   function clearRecentlyViewed(){ _save(RECENT_KEY, []); }
 
-  // Last watched season/episode for a TV show
-  function getLastEpisode(id) {
-    const entry = _load(WATCH_KEY).find(i => i.id === id && i.media === "tv");
-    return entry ? { season: entry.season, episode: entry.episode } : null;
+  // Last watched season/episode for a TV show or anime
+  function getLastEpisode(id, audio = null) {
+    const normAudio = audio ? String(audio).toUpperCase().replace("-", "_") : null;
+    const entry = _load(WATCH_KEY).find(i => 
+      i.id === id && (i.media === "tv" || i.media === "anime") && (!normAudio || i.audio === normAudio)
+    );
+    return entry ? { season: entry.season, episode: entry.episode, provider: entry.provider, audio: entry.audio, progress: entry.progress || entry.position || 0 } : null;
+  }
+
+  function updateProgress(id, media, progress, duration, season = null, episode = null, provider = null, audio = null) {
+    const normAudio = audio ? String(audio).toUpperCase().replace("-", "_") : null;
+    const list = _load(WATCH_KEY);
+    let entry = list.find(i => i.id === id && i.media === media && (!normAudio || i.audio === normAudio));
+    if (!entry) {
+      entry = list.find(i => i.id === id && i.media === media);
+    }
+    if (entry) {
+      entry.progress = progress;
+      entry.position = progress;
+      entry.duration = duration;
+      if (season !== null) entry.season = season;
+      if (episode !== null) entry.episode = episode;
+      if (provider !== null) entry.provider = provider;
+      if (normAudio !== null) entry.audio = normAudio;
+      entry.watchedAt = Date.now();
+      _save(WATCH_KEY, list);
+    }
+  }
+
+  function getProgress(id, media) {
+    const entry = _load(WATCH_KEY).find(i => i.id === id && i.media === media);
+    return entry ? { progress: entry.progress, duration: entry.duration } : null;
   }
 
   return {
@@ -84,5 +124,9 @@ const History = (() => {
     getRecentlyViewed,
     clearRecentlyViewed,
     getLastEpisode,
+    updateProgress,
+    getProgress,
   };
 })();
+
+window.StreamXHistory = History;

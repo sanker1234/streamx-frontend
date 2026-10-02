@@ -1,23 +1,68 @@
 {
-  "name": "StreamX",
+  "name": "StreamX Cinema",
   "short_name": "StreamX",
-  "description": "Movies, TV Shows & Anime",
-  "start_url": "./",
+  "description": "Stream movies, TV series, Asian dramas, anime, and donghua with a cinema-grade glass interface.",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
-  "orientation": "portrait",
+  "orientation": "any",
+  "background_color": "#080a12",
+  "theme_color": "#080a12",
+  "categories": ["entertainment", "video", "movies"],
   "icons": [
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Movies",
+      "short_name": "Movies",
+      "description": "Explore trending Hollywood movies",
+      "url": "./index.html#/movies",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "TV Series",
+      "short_name": "Series",
+      "description": "Watch trending TV shows",
+      "url": "./index.html#/series",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Anime",
+      "short_name": "Anime",
+      "description": "Stream anime and donghua",
+      "url": "./index.html#/anime",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Watchlist",
+      "short_name": "Watchlist",
+      "description": "View saved titles",
+      "url": "./index.html#/watchlist",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

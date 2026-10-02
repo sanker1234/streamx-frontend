@@ -29,11 +29,11 @@ const Player = (() => {
     _renderSkeleton(item);
 
     // Track as recently viewed
-    History.recordView(item);
+    StreamXHistory.recordView(item);
 
     // Restore last watched episode if TV
     if (item.media === "tv") {
-      const last = History.getLastEpisode(item.id);
+      const last = StreamXHistory.getLastEpisode(item.id);
       if (last) { _season = last.season || 1; _episode = last.episode || 1; }
     }
 
@@ -42,6 +42,10 @@ const Player = (() => {
         _seasons = _details.season_list || [];
 
         _renderFull();
+
+        if (_selectedServer) {
+          _updateServerLinks();
+        }
 
         if (_details.media === "tv" && _seasons.length) {
             setTimeout(() => onSeasonChange(_season), 100);
@@ -53,26 +57,24 @@ const Player = (() => {
   }
 
   function close() {
-
     const frame = document.getElementById("stream-frame");
-
-    if (frame) {
-        frame.src = "";
-    }
-
+    if (frame) frame.src = "";
     $("player-modal-bg").classList.remove("open");
     document.body.style.overflow = "";
-
-    _item = null;
+    _item    = null;
     _details = null;
-}
+    // Restore URL hash to home
+    if (window.location.hash && window.location.hash !== "#/") {
+      history.pushState(null, "", "#/");
+    }
+  }
 
   // ── Skeleton ──────────────────────────────────────────────────────────
   function _renderSkeleton(item) {
     $("player-modal-bg").innerHTML = `
       <div class="player-modal" role="dialog" aria-modal="true">
         <div class="pm-header">
-          <button class="pm-close" onclick="Player.close()" aria-label="Close">✕</button>
+          <button class="pm-close" onclick="Player.close()" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
           <span class="pm-header-title">${_esc(item.title)}</span>
         </div>
         <div class="pm-body">
@@ -93,13 +95,13 @@ const Player = (() => {
     $("player-modal-bg").innerHTML = `
       <div class="player-modal">
         <div class="pm-header">
-          <button class="pm-close" onclick="Player.close()">✕</button>
+          <button class="pm-close" onclick="Player.close()" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
           <span class="pm-header-title">Error</span>
         </div>
         <div class="pm-body" style="padding:40px;text-align:center;color:var(--text3)">
-          <p style="font-size:32px;margin-bottom:12px">⚠️</p>
+          <p style="font-size:32px;margin-bottom:12px">Error</p>
           <p>${_esc(msg)}</p>
-          ${msg.includes("API key") ? `<p style="margin-top:12px;font-size:12px">Open <code>js/config.js</code> and paste your TMDB API key.</p>` : ""}
+          ${msg.includes("API key") ? `<p style="margin-top:12px;font-size:12px">Open <code>js/config.js</code> and add your backend key.</p>` : ""}
         </div>
       </div>`;
   }
@@ -120,11 +122,11 @@ const Player = (() => {
     $("player-modal-bg").innerHTML = `
       <div class="player-modal" role="dialog" aria-modal="true" aria-label="${_esc(d.title)}">
         <div class="pm-header">
-          <button class="pm-close" onclick="Player.close()" aria-label="Close">✕</button>
+          <button class="pm-close" onclick="Player.close()" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
           <span class="pm-header-title">${_esc(d.title)}</span>
           <div class="pm-header-actions">
             <button class="pm-wl-btn${wl?" added":""}" onclick="Player.toggleWL()" id="pm-wl-btn">
-              ${wl ? "♥ Saved" : "♡ Watchlist"}
+              ${wl ? "Saved" : "Watchlist"}
             </button>
           </div>
         </div>
@@ -149,6 +151,16 @@ const Player = (() => {
                 <span class="pm-rating-num">${d.rating.toFixed(1)}</span>
                 <span class="pm-votes">(${_fmtNum(d.votes)} votes)</span>
               </div>
+              <div class="pm-hero-cta-row">
+                <button class="btn-primary pm-cta-btn" onclick="Player.switchTab('stream'); document.getElementById('pm-tab-stream')?.scrollIntoView({behavior:'smooth', block:'nearest'});">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  <span>Watch Now</span>
+                </button>
+                <button class="btn-secondary pm-cta-btn" onclick="Player.switchTab('download'); document.getElementById('pm-tab-download')?.scrollIntoView({behavior:'smooth', block:'nearest'});">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+                  <span>Download</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -162,9 +174,9 @@ const Player = (() => {
 
             <!-- Tabs -->
             <div class="pm-tabs">
-              <button class="pm-tab${_tab==="stream"?" active":""}" onclick="Player.switchTab('stream')">▶ Stream</button>
-              <button class="pm-tab${_tab==="download"?" active":""}" onclick="Player.switchTab('download')">⬇ Download</button>
-              ${d.trailer ? `<button class="pm-tab" onclick="Player.openTrailer()">🎬 Trailer</button>` : ""}
+              <button class="pm-tab${_tab==="stream"?" active":""}" onclick="Player.switchTab('stream')">Stream</button>
+              <button class="pm-tab${_tab==="download"?" active":""}" onclick="Player.switchTab('download')">Download</button>
+              ${d.trailer ? `<button class="pm-tab" onclick="Player.openTrailer()">Trailer</button>` : ""}
             </div>
 
             <div id="pm-tab-stream" class="pm-tab-content${_tab==="stream"?" active":""}">
@@ -175,6 +187,7 @@ const Player = (() => {
                 width="100%"
                 height="500"
                 frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                 allowfullscreen>
                 </iframe>
             </div>
@@ -204,14 +217,49 @@ const Player = (() => {
       `<option value="${s.season_number}" ${s.season_number===_season?"selected":""}>${_esc(s.name)}</option>`
     ).join("");
     return `
-      <div class="pm-tv-ctrl">
+      <div class="pm-tv-ctrl" style="display: flex; align-items: center; gap: 8px;">
         <select class="ep-sel" id="pm-season-sel" onchange="Player.onSeasonChange(this.value)">
           ${seasonOpts}
         </select>
         <select class="ep-sel" id="pm-episode-sel" onchange="Player.onEpisodeChange(this.value)">
           <option value="1" ${_episode===1?"selected":""}>Episode 1</option>
         </select>
+        <button class="btn-primary" id="pm-next-ep-btn" onclick="Player.playNextEpisode()" style="font-size: 12px; padding: 6px 12px; height: 36px; display: inline-flex; align-items: center; border-radius: 6px;">Next Episode</button>
       </div>`;
+  }
+
+  function playNextEpisode() {
+    const epSel = document.getElementById("pm-episode-sel");
+    if (!epSel) return;
+    const currentVal = parseInt(epSel.value);
+    const options = Array.from(epSel.options);
+    const currentIndex = options.findIndex(opt => parseInt(opt.value) === currentVal);
+
+    if (currentIndex !== -1 && currentIndex + 1 < options.length) {
+      const nextOption = options[currentIndex + 1];
+      epSel.value = nextOption.value;
+      onEpisodeChange(nextOption.value);
+    } else {
+      const seasonSel = document.getElementById("pm-season-sel");
+      if (seasonSel) {
+        const currentSeason = parseInt(seasonSel.value);
+        const seasonOptions = Array.from(seasonSel.options);
+        const nextSeasonIndex = seasonOptions.findIndex(opt => parseInt(opt.value) === currentSeason) + 1;
+        if (nextSeasonIndex < seasonOptions.length) {
+          const nextSeasonVal = seasonOptions[nextSeasonIndex].value;
+          seasonSel.value = nextSeasonVal;
+          onSeasonChange(nextSeasonVal).then(() => {
+            setTimeout(() => {
+              const freshEpSel = document.getElementById("pm-episode-sel");
+              if (freshEpSel) {
+                freshEpSel.value = "1";
+                onEpisodeChange(1);
+              }
+            }, 600);
+          });
+        }
+      }
+    }
   }
 
   // Async: fetch season detail to populate episode list
@@ -235,81 +283,139 @@ const Player = (() => {
       epSel.innerHTML = `<option value="1">Episode 1</option>`;
     }
     _updateServerLinks();
+    _updateDownloadTab();
   }
 
   function onEpisodeChange(val) {
     _episode = parseInt(val);
     _updateServerLinks();
+    _updateDownloadTab();
   }
 
   // Re-render server links with updated S/E
-  function _updateServerLinks() {
+  async function _updateServerLinks() {
     const frame = document.getElementById("stream-frame");
+    if (!frame) return;
 
-        if (frame) {
-            frame.src = "";
-        }
+    frame.src = "";
+    const resolvedUrl = await _resolveServerUrl(_selectedServer);
+    const fallbackUrl = _getSelectedServerUrl();
+    frame.src = resolvedUrl || fallbackUrl || "";
+
+    if (_selectedServer) {
+      _onStreamClick(_selectedServer);
     }
-  //dont render the server links when season or episode changes, just update the iframe src if it is already loaded
+  }
 
+  function _getContentType(details) {
+    if (!details) return "hollywood";
+
+    const indianLangs = ["hi", "te", "ta", "ml", "kn", "pa", "mr", "gu", "bn", "or", "as", "ur"];
+    const isIndian = (details.original_language && indianLangs.includes(details.original_language)) ||
+                     (details.production_countries && details.production_countries.some(c => c.iso_3166_1 === "IN"));
+
+    const isKorean = details.original_language === "ko" ||
+                     (details.production_countries && details.production_countries.some(c => c.iso_3166_1 === "KR"));
+
+    const isChinese = details.original_language === "zh" || details.original_language === "cn" ||
+                      (details.production_countries && details.production_countries.some(c => c.iso_3166_1 === "CN"));
+
+    const isJapanese = details.original_language === "ja" ||
+                       (details.production_countries && details.production_countries.some(c => c.iso_3166_1 === "JP"));
+
+    if (isIndian) return "indian";
+    if (isKorean) return "kdrama";
+    if (isChinese) return "cdrama";
+    if (isJapanese) return "jdrama";
+
+    return "hollywood";
+  }
 
   // ── Stream servers ────────────────────────────────────────────────────
-    function _renderStreamServers() {
-    const isTV = _details?.media === "tv";
+  function _renderStreamServers() {
+    const contentType = _getContentType(_details);
+    const activeServers = STREAM_SERVERS.filter(srv => {
+      if (!srv.supportedCategories) return true;
+      return srv.supportedCategories.includes(contentType);
+    });
+
+    if (activeServers.length > 0 && !activeServers.some(srv => srv.key === _selectedServer)) {
+      _selectedServer = activeServers[0].key;
+      localStorage.setItem("streamx_provider", _selectedServer);
+      localStorage.setItem("streamx_server", _selectedServer);
+    }
+
+    const currentProviderObj = activeServers.find(srv => srv.key === _selectedServer) || activeServers[0];
 
     return `
-        <p class="pm-srv-label">Select a server</p>
-
-        <div class="pm-srv-grid">
-        ${STREAM_SERVERS.map(srv => {
-            const url = isTV
-            ? srv.tv(_details.id, _season, _episode)
-            : srv.movie(_details.id);
-
-            return `
-            <button class="srv-btn ${_selectedServer === srv.key ? 'active' : ''}"
-       onclick="Player.loadServer(event,'${url}','${srv.key}')">
-
-                <div class="srv-icon"
-                    style="background:${srv.color}22;color:${srv.color}">
-                ${srv.icon}
-                </div>
-
-                <div class="srv-info">
-                <div class="srv-name">${_esc(srv.label)}</div>
-                <div class="srv-desc">${_esc(srv.desc)}</div>
-                </div>
-
-            </button>
-            `;
-        }).join("")}
+      <div class="pm-provider-ctrl">
+        <label for="pm-provider-select" class="pm-provider-label">Streaming Provider</label>
+        <div class="pm-provider-select-wrap">
+          <select id="pm-provider-select" class="pm-provider-select" onchange="Player.onProviderChange(this.value)">
+            ${activeServers.map(srv => {
+              const isSelected = srv.key === _selectedServer;
+              const label = `${srv.label}${srv.recommended ? " (Recommended)" : ""}`;
+              return `<option value="${srv.key}" ${isSelected ? "selected" : ""}>
+                ${isSelected ? "✓ " : "• "}${_esc(label)}
+              </option>`;
+            }).join("")}
+          </select>
+          <div class="pm-select-arrow">▼</div>
         </div>
-
-        <p class="pm-note">
-        ( Intitally ,Click once selected server to play )->If a server fails, try another one.
-        </p>
+        ${currentProviderObj ? `<div class="pm-provider-desc">${currentProviderObj.icon} ${_esc(currentProviderObj.desc)}</div>` : ""}
+      </div>
+      <div id="pm-fallback-toast" class="pm-fallback-toast" style="display:none;"></div>
     `;
-    }
+  }
 
   // ── Download servers ──────────────────────────────────────────────────
   function _renderDownloadServers() {
-    const item = _details || _item;
+    const rawItem = _details || _item || {};
+    const isExplicitMovie = rawItem.media === "movie" || _item?.media === "movie" || rawItem.media_type === "movie";
+    const isTv = !isExplicitMovie && (
+      rawItem.media === "tv" ||
+      rawItem.media === "series" ||
+      _item?.media === "tv" ||
+      _item?.media === "series" ||
+      rawItem.media_type === "tv" ||
+      rawItem.media_type === "series" ||
+      Boolean(rawItem.first_air_date) ||
+      Boolean(rawItem.number_of_seasons) ||
+      Boolean(rawItem.seasons)
+    );
+
+    const item = {
+      ...rawItem,
+      media: isTv ? "tv" : (rawItem.media || _item?.media || "movie"),
+      season: _season || 1,
+      episode: _episode || 1
+    };
+
+    const tvLabel = isTv ? ` · Season ${_season || 1}, Episode ${_episode || 1}` : "";
+
     return `
-      <p class="pm-srv-label">Download sources — opens in new tab</p>
+      <p class="pm-srv-label">Download sources${tvLabel} — opens in new tab</p>
       <div class="pm-dl-grid">
         ${DOWNLOAD_SERVERS.map(dl => {
-          const url = dl.url(item);
+          const url = typeof dl.url === "function" ? dl.url(item, _season || 1, _episode || 1) : "#";
           return `<a class="dl-btn" href="${url}" target="_blank" rel="noopener noreferrer">
             <div class="dl-icon">${dl.icon}</div>
             <div class="srv-info">
               <div class="dl-name">${_esc(dl.label)}</div>
-              <div class="srv-desc">${_esc(dl.desc)}</div>
+              <div class="srv-desc">${_esc(isTv ? `Direct Download (Season ${_season || 1}, Episode ${_episode || 1}) · VidVault` : dl.desc)}</div>
             </div>
             <span class="dl-arrow">↗</span>
           </a>`;
         }).join("")}
       </div>
-      <p class="pm-note">Download links search the title on each site. YTS for movies · Nyaa for anime.</p>`;
+      <p class="pm-note">${isTv ? `Direct episode download powered by VidVault (S${_season || 1} E${_episode || 1}).` : "Fast downloads powered by VidVault with direct TMDB ID support for movies and series."}</p>`;
+  }
+
+  function _updateDownloadTab() {
+    const dlContainer = document.getElementById("pm-tab-download");
+    if (dlContainer) {
+      dlContainer.innerHTML = _renderDownloadServers();
+    }
   }
 
   // ── Cast ──────────────────────────────────────────────────────────────
@@ -337,10 +443,10 @@ const Player = (() => {
           <div class="rec-card" onclick="Player.open(${_jsonAttr(r)})">
             <div class="rec-poster" style="background-image:url('${r.poster||""}')">
               ${!r.poster ? `<span class="rec-no-img">${_esc(r.title.charAt(0))}</span>` : ""}
-              <div class="rec-overlay"><span>▶</span></div>
+              <div class="rec-overlay"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
             </div>
             <div class="rec-title">${_esc(r.title)}</div>
-            <div class="rec-year">${r.year} · ⭐ ${r.rating.toFixed(1)}</div>
+            <div class="rec-year">${r.year} · <svg viewBox="0 0 24 24" width="11" height="11" fill="var(--gold)" style="vertical-align:middle;display:inline-block"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> ${r.rating.toFixed(1)}</div>
           </div>`).join("")}
       </div>`;
   }
@@ -354,7 +460,12 @@ const Player = (() => {
     });
     document.querySelectorAll(".pm-tab-content").forEach(c => c.classList.remove("active"));
     const el = document.getElementById(`pm-tab-${tab}`);
-    if (el) el.classList.add("active");
+    if (el) {
+      el.classList.add("active");
+      if (tab === "download") {
+        _updateDownloadTab();
+      }
+    }
   }
 
   function openTrailer() {
@@ -369,13 +480,13 @@ const Player = (() => {
     const btn   = document.getElementById("pm-wl-btn");
     if (btn) {
       btn.className = `pm-wl-btn${added?" added":""}`;
-      btn.textContent = added ? "♥ Saved" : "♡ Watchlist";
+      btn.textContent = added ? "Saved" : "Watchlist";
     }
     // Update card heart if visible
     const cardBtn = document.querySelector(`#card-${_item.media}-${_item.id} .card-wl`);
     if (cardBtn) {
       cardBtn.classList.toggle("added", added);
-      cardBtn.innerHTML = added ? "♥" : "♡";
+      cardBtn.innerHTML = added ? "Saved" : "Save";
     }
     // Dispatch global count update
     window.dispatchEvent(new CustomEvent("watchlist:change"));
@@ -385,38 +496,157 @@ const Player = (() => {
   function _onStreamClick(serverKey) {
     if (!_details && !_item) return;
     const item = _details || _item;
-    History.recordWatch(
+    StreamXHistory.recordWatch(
       item,
       item.media === "tv" ? _season : null,
       item.media === "tv" ? _episode : null
     );
   }
-  let _selectedServer = localStorage.getItem("streamx_server") || "";
 
-  // Load server in iframe
-  function loadServer(event,url, serverKey) {
-    _selectedServer = serverKey;
+  let _selectedServer = localStorage.getItem("streamx_provider") || localStorage.getItem("streamx_server") || "videm";
+  if (!STREAM_SERVERS.some(s => s.key === _selectedServer)) {
+    _selectedServer = STREAM_SERVERS[0]?.key || "videm";
+  }
+  function _getApiBase() {
+    const base = typeof getStreamXBackendUrl === "function" ? getStreamXBackendUrl() : "http://127.0.0.1:3000";
+    return `${base}/api`;
+  }
 
-     console.log("Clicked:", serverKey);
-    
-    document.querySelectorAll(".srv-btn").forEach(btn => {
-    btn.classList.remove("active");
-});
+  function _getProviderLabel(key) {
+    const srv = STREAM_SERVERS.find(s => s.key === key);
+    return srv ? srv.label : key;
+  }
 
-event.currentTarget.classList.add("active");
+  function _showFallbackToast(msg) {
+    const toast = document.getElementById("pm-fallback-toast");
+    if (!toast) return;
+    toast.innerHTML = `<span class="pm-toast-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span><div>${msg}</div>`;
+    toast.style.display = "flex";
+    setTimeout(() => {
+      toast.style.display = "none";
+    }, 4500);
+  }
 
+  async function _resolveServerUrl(serverKey) {
+    if (!_details) return { embedUrl: "", provider: serverKey, capabilities: {} };
+    const isTV = _details.media === "tv";
+    const mediaType = isTV ? "tv" : "movie";
+    const seasonStr = isTV ? `&season=${_season}` : "";
+    const episodeStr = isTV ? `&episode=${_episode}` : "";
 
-    localStorage.setItem("streamx_server", serverKey);
-
-    const frame = document.getElementById("stream-frame");
-
-    if (frame) {
-        frame.src = url;
+    try {
+      const response = await fetch(`${_getApiBase()}/movie/sources/${mediaType}/${_details.id}?provider=${serverKey}${seasonStr}${episodeStr}`);
+      const data = await response.json();
+      if (data.success && (data.embedUrl || (data.sources && data.sources.length > 0))) {
+        return {
+          embedUrl: data.embedUrl,
+          provider: data.provider || serverKey,
+          capabilities: data.capabilities || {},
+          isFallback: Boolean(data.provider && data.provider !== serverKey)
+        };
+      }
+    } catch (e) {
+      console.warn("Failed to fetch resolved URL from backend, using client-side fallback:", e);
     }
 
-        // redraw buttons so active server is highlighted
-    _onStreamClick(serverKey);
-}
+    const fallbackUrl = _getSelectedServerUrl(serverKey);
+    return {
+      embedUrl: fallbackUrl,
+      provider: serverKey,
+      capabilities: {},
+      isFallback: false
+    };
+  }
+
+  function _getSelectedServerUrl(key = _selectedServer) {
+    if (!_details) return "";
+    const server = STREAM_SERVERS.find(srv => srv.key === key) || STREAM_SERVERS[0];
+    if (!server) return "";
+    return _details.media === "tv"
+      ? server.tv(_details.id, _season, _episode)
+      : server.movie(_details.id);
+  }
+
+  // Handle provider dropdown change & URL loading
+  async function onProviderChange(providerKey) {
+    if (!providerKey) return;
+
+    const res = await _resolveServerUrl(providerKey);
+    const targetProviderKey = res.provider || providerKey;
+    const finalEmbedUrl = res.embedUrl || _getSelectedServerUrl(providerKey);
+
+    if (res.isFallback || targetProviderKey !== providerKey) {
+      const origLabel = _getProviderLabel(providerKey);
+      const newLabel = _getProviderLabel(targetProviderKey);
+      _showFallbackToast(`${_esc(origLabel)} unavailable.<br>Switched to ${_esc(newLabel)}.`);
+    }
+
+    _selectedServer = targetProviderKey;
+    localStorage.setItem("streamx_provider", targetProviderKey);
+    localStorage.setItem("streamx_server", targetProviderKey);
+
+    // Update select element UI
+    const selectEl = document.getElementById("pm-provider-select");
+    if (selectEl) {
+      selectEl.value = targetProviderKey;
+      Array.from(selectEl.options).forEach(opt => {
+        const srv = STREAM_SERVERS.find(s => s.key === opt.value);
+        const label = srv ? `${srv.label}${srv.recommended ? " (Recommended)" : ""}` : opt.value;
+        const isSel = opt.value === targetProviderKey;
+        opt.textContent = `${isSel ? "✓ " : "• "}${label}`;
+      });
+    }
+
+    // Update iframe safely without sandbox restriction
+    const frame = document.getElementById("stream-frame");
+    if (frame) {
+      const parent = frame.parentNode;
+      const newFrame = document.createElement("iframe");
+      for (const attr of frame.attributes) {
+        if (attr.name !== "src" && attr.name !== "sandbox") {
+          newFrame.setAttribute(attr.name, attr.value);
+        }
+      }
+
+      // Do not set sandbox attribute so movie/TV stream providers play without restriction
+      newFrame.removeAttribute("sandbox");
+      newFrame.setAttribute("allowfullscreen", "true");
+      newFrame.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
+
+      newFrame.src = finalEmbedUrl || "";
+      parent.replaceChild(newFrame, frame);
+    }
+
+    _onStreamClick(targetProviderKey);
+  }
+
+  // Load server compatibility shim for legacy callers
+  async function loadServer(event, url, serverKey) {
+    return onProviderChange(serverKey || _selectedServer);
+  }
+
+  // Re-render server links with updated S/E
+  async function _updateServerLinks() {
+    return onProviderChange(_selectedServer);
+  }
+
+  // Global postMessage listener for player capabilities (auto-next, etc.)
+  window.addEventListener("message", (event) => {
+    try {
+      const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (!data) return;
+      
+      const evt = (data.event || data.type || data.action || "").toLowerCase();
+      if (evt === "ended" || evt === "autonext" || evt === "video_ended" || evt === "player_ended") {
+        console.log("[StreamX Player] Received ended event from provider, playing next episode...");
+        if (_details && _details.media === "tv") {
+          playNextEpisode();
+        }
+      }
+    } catch (e) {
+      // Ignore non-JSON postMessage data
+    }
+  });
 
   // ── Utilities ─────────────────────────────────────────────────────────
   function _esc(str) {
@@ -431,19 +661,23 @@ event.currentTarget.classList.add("active");
   function _starsHTML(rating) {
     const full = Math.round(rating / 2);
     return Array.from({length:5},(_,i)=>
-      `<span class="star${i<full?"":" empty"}">★</span>`
+      `<svg class="star-icon${i<full?" filled":""}" viewBox="0 0 24 24" width="13" height="13" fill="${i<full?"var(--gold)":"rgba(255,255,255,0.18)"}" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`
     ).join("");
   }
 
   return {
-  open,
-  close,
-  toggleWL,
-  switchTab,
-  openTrailer,
-  onSeasonChange,
-  onEpisodeChange,
-  _onStreamClick,
-  loadServer,
-};
+    open,
+    close,
+    toggleWL,
+    switchTab,
+    openTrailer,
+    onSeasonChange,
+    onEpisodeChange,
+    onProviderChange,
+    _onStreamClick,
+    loadServer,
+    playNextEpisode,
+  };
 })();
+
+window.Player = Player;

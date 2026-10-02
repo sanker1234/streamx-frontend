@@ -19,8 +19,13 @@ const Watchlist = (() => {
     window.dispatchEvent(new CustomEvent("watchlist:change", { detail: getAll() }));
   }
 
-  function getAll()         { return _load(); }
-  function count()          { return _load().length; }
+  function getAll() {
+    return _load().filter(i => {
+      const m = (i.media || "").toLowerCase();
+      return m !== "manga" && m !== "manhwa" && m !== "manhua";
+    });
+  }
+  function count()          { return getAll().length; }
   function has(id, media)   { return _load().some(i => i.id === id && i.media === media); }
 
   function add(item) {
@@ -51,3 +56,5 @@ const Watchlist = (() => {
 
   return { getAll, count, has, add, remove, toggle, clear };
 })();
+
+window.Watchlist = Watchlist;

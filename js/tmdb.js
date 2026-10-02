@@ -10,15 +10,13 @@ const TMDB = (() => {
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   // ── Core fetch ────────────────────────────────────────────────────────
-  const API_BASE =
-  window.location.hostname === "127.0.0.1" ||
-  window.location.hostname === "localhost"
-    ? "http://127.0.0.1:3000/api"
-    : "https://streamx-backend-ih2r.onrender.com/api";
+  function _getApiBase() {
+    const base = typeof getStreamXBackendUrl === "function" ? getStreamXBackendUrl() : "http://127.0.0.1:3000";
+    return `${base}/api`;
+  }
 
-async function _fetch(endpoint, params = {}) {
-
-  const url = new URL(`${API_BASE}${endpoint}`);
+  async function _fetch(endpoint, params = {}) {
+    const url = new URL(`${_getApiBase()}${endpoint}`);
 
   url.searchParams.set("language", "en-US");
 
@@ -244,3 +242,5 @@ async function _fetch(endpoint, params = {}) {
     _normalise,
   };
 })();
+
+window.TMDB = TMDB;
