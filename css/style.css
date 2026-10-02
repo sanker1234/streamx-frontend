@@ -6476,6 +6476,12 @@ img.loaded {
 
   /* ── 3. FULL-SCREEN MOBILE VIDEO PLAYER MODAL (NO HALF CUT-THROUGH) ── */
   #player-modal-bg {
+    display: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #player-modal-bg.open {
     position: fixed !important;
     inset: 0 !important;
     width: 100vw !important;
@@ -6891,6 +6897,7 @@ img.loaded {
   }
 
   /* ── 5. CAROUSEL & CONTENT HORIZONTAL TOUCH SCROLL ── */
+  .row-scroll,
   .row-cards,
   .content-row-cards,
   .history-row,
@@ -6898,11 +6905,12 @@ img.loaded {
     display: flex !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    scroll-snap-type: x mandatory !important;
     scrollbar-width: none !important;
     padding-bottom: 8px !important;
+    touch-action: pan-x pan-y !important;
   }
 
+  .row-scroll::-webkit-scrollbar,
   .row-cards::-webkit-scrollbar,
   .content-row-cards::-webkit-scrollbar,
   .history-row::-webkit-scrollbar,
@@ -6912,8 +6920,24 @@ img.loaded {
 
   .card,
   .content-card {
-    scroll-snap-align: start !important;
     flex-shrink: 0 !important;
+  }
+
+  /* GPU performance optimization: disable expensive blur passes on thousands of card micro-elements during mobile scrolling */
+  .card-badge,
+  .card-wl,
+  .card-play-btn,
+  .card-overlay,
+  .card-meta,
+  .card-rating,
+  .card-no-img {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .row-section {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 280px;
   }
 }
 
@@ -6976,5 +7000,62 @@ img.loaded {
   .pm-player-wrap {
     max-height: 80vh !important;
     margin: 0 !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   MOBILE CRITICAL FIX v8.0
+   Fix 1: background-attachment:fixed is broken on iOS/mobile Safari
+           and causes blank white / invisible page rendering.
+   Fix 2: body::before with filter:blur on position:fixed thrashes
+           the GPU and causes jank + potential blank rendering.
+   Fix 3: Scroll performance optimizations.
+   ══════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+
+  /* FIX 1 — Remove broken background-attachment:fixed on mobile.
+     Use background-size:cover with scroll attachment instead.
+     This is the primary cause of the blank page on normal mobile mode. */
+  body {
+    background-attachment: scroll !important;
+    background-size: auto !important;
+  }
+
+  /* FIX 2 — Disable the body::before fixed+blur pseudo-element on mobile.
+     position:fixed + filter:blur() creates a new stacking context that
+     breaks rendering in many mobile browsers, causing blank pages. */
+  body::before {
+    display: none !important;
+  }
+
+  /* FIX 3 — Scroll performance: enable native momentum scrolling
+     and GPU-composited layer for the main scroll container. */
+  html, body {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto;
+  }
+
+  /* FIX 4 — Row horizontal scroll containers: enable passive touch-scroll
+     so vertical page scroll is not blocked by horizontal swipe detection. */
+  .row-scroll {
+    touch-action: pan-x pinch-zoom;
+    -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
+  }
+
+  /* FIX 5 — Disable expensive backdrop-filter on cards during scroll.
+     These cause per-frame repaints and are the main source of scroll jank.
+     The card still looks great with the opaque background fallback. */
+  .card-info,
+  .card-badge,
+  .card-overlay {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* FIX 6 — Reduce nav backdrop-filter cost on mobile (keep it but cheaper) */
+  nav {
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
   }
 }
