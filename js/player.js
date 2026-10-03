@@ -43,12 +43,10 @@ const Player = (() => {
 
         _renderFull();
 
-        if (_selectedServer) {
-          _updateServerLinks();
-        }
-
         if (_details.media === "tv" && _seasons.length) {
-            setTimeout(() => onSeasonChange(_season), 100);
+          onSeasonChange(_season);
+        } else if (_selectedServer) {
+          _updateServerLinks();
         }
     } catch (err) {
       console.error("Player: detail fetch failed", err);
@@ -201,7 +199,8 @@ const Player = (() => {
                   style="width:100%; height:100%; aspect-ratio:16/9; border:0; display:block;"
                   frameborder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                  allowfullscreen>
+                  allowfullscreen
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups">
                   </iframe>
               </div>
 
@@ -312,20 +311,6 @@ const Player = (() => {
     _updateDownloadTab();
   }
 
-  // Re-render server links with updated S/E
-  async function _updateServerLinks() {
-    const frame = document.getElementById("stream-frame");
-    if (!frame) return;
-
-    frame.src = "";
-    const resolvedUrl = await _resolveServerUrl(_selectedServer);
-    const fallbackUrl = _getSelectedServerUrl();
-    frame.src = resolvedUrl || fallbackUrl || "";
-
-    if (_selectedServer) {
-      _onStreamClick(_selectedServer);
-    }
-  }
 
   function _getContentType(details) {
     if (!details) return "hollywood";
@@ -523,9 +508,9 @@ const Player = (() => {
     );
   }
 
-  let _selectedServer = localStorage.getItem("streamx_provider") || localStorage.getItem("streamx_server") || "videm";
-  if (!STREAM_SERVERS.some(s => s.key === _selectedServer)) {
-    _selectedServer = STREAM_SERVERS[0]?.key || "videm";
+  let _selectedServer = localStorage.getItem("streamx_provider") || localStorage.getItem("streamx_server") || "vidlink";
+  if (_selectedServer === "videm" || !STREAM_SERVERS.some(s => s.key === _selectedServer)) {
+    _selectedServer = STREAM_SERVERS[0]?.key || "vidlink";
   }
   function _getApiBase() {
     const base = typeof getStreamXBackendUrl === "function" ? getStreamXBackendUrl() : "http://127.0.0.1:3000";
@@ -631,8 +616,9 @@ const Player = (() => {
         }
       }
 
-      // Do not set sandbox attribute so movie/TV stream providers play without restriction
-      newFrame.removeAttribute("sandbox");
+      // Security sandbox prevents third-party ads from hijacking the top window,
+      // executing infinite redirect loops, or crashing mobile Chrome
+      newFrame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-presentation allow-popups");
       newFrame.setAttribute("allowfullscreen", "true");
       newFrame.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
 

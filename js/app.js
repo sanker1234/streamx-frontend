@@ -2052,9 +2052,12 @@ const App = (() => {
     if (animeMatch) {
       const media = animeMatch[1];
       const id = animeMatch[2];
-      await _loadAllHomeContent();
       const item = { id: parseInt(id) || id, media, title: "Loading…", poster: "", backdrop: "" };
       await _openAnimeDetail(item, true /* skipHashPush */);
+      // Lazy preload home shell in background only if needed
+      if (!document.getElementById("home-rows")?.children.length) {
+        _loadGeneralHomeContent().catch(() => {});
+      }
       return true;
     }
 
@@ -2063,21 +2066,22 @@ const App = (() => {
     if (mediaMatch) {
       const media = mediaMatch[1];
       const id = parseInt(mediaMatch[2]);
-      await _loadAllHomeContent();
       const item = { id, media, title: "Loading…", poster: "", backdrop: "" };
       Player.open(item, true /* skipHashPush */);
+      // Lazy preload home shell in background only if needed
+      if (!document.getElementById("home-rows")?.children.length) {
+        _loadGeneralHomeContent().catch(() => {});
+      }
       return true;
     }
 
     // Browse: #/browse or #/browse/:rowId
     if (path === "/browse" || path === "/browse/") {
-      await _loadAllHomeContent();
       openBrowse("trending_movies", true);
       return true;
     }
     const browseMatch = path.match(/^\/browse\/(.+)$/);
     if (browseMatch) {
-      await _loadAllHomeContent();
       openBrowse(browseMatch[1], true /* skipHashPush */);
       return true;
     }
