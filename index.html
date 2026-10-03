@@ -33,7 +33,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="css/style.css?v=9.5">
+  <link rel="stylesheet" href="css/style.css?v=9.6">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
@@ -85,11 +85,12 @@
           <path d="M21 21l-4.35-4.35"/>
         </svg>
       </button>
-      <input type="text" id="search-input" placeholder="Search movies, series, dramas, anime, donghua…"
-             aria-label="Search" autocomplete="off"
+      <input type="search" id="search-input" placeholder="Search movies, series, dramas, anime, donghua…"
+             aria-label="Search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+             enterkeyhint="search" inputmode="search"
              oninput="App.onSearchInput(this.value)"
              onkeydown="if(event.key==='Enter'){event.preventDefault();App.triggerSearch();}">
-      <button class="search-close-mobile-btn" onclick="App.toggleMobileSearch(false)" aria-label="Close search">✕</button>
+      <button class="search-close-mobile-btn" onclick="App.toggleMobileSearch(false)" aria-label="Close search" type="button">✕</button>
       <kbd class="search-kbd" title="Press / to search">/</kbd>
       <div id="search-history" class="search-history"></div>
     </div>
@@ -751,13 +752,13 @@
 </div>
 
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=9.5"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->
-<script src="js/tmdb.js?v=9.5"></script>      <!-- TMDB API layer -->
-<script src="js/anilist.js?v=9.5"></script>   <!-- AniList API layer -->
-<script src="js/watchlist.js?v=9.5"></script> <!-- localStorage watchlist -->
-<script src="js/history.js?v=9.5"></script>   <!-- continue watching / recently viewed -->
-<script src="js/player.js?v=9.5"></script>    <!-- detail modal + server picker -->
-<script src="js/app.js?v=9.5"></script>       <!-- main app controller, boots on DOMContentLoaded -->
+<script src="js/config.js?v=9.6"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->
+<script src="js/tmdb.js?v=9.6"></script>      <!-- TMDB API layer -->
+<script src="js/anilist.js?v=9.6"></script>   <!-- AniList API layer -->
+<script src="js/watchlist.js?v=9.6"></script> <!-- localStorage watchlist -->
+<script src="js/history.js?v=9.6"></script>   <!-- continue watching / recently viewed -->
+<script src="js/player.js?v=9.6"></script>    <!-- detail modal + server picker -->
+<script src="js/app.js?v=9.6"></script>       <!-- main app controller, boots on DOMContentLoaded -->
 
 </body>
 </html>

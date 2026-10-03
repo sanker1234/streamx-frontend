@@ -128,8 +128,12 @@ const App = (() => {
     document.addEventListener("click", (e) => {
       const historyDropdown = document.getElementById("search-history");
       const searchWrap = e.target.closest(".search-wrap");
+      const mobileSearchBtn = e.target.closest("#mobile-search-btn");
       if (!searchWrap && historyDropdown) {
         historyDropdown.classList.remove("show");
+      }
+      if (!searchWrap && !mobileSearchBtn && document.getElementById("top-header")?.classList.contains("mobile-search-open")) {
+        toggleMobileSearch(false);
       }
 
       const pDrop = document.getElementById("profile-dropdown-menu");
@@ -158,6 +162,13 @@ const App = (() => {
         e.preventDefault();
         document.getElementById("search-input")?.focus();
         return;
+      }
+
+      if (e.key === "Escape") {
+        if (document.getElementById("top-header")?.classList.contains("mobile-search-open")) {
+          toggleMobileSearch(false);
+          return;
+        }
       }
 
       // Video Player keyboard controls (only if modal is open and video player is active)
@@ -529,14 +540,31 @@ const App = (() => {
 
   function toggleMobileSearch(forceState) {
     const header = document.getElementById("top-header");
+    const wrap = document.getElementById("header-search-wrap");
+    const inp = document.getElementById("search-input");
     if (!header) return;
+
     const isNowOpen = typeof forceState === "boolean" ? forceState : !header.classList.contains("mobile-search-open");
     header.classList.toggle("mobile-search-open", isNowOpen);
+    if (wrap) wrap.classList.toggle("mobile-search-open", isNowOpen);
+
     if (isNowOpen) {
-      setTimeout(() => {
-        const inp = document.getElementById("search-input");
-        if (inp) inp.focus();
-      }, 60);
+      if (inp) {
+        // Immediate synchronous focus in the direct user tap gesture
+        // Essential for iOS Safari / Android Chrome virtual keyboard activation
+        inp.focus();
+        requestAnimationFrame(() => {
+          inp.focus();
+          if (inp.value) {
+            const len = inp.value.length;
+            inp.setSelectionRange(len, len);
+          }
+        });
+      }
+    } else {
+      if (inp) inp.blur();
+      const historyEl = document.getElementById("search-history");
+      if (historyEl) historyEl.classList.remove("show");
     }
   }
 
@@ -2949,7 +2977,12 @@ const App = (() => {
     // 2. Render Mobile Drawer Links
     const drawerLinksContainer = document.getElementById("drawer-links");
     if (drawerLinksContainer) {
-      let drawerHTML = "";
+      let drawerHTML = `
+        <button class="drawer-link drawer-search-shortcut" onclick="App.toggleMobileDrawer(); App.toggleMobileSearch(true);" style="background: rgba(229, 9, 20, 0.12); border: 1px solid rgba(229, 9, 20, 0.28); color: #fff; margin-bottom: 12px; font-weight: 600;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span>Search Everything</span>
+        </button>
+      `;
       STREAMX_NAV_SECTIONS.forEach((sect, index) => {
         if (index > 0) {
           drawerHTML += `<div class="drawer-divider"></div>`;
