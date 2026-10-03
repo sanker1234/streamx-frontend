@@ -199,8 +199,7 @@ const Player = (() => {
                   style="width:100%; height:100%; aspect-ratio:16/9; border:0; display:block;"
                   frameborder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                  allowfullscreen
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups">
+                  allowfullscreen>
                   </iframe>
               </div>
 
@@ -616,9 +615,8 @@ const Player = (() => {
         }
       }
 
-      // Security sandbox prevents third-party ads from hijacking the top window,
-      // executing infinite redirect loops, or crashing mobile Chrome
-      newFrame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-presentation allow-popups");
+      // Do not set sandbox attribute so movie/TV stream providers play without restriction
+      newFrame.removeAttribute("sandbox");
       newFrame.setAttribute("allowfullscreen", "true");
       newFrame.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
 
