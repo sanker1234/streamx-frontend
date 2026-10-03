@@ -33,7 +33,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="css/style.css?v=9.3">
+  <link rel="stylesheet" href="css/style.css?v=9.4">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
@@ -78,14 +78,17 @@
     </button>
 
     <div class="search-wrap" id="header-search-wrap" role="search">
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-           viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/>
-        <path d="M21 21l-4.35-4.35"/>
-      </svg>
+      <button class="search-icon-btn" id="search-submit-btn" onclick="App.triggerSearch()" aria-label="Submit search" type="button">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35"/>
+        </svg>
+      </button>
       <input type="text" id="search-input" placeholder="Search movies, series, dramas, anime, donghua…"
              aria-label="Search" autocomplete="off"
-             oninput="App.onSearchInput(this.value)">
+             oninput="App.onSearchInput(this.value)"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();App.triggerSearch();}">
       <button class="search-close-mobile-btn" onclick="App.toggleMobileSearch(false)" aria-label="Close search">✕</button>
       <kbd class="search-kbd" title="Press / to search">/</kbd>
       <div id="search-history" class="search-history"></div>
@@ -105,18 +108,27 @@
 
     <!-- User Profile & Dropdown -->
     <div class="nav-profile-container" id="nav-profile-container">
-      <div class="nav-profile" id="nav-profile-btn" onclick="App.toggleProfileDropdown(event)" role="button" aria-label="User Profile" tabindex="0">
-        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" id="header-avatar-img" class="profile-avatar">
-        <span class="profile-vip-indicator" title="VIP Status Active"></span>
+      <div class="nav-profile" id="nav-profile-btn" onclick="App.toggleProfileDropdown(event)" role="button" aria-label="Library & Preferences" tabindex="0">
+        <div class="profile-avatar-icon">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
       </div>
 
       <!-- Streaming Profile Dropdown Menu -->
       <div id="profile-dropdown-menu" class="profile-dropdown" style="display:none" role="menu">
         <div class="pdrop-header" onclick="App.showPage('profile'); App.closeProfileDropdown();">
-          <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Avatar" id="pdrop-avatar-img" class="pdrop-avatar">
+          <div class="pdrop-avatar-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
           <div class="pdrop-info">
-            <div class="pdrop-name" id="pdrop-user-name">Alex Hunter</div>
-            <div class="pdrop-badge">VIP CINEMA PASS</div>
+            <div class="pdrop-name">Local Profile</div>
+            <div class="pdrop-badge">Client Preferences</div>
           </div>
         </div>
         <div class="pdrop-stats-row">
@@ -137,7 +149,7 @@
         <div class="pdrop-menu-items">
           <button class="pdrop-item" onclick="App.showPage('profile'); App.closeProfileDropdown();">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>My Profile &amp; Stats</span>
+            <span>Library &amp; Preferences</span>
           </button>
           <button class="pdrop-item" onclick="App.showPage('watchlist'); App.closeProfileDropdown();">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
@@ -146,6 +158,10 @@
           <button class="pdrop-item" onclick="App.showPage('continue-page'); App.closeProfileDropdown();">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
             <span>Continue Watching</span>
+          </button>
+          <button class="pdrop-item" onclick="App.showPage('history-page'); App.closeProfileDropdown();">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+            <span>Watch History</span>
           </button>
           <button class="pdrop-item" onclick="App.showPage('settings-page'); App.closeProfileDropdown();">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46.22 14.24 0 14 0h-4c-.24 0-.46.22-.49.49l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.27.25.49.49.49h4c.24 0 .46-.22.49-.49l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
@@ -373,43 +389,44 @@
   </div>
 </div>
 
-<!-- ── DEDICATED STREAMING PROFILE & STATS PAGE ──────── -->
-<div id="page-profile" class="page" style="display:none" role="main" aria-label="User Streaming Profile">
+<!-- ── DEDICATED STREAMING PROFILE & PREFERENCES PAGE ──────── -->
+<div id="page-profile" class="page" style="display:none" role="main" aria-label="Library & Preferences">
   <!-- Profile Hero Header -->
   <div class="profile-hero-card">
     <div class="profile-hero-backdrop"></div>
     <div class="profile-hero-content">
       <div class="profile-avatar-wrap">
-        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80" alt="User Avatar" id="profile-page-avatar" class="profile-page-avatar">
-        <button class="profile-avatar-edit-badge" onclick="App.openEditProfileModal()" title="Change Avatar">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-        </button>
+        <div class="profile-page-avatar-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
       </div>
       <div class="profile-main-meta">
         <div class="profile-tag-row">
-          <span class="profile-badge-vip" id="profile-badge-vip">PRO VIP PASS</span>
-          <span class="profile-member-date" id="profile-member-date">Member since Oct 2024</span>
+          <span class="profile-badge-local">Local Storage</span>
+          <span class="profile-member-date">Client-Side Session</span>
         </div>
-        <h1 class="profile-name" id="profile-page-name">Alex Hunter</h1>
-        <p class="profile-handle" id="profile-page-handle">@alex_streamx</p>
-        <p class="profile-bio" id="profile-page-bio">Binge-watching anime masterpieces and cinematic epics. Always exploring hidden gems.</p>
+        <h1 class="profile-name">My Library &amp; Preferences</h1>
+        <p class="profile-bio">Your watch history, saved watchlist titles, and playback settings stored locally in your browser. No cloud account or tracking required.</p>
         <div class="profile-action-btns">
-          <button class="btn-profile-primary" onclick="App.openEditProfileModal()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-            Edit Profile &amp; Avatar
-          </button>
-          <button class="btn-profile-secondary" onclick="App.showPage('settings-page')">
+          <button class="btn-profile-primary" onclick="App.showPage('settings-page')">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46.22 14.24 0 14 0h-4c-.24 0-.46.22-.49.49l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.27.25.49.49.49h4c.24 0 .46-.22.49-.49l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-            Preferences
+            Preferences &amp; Settings
+          </button>
+          <button class="btn-profile-secondary" onclick="App.clearHistoryFromProfile()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z"/></svg>
+            Clear History
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Live Streaming Activity & Analytics Dashboard -->
+  <!-- Real Streaming Overview Dashboard -->
   <div class="profile-section-title">
-    <h2>Streaming Activity &amp; Overview</h2>
+    <h2>Streaming Overview</h2>
   </div>
   <div class="profile-stats-grid">
     <div class="stat-card">
@@ -445,7 +462,7 @@
       </div>
       <div class="stat-card-data">
         <div class="stat-card-number" id="prof-stat-time-val">0h 0m</div>
-        <div class="stat-card-label">Watch Time</div>
+        <div class="stat-card-label">Est. Watch Time</div>
       </div>
     </div>
   </div>
@@ -463,49 +480,6 @@
     <button class="row-see-all" onclick="App.showPage('watchlist')">View All →</button>
   </div>
   <div id="profile-watchlist-row" class="row-scroll profile-items-scroll"></div>
-</div>
-
-<!-- ── PROFILE EDIT & AVATAR PICKER MODAL ───────────── -->
-<div id="profile-edit-modal-bg" class="profile-modal-backdrop" style="display:none" role="dialog" aria-modal="true" aria-label="Edit Profile">
-  <div class="profile-modal-card">
-    <div class="profile-modal-header">
-      <h3>Edit Profile &amp; Avatar</h3>
-      <button class="modal-close-btn" onclick="App.closeEditProfileModal()" aria-label="Close modal">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="profile-modal-body">
-      <div class="avatar-preview-row">
-        <img src="" id="edit-avatar-preview" alt="Preview Avatar" class="edit-avatar-preview-img">
-        <div class="avatar-preview-info">
-          <h4>Profile Avatar</h4>
-          <p>Choose an avatar preset below or enter a custom image URL.</p>
-        </div>
-      </div>
-
-      <div class="avatar-presets-title">Choose from Presets</div>
-      <div class="avatar-presets-grid" id="avatar-presets-grid"></div>
-
-      <div class="form-group" style="margin-top:16px;">
-        <label for="edit-avatar-url">Custom Avatar URL</label>
-        <input type="text" id="edit-avatar-url" placeholder="https://example.com/avatar.jpg" oninput="App.onCustomAvatarInput(this.value)">
-      </div>
-
-      <div class="form-group">
-        <label for="edit-profile-name">Display Name</label>
-        <input type="text" id="edit-profile-name" placeholder="Your Name" maxlength="32">
-      </div>
-
-      <div class="form-group">
-        <label for="edit-profile-bio">Bio / About</label>
-        <textarea id="edit-profile-bio" rows="2" placeholder="Tell other members what you love to watch..." maxlength="140"></textarea>
-      </div>
-    </div>
-    <div class="profile-modal-footer">
-      <button class="btn-secondary" onclick="App.closeEditProfileModal()">Cancel</button>
-      <button class="btn-primary" onclick="App.saveUserProfile()">Save Changes</button>
-    </div>
-  </div>
 </div>
 
 <!-- ── PLAYER MODAL ───────────────────────────────── -->
@@ -536,7 +510,7 @@
         </div>
         <p class="disclaimer-box-text">
           <strong>StreamX does not host, upload, archive, or transmit any video, audio, or media files on its servers.</strong>
-          All streams and downloads are dynamically embedded or linked via publicly accessible third-party services (including VidBolt, Videm, CodeSpecters, StreamFliz, VidVault, etc.) over which StreamX exercises zero ownership or control. All trademarks and intellectual property belong to their respective copyright holders. StreamX functions strictly as an interactive client-side content indexing and metadata aggregator for personal, non-commercial use.
+          StreamX provides an interface for discovering and accessing media content and may rely on external sources and services. StreamX exercises no control over third-party content and does not guarantee the availability, accuracy, or integrity of externally supplied media. All trademarks, service marks, and copyrighted materials belong to their respective owners. Users are responsible for complying with all applicable local copyright laws and regulations.
         </p>
         <div class="disclaimer-box-actions">
           <button class="footer-action-btn" onclick="App.openDisclaimerModal('non-hosting')">
@@ -674,13 +648,13 @@
         </div>
 
         <h4 class="disclaimer-section-title">1. Automated Content Indexing</h4>
-        <p class="disclaimer-p">StreamX is an automated client-side web application designed to organize and index publicly accessible metadata from TMDB (The Movie Database) and AniList. When a user requests to watch a title, the application dynamically embeds a third-party player iframe (e.g. VidBolt, Videm, CodeSpecters, StreamFliz) or resolves public HLS stream endpoints provided by external CDNs.</p>
+        <p class="disclaimer-p">StreamX is an automated client-side web application designed to organize and index publicly accessible metadata from public databases. When media playback is initiated, the application connects to external third-party services and content delivery networks to present streams. StreamX does not host, manage, or control these external services.</p>
 
         <h4 class="disclaimer-section-title">2. Zero Server-Side Media Storage</h4>
         <p class="disclaimer-p">StreamX operates <strong>without any local or remote file storage, video transcoding servers, or media upload pipelines</strong>. StreamX servers do not hold, upload, copy, or distribute copyrighted video files. No proprietary video files exist on any server operated by StreamX.</p>
 
         <h4 class="disclaimer-section-title">3. Third-Party Content &amp; Links</h4>
-        <p class="disclaimer-p">Any stream playback, advertisements within third-party iframe embeds, or external download mirrors (such as VidVault) are strictly the responsibility of their respective external providers. StreamX disclaims all liability regarding the availability, legality, or content provided by external third-party hosts.</p>
+        <p class="disclaimer-p">Any stream playback, advertisements displayed within external player frames, or external download mirrors are strictly the responsibility of the respective third-party providers. StreamX disclaims all liability regarding the availability, legality, performance, or content provided by external sources.</p>
       </div>
 
       <!-- 2. Important User Guidelines -->
@@ -725,7 +699,7 @@
         <div class="dmca-steps-box">
           <h5>How to Takedown Content at the Source:</h5>
           <ol>
-            <li>Identify the specific third-party file host delivering the video stream (e.g. VidBolt, Videm, CodeSpecters, etc.).</li>
+            <li>Identify the specific external host or service delivering the content.</li>
             <li>Submit a formal DMCA takedown request directly to the responsible host provider. Once removed by the file host, the media will immediately become unplayable across the entire internet, including on StreamX.</li>
             <li>If you wish to request the removal of specific search metadata or indexing links on StreamX, please send a detailed notice including the exact TMDB / AniList ID and title to our compliance team.</li>
           </ol>
@@ -777,13 +751,13 @@
 </div>
 
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=9.3"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->
-<script src="js/tmdb.js?v=9.3"></script>      <!-- TMDB API layer -->
-<script src="js/anilist.js?v=9.3"></script>   <!-- AniList API layer -->
-<script src="js/watchlist.js?v=9.3"></script> <!-- localStorage watchlist -->
-<script src="js/history.js?v=9.3"></script>   <!-- continue watching / recently viewed -->
-<script src="js/player.js?v=9.3"></script>    <!-- detail modal + server picker -->
-<script src="js/app.js?v=9.3"></script>       <!-- main app controller, boots on DOMContentLoaded -->
+<script src="js/config.js?v=9.4"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->
+<script src="js/tmdb.js?v=9.4"></script>      <!-- TMDB API layer -->
+<script src="js/anilist.js?v=9.4"></script>   <!-- AniList API layer -->
+<script src="js/watchlist.js?v=9.4"></script> <!-- localStorage watchlist -->
+<script src="js/history.js?v=9.4"></script>   <!-- continue watching / recently viewed -->
+<script src="js/player.js?v=9.4"></script>    <!-- detail modal + server picker -->
+<script src="js/app.js?v=9.4"></script>       <!-- main app controller, boots on DOMContentLoaded -->
 
 </body>
 </html>

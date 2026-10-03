@@ -75,6 +75,8 @@ const TMDB = (() => {
       backdrop    : backdropUrl(item.backdrop_path),
       genre_ids   : item.genre_ids || [],
       genres      : (item.genres || []).map(g => g.name),
+      origin_country: item.origin_country || [],
+      original_language: item.original_language || "",
       adult       : item.adult || false,
       // TV-only
       seasons     : item.number_of_seasons || null,

@@ -43,10 +43,14 @@ const Anilist = (() => {
 
   function _normalise(item, forcedMedia) {
     if (!item) return null;
+    const origin = item.countryOfOrigin || "";
+    const isDonghua = origin === "CN" || origin === "TW" || item.media === "donghua";
+    const detectedMedia = forcedMedia || (isDonghua ? "donghua" : (item.media || "anime"));
     return {
       id: item.id,
       idMal: item.idMal,
-      media: forcedMedia || item.media || "anime",
+      media: detectedMedia,
+      countryOfOrigin: origin,
       title: item.title || "Untitled",
       format: item.format || "TV",
       overview: item.overview || "",

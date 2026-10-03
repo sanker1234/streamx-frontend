@@ -1254,6 +1254,15 @@ const App = (() => {
     _searchTimer = setTimeout(() => _doSearch(val), APP_CONFIG.search_debounce);
   }
 
+  function triggerSearch() {
+    clearTimeout(_searchTimer);
+    const input = document.getElementById("search-input");
+    const val = input ? input.value : "";
+    document.getElementById("search-history")?.classList.remove("show");
+    if (input) input.blur();
+    _doSearch(val);
+  }
+
   function _renderSearchHistoryDropdown(list) {
     const dropdown = document.getElementById("search-history");
     if (!dropdown) return;
@@ -1281,6 +1290,7 @@ const App = (() => {
     const input = document.getElementById("search-input");
     if (input) input.value = query;
     document.getElementById("search-history")?.classList.remove("show");
+    if (input) input.blur();
     _doSearch(query);
   }
 
@@ -1291,13 +1301,43 @@ const App = (() => {
     _showToast("Search history cleared");
   }
 
+  function setSearchContext(ctx) {
+    _searchContext = ctx;
+    _searchFilters = {};
+    if (_searchQuery) {
+      _doSearch(_searchQuery);
+    } else {
+      _renderFilterPanel();
+    }
+  }
+
+  function _renderSearchEmptyState() {
+    const grid = document.getElementById("search-grid");
+    if (!grid) return;
+    _renderFilterPanel();
+    document.getElementById("search-label").textContent = "Search StreamX";
+    grid.style.display = "block";
+    grid.innerHTML = `
+      <div class="empty-state" style="padding: 60px 20px; text-align: center; color: var(--text2);">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px; opacity: 0.6; display: block;">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="M21 21l-4.35-4.35"></path>
+        </svg>
+        <h3 style="color: #fff; font-size: 18px; margin-bottom: 8px;">Discover Movies, Series, Dramas &amp; Anime</h3>
+        <p style="font-size: 13px; max-width: 440px; margin: 0 auto; color: var(--text3);">Type in the search bar above and press Enter to search across all catalog titles.</p>
+      </div>
+    `;
+  }
+
   async function _doSearch(query) {
-    query = query.trim();
+    query = (query || "").trim();
     if (!query) {
       if (window.location.hash.startsWith("#/search")) {
-        history.replaceState(null, "", "#/");
+        history.replaceState(null, "", "#/search");
       }
-      _showPage("home");
+      _searchQuery = "";
+      _showPage("search", true);
+      _renderSearchEmptyState();
       return;
     }
 
@@ -1317,26 +1357,34 @@ const App = (() => {
       localStorage.setItem("streamx_search_history", JSON.stringify(_searchHistory));
     }
 
-    // Determine context before showing search page
-    if (_currentPage === "browse" && _activeRowId) {
-      if (_activeRowId.includes("movies")) _searchContext = "movie";
-      else if (_activeRowId.includes("tv")) _searchContext = "tv";
-      else if (_activeRowId.includes("anime")) _searchContext = "anime";
-      else if (_activeRowId.includes("donghua")) _searchContext = "donghua";
-      else if (_activeRowId.includes("kdrama")) _searchContext = "drama";
-    } else if (_currentPage !== "search") {
-      _searchContext = "global";
+    // Context determination: if coming from a non-search page, set context once; else keep active context
+    if (_currentPage !== "search") {
+      if (_currentPage === "browse" && _activeRowId) {
+        if (_activeRowId.includes("movies")) _searchContext = "movie";
+        else if (_activeRowId.includes("tv")) _searchContext = "tv";
+        else if (_activeRowId.includes("anime")) _searchContext = "anime";
+        else if (_activeRowId.includes("donghua")) _searchContext = "donghua";
+        else if (_activeRowId.includes("kdrama")) _searchContext = "drama";
+        else _searchContext = "global";
+      } else {
+        _searchContext = "global";
+      }
     }
 
-    _showPage("search");
+    _showPage("search", true); // CRITICAL: skipHashPush = true prevents destroying the ?q= URL hash
     document.getElementById("search-history")?.classList.remove("show");
 
     // Setup filter panel
     _renderFilterPanel();
 
     const grid = document.getElementById("search-grid");
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(140px, 1fr))";
+    grid.style.gap = "20px";
     grid.innerHTML = Array(8).fill('<div class="card card-skeleton"><div class="card-poster"></div><div class="card-info"><div class="skeleton-line" style="height:12px;width:75%;margin-top:8px"></div><div class="skeleton-line" style="height:10px;width:40%;margin-top:6px"></div></div></div>').join("");
-    document.getElementById("search-label").textContent = `Searching in ${_searchContext.toUpperCase()} for "${query}"…`;
+    document.getElementById("search-label").textContent = `Searching for "${query}"…`;
+
+    const activeQueryAtLaunch = query;
 
     try {
       if (_searchContext === "global") {
@@ -1346,50 +1394,89 @@ const App = (() => {
           Anilist.search(query, 1)
         ]);
 
+        if (_searchQuery !== activeQueryAtLaunch) return; // Prevent race conditions
+
         const movies = [];
         const tvshows = [];
+        const dramas = [];
         const anime = [];
         const donghua = [];
 
         if (tmdbRes.status === "fulfilled") {
           (tmdbRes.value.results || []).forEach(item => {
-            if (item.media === "movie") movies.push(item);
-            else if (item.media === "tv") tvshows.push(item);
-          });
-        }
-        if (animeRes.status === "fulfilled") {
-          (animeRes.value.results || []).forEach(item => {
-            if (item.media === "donghua") donghua.push(item);
-            else anime.push(item);
+            if (item.media === "movie") {
+              movies.push(item);
+            } else if (item.media === "tv") {
+              const origin = item.origin_country || [];
+              const lang = item.original_language || "";
+              const isDrama = origin.includes("KR") || origin.includes("CN") || origin.includes("TW") || origin.includes("JP") || lang === "ko" || lang === "zh";
+              if (isDrama) {
+                dramas.push({ ...item, media: "drama" });
+              } else {
+                tvshows.push(item);
+              }
+            }
           });
         }
 
-        _renderGlobalSearchResults(movies, tvshows, anime, donghua);
+        if (animeRes.status === "fulfilled") {
+          (animeRes.value.results || []).forEach(item => {
+            if (item.media === "donghua" || item.countryOfOrigin === "CN" || item.countryOfOrigin === "TW") {
+              donghua.push(item);
+            } else {
+              anime.push(item);
+            }
+          });
+        }
+
+        _renderGlobalSearchResults(movies, tvshows, dramas, anime, donghua);
       } else {
         // Context-aware search
         let results = [];
         if (_searchContext === "movie") {
           const res = await TMDB.search(query, 1);
-          results = res.results.filter(r => r.media === "movie");
-          _searchTotal = res.total_pages;
+          results = (res.results || []).filter(r => r.media === "movie");
+          _searchTotal = res.total_pages || 1;
         } else if (_searchContext === "tv") {
           const res = await TMDB.search(query, 1);
-          results = res.results.filter(r => r.media === "tv");
-          _searchTotal = res.total_pages;
+          results = (res.results || []).filter(r => {
+            if (r.media !== "tv") return false;
+            const origin = r.origin_country || [];
+            const lang = r.original_language || "";
+            const isDrama = origin.includes("KR") || origin.includes("CN") || origin.includes("TW") || lang === "ko" || lang === "zh";
+            return !isDrama;
+          });
+          _searchTotal = res.total_pages || 1;
+        } else if (_searchContext === "drama") {
+          const res = await TMDB.search(query, 1);
+          results = (res.results || []).filter(r => {
+            if (r.media !== "tv") return false;
+            const origin = r.origin_country || [];
+            const lang = r.original_language || "";
+            return origin.includes("KR") || origin.includes("CN") || origin.includes("TW") || origin.includes("JP") || lang === "ko" || lang === "zh";
+          }).map(r => ({ ...r, media: "drama" }));
+          if (!results.length && res.results?.length) {
+            results = res.results.filter(r => r.media === "tv").map(r => ({ ...r, media: "drama" }));
+          }
+          _searchTotal = res.total_pages || 1;
         } else if (_searchContext === "anime") {
           const res = await Anilist.search(query, 1);
-          results = res.results.filter(r => r.media === "anime");
-          _searchTotal = res.total_pages;
+          results = (res.results || []).filter(r => r.media !== "donghua" && r.countryOfOrigin !== "CN" && r.countryOfOrigin !== "TW");
+          _searchTotal = res.total_pages || 1;
         } else if (_searchContext === "donghua") {
           const res = await Anilist.search(query, 1);
-          results = res.results.filter(r => r.media === "donghua");
-          _searchTotal = res.total_pages;
+          results = (res.results || []).filter(r => r.media === "donghua" || r.countryOfOrigin === "CN" || r.countryOfOrigin === "TW");
+          if (!results.length && res.results?.length) {
+            results = res.results;
+          }
+          _searchTotal = res.total_pages || 1;
         } else {
-          // Drama / fallback
           const res = await TMDB.search(query, 1);
-          results = res.results;
-          _searchTotal = res.total_pages;
+          results = res.results || [];
+          _searchTotal = res.total_pages || 1;
         }
+
+        if (_searchQuery !== activeQueryAtLaunch) return; // Prevent race conditions
 
         // Apply filters locally
         results = _applyClientFilters(results);
@@ -1405,45 +1492,67 @@ const App = (() => {
     if (existing) existing.remove();
 
     const grid = document.getElementById("search-grid");
+    if (!grid) return;
     const wrap = document.createElement("div");
     wrap.id = "filter-panel-wrap";
     wrap.className = "search-filter-panel";
 
-    let filtersHTML = `<span class="search-context-badge">${_searchContext} search</span>`;
+    const contexts = [
+      { id: "global", label: "All Categories" },
+      { id: "movie", label: "Movies" },
+      { id: "tv", label: "TV Series" },
+      { id: "drama", label: "Dramas" },
+      { id: "anime", label: "Anime" },
+      { id: "donghua", label: "Donghua" }
+    ];
 
-    if (_searchContext === "movie" || _searchContext === "tv") {
+    let filtersHTML = `
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%;">
+        ${contexts.map(c => `
+          <button type="button" class="search-cat-pill ${_searchContext === c.id ? "active" : ""}"
+                  onclick="App.setSearchContext('${c.id}')">
+            ${c.label}
+          </button>
+        `).join("")}
+      </div>
+    `;
+
+    if (_searchContext === "movie" || _searchContext === "tv" || _searchContext === "drama") {
       filtersHTML += `
-        <select class="filter-dropdown" onchange="App.setFilter('year', this.value)">
-          <option value="">All Years</option>
-          ${Array.from({ length: 15 }, (_, i) => 2026 - i).map(y => `<option value="${y}" ${_searchFilters.year == String(y) ? "selected" : ""}>${y}</option>`).join("")}
-        </select>
-        <select class="filter-dropdown" onchange="App.setFilter('rating', this.value)">
-          <option value="">All Ratings</option>
-          <option value="8" ${_searchFilters.rating == "8" ? "selected" : ""}>8.0+ Rating</option>
-          <option value="7" ${_searchFilters.rating == "7" ? "selected" : ""}>7.0+ Rating</option>
-          <option value="6" ${_searchFilters.rating == "6" ? "selected" : ""}>6.0+ Rating</option>
-        </select>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap;">
+          <select class="filter-dropdown" onchange="App.setFilter('year', this.value)">
+            <option value="">All Years</option>
+            ${Array.from({ length: 15 }, (_, i) => 2026 - i).map(y => `<option value="${y}" ${_searchFilters.year == String(y) ? "selected" : ""}>${y}</option>`).join("")}
+          </select>
+          <select class="filter-dropdown" onchange="App.setFilter('rating', this.value)">
+            <option value="">All Ratings</option>
+            <option value="8" ${_searchFilters.rating == "8" ? "selected" : ""}>8.0+ Rating</option>
+            <option value="7" ${_searchFilters.rating == "7" ? "selected" : ""}>7.0+ Rating</option>
+            <option value="6" ${_searchFilters.rating == "6" ? "selected" : ""}>6.0+ Rating</option>
+          </select>
+          ${Object.keys(_searchFilters).length ? `<button class="filter-btn-clear" onclick="App.clearFilters()">Reset Filters</button>` : ""}
+        </div>
       `;
     } else if (_searchContext === "anime" || _searchContext === "donghua") {
       filtersHTML += `
-        <select class="filter-dropdown" onchange="App.setFilter('status', this.value)">
-          <option value="">All Status</option>
-          <option value="RELEASING" ${_searchFilters.status === "RELEASING" ? "selected" : ""}>Airing</option>
-          <option value="FINISHED" ${_searchFilters.status === "FINISHED" ? "selected" : ""}>Completed</option>
-        </select>
-        <select class="filter-dropdown" onchange="App.setFilter('season', this.value)">
-          <option value="">All Seasons</option>
-          <option value="WINTER">Winter</option>
-          <option value="SPRING">Spring</option>
-          <option value="SUMMER">Summer</option>
-          <option value="FALL">Fall</option>
-        </select>
+        <div style="display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap;">
+          <select class="filter-dropdown" onchange="App.setFilter('status', this.value)">
+            <option value="">All Status</option>
+            <option value="RELEASING" ${_searchFilters.status === "RELEASING" ? "selected" : ""}>Airing</option>
+            <option value="FINISHED" ${_searchFilters.status === "FINISHED" ? "selected" : ""}>Completed</option>
+          </select>
+          <select class="filter-dropdown" onchange="App.setFilter('season', this.value)">
+            <option value="">All Seasons</option>
+            <option value="WINTER">Winter</option>
+            <option value="SPRING">Spring</option>
+            <option value="SUMMER">Summer</option>
+            <option value="FALL">Fall</option>
+          </select>
+          ${Object.keys(_searchFilters).length ? `<button class="filter-btn-clear" onclick="App.clearFilters()">Reset Filters</button>` : ""}
+        </div>
       `;
     }
 
-    filtersHTML += `
-      <button class="filter-btn-clear" onclick="App.clearFilters()">Reset Filters</button>
-    `;
     wrap.innerHTML = filtersHTML;
     grid.parentNode.insertBefore(wrap, grid);
   }
@@ -1477,19 +1586,20 @@ const App = (() => {
     });
   }
 
-  function _renderGlobalSearchResults(movies, tvshows, anime, donghua) {
+  function _renderGlobalSearchResults(movies, tvshows, dramas, anime, donghua) {
     const grid = document.getElementById("search-grid");
     if (!grid) return;
 
     grid.style.display = "flex";
     grid.style.flexDirection = "column";
-    grid.style.gap = "24px";
+    grid.style.gap = "28px";
 
     let html = "";
 
     const sections = [
       { label: "Movies", list: movies, type: "movie" },
       { label: "TV Shows & Series", list: tvshows, type: "tv" },
+      { label: "Dramas & Asian Series", list: dramas, type: "drama" },
       { label: "Anime", list: anime, type: "anime" },
       { label: "Donghua", list: donghua, type: "donghua" }
     ];
@@ -1500,7 +1610,12 @@ const App = (() => {
         hasAny = true;
         html += `
           <div class="global-search-section">
-            <h3 style="margin-bottom:12px; font-size:16px; border-left:4px solid var(--primary); padding-left:8px">${sec.label}</h3>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <h3 style="font-size:16px; font-weight:700; border-left:4px solid var(--primary); padding-left:10px; color:#fff;">
+                ${sec.label} <span style="font-size:13px; font-weight:400; color:var(--text3); margin-left:6px;">(${sec.list.length})</span>
+              </h3>
+              ${sec.list.length > 6 ? `<button class="row-see-all" onclick="App.setSearchContext('${sec.type}')">View All ${sec.label} →</button>` : ""}
+            </div>
             <div class="browse-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:16px">
               ${sec.list.slice(0, 6).map(item => _cardHTML(item)).join("")}
             </div>
@@ -1510,11 +1625,16 @@ const App = (() => {
     });
 
     if (!hasAny) {
-      grid.innerHTML = `<div class="empty-state"><p>No results found matching "${_esc(_searchQuery)}"</p></div>`;
+      grid.innerHTML = `
+        <div class="empty-state" style="padding: 60px 20px; text-align: center; color: var(--text2);">
+          <p style="font-size:16px; margin-bottom:8px; color:#fff;">No results found matching "${_esc(_searchQuery)}"</p>
+          <p style="font-size:13px; color:var(--text3); max-width:440px; margin:0 auto 16px;">Try checking your spelling or searching for a different title.</p>
+        </div>
+      `;
       document.getElementById("search-label").textContent = "No Results";
     } else {
       grid.innerHTML = html;
-      document.getElementById("search-label").textContent = `Global Results for "${_searchQuery}"`;
+      document.getElementById("search-label").textContent = `Search results for "${_searchQuery}"`;
       grid.querySelectorAll("img[data-src]").forEach(img => _observeImg(img));
     }
   }
@@ -1529,9 +1649,11 @@ const App = (() => {
 
     if (!results.length && !append) {
       grid.innerHTML = `<div class="empty-state"><p>No filtered results for "${_esc(_searchQuery)}"</p></div>`;
+      document.getElementById("search-label").textContent = `No Results for "${_searchQuery}"`;
       return;
     }
 
+    document.getElementById("search-label").textContent = `${_searchContext.toUpperCase()} results for "${_searchQuery}" (${results.length})`;
     const html = results.filter(i => i.poster).map(i => _cardHTML(i)).join("");
     if (append) {
       grid.insertAdjacentHTML("beforeend", html);
@@ -1872,15 +1994,20 @@ const App = (() => {
     }
 
     // Search: #/search?q=query or #/search
-    if (path === "/search" || path.startsWith("/search?")) {
-      const searchMatch = path.match(/^\/search\?q=(.+)/);
-      const query = searchMatch ? decodeURIComponent(searchMatch[1]) : "";
+    if (path === "/search" || path.startsWith("/search?") || path.startsWith("/search")) {
+      let query = "";
+      const searchIdx = path.indexOf("?");
+      if (searchIdx !== -1) {
+        const params = new URLSearchParams(path.slice(searchIdx));
+        query = params.get("q") || "";
+      }
       const input = document.getElementById("search-input");
       if (input) input.value = query;
-      if (query) {
-        await _doSearch(query);
+      if (query.trim()) {
+        await _doSearch(query.trim());
       } else {
         _showPage("search", true);
+        _renderSearchEmptyState();
       }
       return true;
     }
@@ -2032,7 +2159,7 @@ const App = (() => {
         home: "#/",
         anime: "#/anime",
         profile: "#/profile",
-        search: "#/search",
+        search: _searchQuery ? `#/search?q=${encodeURIComponent(_searchQuery)}` : "#/search",
         browse: _activeRowId ? `#/browse/${_activeRowId}` : "#/browse",
         watchlist: "#/watchlist",
         "history-page": "#/history-page",
@@ -2102,9 +2229,11 @@ const App = (() => {
     if (media === "anime" || media === "donghua") {
       _openAnimeDetail(item);
     } else {
-      const newHash = `#/${media || "movie"}/${item.id}`;
+      const cleanMedia = (media === "drama" || media === "tv") ? "tv" : "movie";
+      const normalizedItem = (media === "drama") ? { ...item, media: "tv" } : item;
+      const newHash = `#/${cleanMedia}/${item.id}`;
       if (window.location.hash !== newHash) history.pushState(null, "", newHash);
-      Player.open(item);
+      Player.open(normalizedItem);
     }
   }
 
@@ -4692,46 +4821,7 @@ const App = (() => {
     _showToast("🔔 No new notifications. You are all caught up!");
   }
 
-  // ── Streaming User Profile System (Netflix/AniWatch Style) ───────────────
-  const _AVATAR_PRESETS = [
-    { id: "samurai", name: "Neon Samurai", url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200&auto=format&fit=crop&q=80" },
-    { id: "hacker", name: "Cyberpunk Hacker", url: "https://images.unsplash.com/photo-1563089145-599997674d42?w=200&auto=format&fit=crop&q=80" },
-    { id: "gamer", name: "Anime Gamer", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80" },
-    { id: "cinema", name: "Classic Cinema Reel", url: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=200&auto=format&fit=crop&q=80" },
-    { id: "astro", name: "Sci-Fi Cosmonaut", url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=200&auto=format&fit=crop&q=80" },
-    { id: "warrior", name: "Manga Inker", url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=200&auto=format&fit=crop&q=80" },
-    { id: "synth", name: "Retro Synthwave", url: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=200&auto=format&fit=crop&q=80" },
-    { id: "director", name: "Film Director", url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80" },
-    { id: "mystic", name: "Mystic Realm", url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=80" },
-    { id: "midnight", name: "Midnight Wolf", url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&auto=format&fit=crop&q=80" },
-    { id: "dragon", name: "Dragon Nebula", url: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=200&auto=format&fit=crop&q=80" },
-    { id: "aurora", name: "Aurora Sky", url: "https://images.unsplash.com/photo-1531306728370-e2ebd9d7bb99?w=200&auto=format&fit=crop&q=80" }
-  ];
-
-  let _selectedAvatarUrl = "";
-
-  function _getUserProfile() {
-    try {
-      const stored = localStorage.getItem("streamx_user_profile");
-      if (stored) return JSON.parse(stored);
-    } catch (e) {
-      console.warn("Failed to parse user profile, falling back to default", e);
-    }
-    return {
-      name: "Alex Hunter",
-      handle: "@alex_streamx",
-      bio: "Binge-watching anime masterpieces and cinematic epics. Always exploring hidden gems.",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80",
-      memberSince: "Oct 2024",
-      badge: "PRO VIP PASS"
-    };
-  }
-
-  function _saveUserProfileData(profile) {
-    localStorage.setItem("streamx_user_profile", JSON.stringify(profile));
-    _syncUserProfileUI();
-  }
-
+  // ── Local Streaming Library & Profile System ────────────────────────────
   function _computeUserStreamingStats() {
     const history = StreamXHistory.getWatchHistory() || [];
     const watchedCount = history.length;
@@ -4763,16 +4853,7 @@ const App = (() => {
   }
 
   function _syncUserProfileUI() {
-    const profile = _getUserProfile();
     const stats = _computeUserStreamingStats();
-
-    // Top header avatar & dropdown header
-    const headerAvatar = document.getElementById("header-avatar-img");
-    if (headerAvatar) headerAvatar.src = profile.avatar;
-    const pdropAvatar = document.getElementById("pdrop-avatar-img");
-    if (pdropAvatar) pdropAvatar.src = profile.avatar;
-    const pdropName = document.getElementById("pdrop-user-name");
-    if (pdropName) pdropName.textContent = profile.name;
 
     // Dropdown stats
     const pdropWatched = document.getElementById("pdrop-stat-watched");
@@ -4781,20 +4862,6 @@ const App = (() => {
     if (pdropSaved) pdropSaved.textContent = stats.savedCount;
     const pdropTime = document.getElementById("pdrop-stat-time");
     if (pdropTime) pdropTime.textContent = `${stats.totalHours}h`;
-
-    // Profile page hero & metadata
-    const pageAvatar = document.getElementById("profile-page-avatar");
-    if (pageAvatar) pageAvatar.src = profile.avatar;
-    const pageName = document.getElementById("profile-page-name");
-    if (pageName) pageName.textContent = profile.name;
-    const pageHandle = document.getElementById("profile-page-handle");
-    if (pageHandle) pageHandle.textContent = profile.handle;
-    const pageBio = document.getElementById("profile-page-bio");
-    if (pageBio) pageBio.textContent = profile.bio;
-    const pageDate = document.getElementById("profile-member-date");
-    if (pageDate) pageDate.textContent = `Member since ${profile.memberSince || "Oct 2024"}`;
-    const pageBadge = document.getElementById("profile-badge-vip");
-    if (pageBadge) pageBadge.textContent = profile.badge || "PRO VIP PASS";
 
     // Profile page stats cards
     const statWatched = document.getElementById("prof-stat-watched-count");
@@ -4835,6 +4902,10 @@ const App = (() => {
     }
   }
 
+  function clearHistoryFromProfile() {
+    clearAllHistory();
+  }
+
   function toggleProfileDropdown(e) {
     if (e) e.stopPropagation();
     const dropdown = document.getElementById("profile-dropdown-menu");
@@ -4851,84 +4922,6 @@ const App = (() => {
   function closeProfileDropdown() {
     const dropdown = document.getElementById("profile-dropdown-menu");
     if (dropdown) dropdown.style.display = "none";
-  }
-
-  function openEditProfileModal() {
-    closeProfileDropdown();
-    const modal = document.getElementById("profile-edit-modal-bg");
-    if (!modal) return;
-
-    const profile = _getUserProfile();
-    _selectedAvatarUrl = profile.avatar;
-
-    const nameInput = document.getElementById("edit-profile-name");
-    if (nameInput) nameInput.value = profile.name;
-    const bioInput = document.getElementById("edit-profile-bio");
-    if (bioInput) bioInput.value = profile.bio;
-    const urlInput = document.getElementById("edit-avatar-url");
-    if (urlInput) urlInput.value = profile.avatar;
-    const previewImg = document.getElementById("edit-avatar-preview");
-    if (previewImg) previewImg.src = profile.avatar;
-
-    // Render avatar presets grid
-    const grid = document.getElementById("avatar-presets-grid");
-    if (grid) {
-      grid.innerHTML = _AVATAR_PRESETS.map(preset => `
-        <button type="button" class="avatar-preset-btn ${preset.url === profile.avatar ? 'active' : ''}" 
-                onclick="App.selectAvatarPreset('${preset.url}')" title="${_esc(preset.name)}">
-          <img src="${preset.url}" alt="${_esc(preset.name)}">
-        </button>
-      `).join("");
-    }
-
-    modal.style.display = "flex";
-  }
-
-  function closeEditProfileModal() {
-    const modal = document.getElementById("profile-edit-modal-bg");
-    if (modal) modal.style.display = "none";
-  }
-
-  function onCustomAvatarInput(val) {
-    if (!val || !val.trim()) return;
-    _selectedAvatarUrl = val.trim();
-    const previewImg = document.getElementById("edit-avatar-preview");
-    if (previewImg) previewImg.src = _selectedAvatarUrl;
-    document.querySelectorAll(".avatar-preset-btn").forEach(btn => btn.classList.remove("active"));
-  }
-
-  function selectAvatarPreset(url) {
-    _selectedAvatarUrl = url;
-    const previewImg = document.getElementById("edit-avatar-preview");
-    if (previewImg) previewImg.src = url;
-    const urlInput = document.getElementById("edit-avatar-url");
-    if (urlInput) urlInput.value = url;
-    document.querySelectorAll(".avatar-preset-btn").forEach(btn => {
-      const img = btn.querySelector("img");
-      if (img && img.src === url) btn.classList.add("active");
-      else btn.classList.remove("active");
-    });
-  }
-
-  function saveUserProfile() {
-    const nameInput = document.getElementById("edit-profile-name");
-    const bioInput = document.getElementById("edit-profile-bio");
-    const profile = _getUserProfile();
-
-    if (nameInput && nameInput.value.trim()) {
-      profile.name = nameInput.value.trim();
-      profile.handle = `@${profile.name.toLowerCase().replace(/[^a-z0-9]/g, "") || "streamx"}`;
-    }
-    if (bioInput) {
-      profile.bio = bioInput.value.trim() || profile.bio;
-    }
-    if (_selectedAvatarUrl) {
-      profile.avatar = _selectedAvatarUrl;
-    }
-
-    _saveUserProfileData(profile);
-    closeEditProfileModal();
-    _showToast("✨ Profile updated successfully!");
   }
 
   function showProfileToast() {
@@ -5160,7 +5153,9 @@ const App = (() => {
     showProfileToast,
     savePlayerPreference,
 
-    // Phase 2 Search Helpers
+    // Search Helpers
+    triggerSearch,
+    setSearchContext,
     toggleMobileSearch,
     setFilter,
     clearFilters,
@@ -5187,11 +5182,7 @@ const App = (() => {
     // User Profile Actions
     toggleProfileDropdown,
     closeProfileDropdown,
-    openEditProfileModal,
-    closeEditProfileModal,
-    onCustomAvatarInput,
-    selectAvatarPreset,
-    saveUserProfile,
+    clearHistoryFromProfile,
     toggleAnimeAutoNext,
     playNextAnimeEpisode: playNextEpisode,
 
