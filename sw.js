@@ -1,17 +1,17 @@
-const CACHE_NAME = "streamx-cinema-v10";
+const CACHE_NAME = "streamx-cinema-v11";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./css/style.css?v=9.1",
-  "./js/config.js?v=9.1",
-  "./js/tmdb.js?v=9.1",
-  "./js/anilist.js?v=9.1",
-  "./js/watchlist.js?v=9.1",
-  "./js/history.js?v=9.1",
-  "./js/player.js?v=9.1",
-  "./js/app.js?v=9.1",
+  "./css/style.css?v=9.2",
+  "./js/config.js?v=9.2",
+  "./js/tmdb.js?v=9.2",
+  "./js/anilist.js?v=9.2",
+  "./js/watchlist.js?v=9.2",
+  "./js/history.js?v=9.2",
+  "./js/player.js?v=9.2",
+  "./js/app.js?v=9.2",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];

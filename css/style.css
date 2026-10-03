@@ -4419,6 +4419,18 @@ img.loaded {
   display: block;
 }
 
+#anime-video-player.player-hidden,
+#anime-iframe-player.player-hidden,
+.player-hidden {
+  display: none !important;
+}
+
+#anime-video-player.player-visible,
+#anime-iframe-player.player-visible,
+.player-visible {
+  display: block !important;
+}
+
 /* Under-Player Slim Action Bar */
 .anime-action-bar-slim {
   background: var(--glass-bg-1, rgba(14, 16, 25, 0.72));
@@ -6610,10 +6622,7 @@ img.loaded {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7) !important;
   }
 
-  #stream-frame,
-  #anime-video-player,
-  #anime-iframe-player,
-  #anime-iframe-container {
+  #stream-frame {
     width: 100% !important;
     height: 100% !important;
     aspect-ratio: 16/9 !important;
@@ -6623,6 +6632,29 @@ img.loaded {
     display: block !important;
     object-fit: contain !important;
     background: #000 !important;
+  }
+
+  #anime-video-player,
+  #anime-iframe-player,
+  #anime-iframe-container {
+    width: 100% !important;
+    height: 100% !important;
+    aspect-ratio: 16/9 !important;
+    max-height: 50vh !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    object-fit: contain !important;
+    background: #000 !important;
+  }
+
+  #anime-video-player.player-hidden,
+  #anime-iframe-player.player-hidden {
+    display: none !important;
+  }
+
+  #anime-video-player.player-visible,
+  #anime-iframe-player.player-visible {
+    display: block !important;
   }
 
   .pm-content {

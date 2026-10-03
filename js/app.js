@@ -165,7 +165,7 @@ const App = (() => {
       const isPlayerActive = bgModal && bgModal.style.display !== "none" && document.getElementById("anime-player-wrap")?.style.display !== "none";
       if (isPlayerActive && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA" && document.activeElement.tagName !== "SELECT") {
         const video = document.getElementById("anime-video-player");
-        if (video && video.style.display !== "none") {
+        if (video && video.style.display !== "none" && !video.classList.contains("player-hidden")) {
           const key = e.key.toLowerCase();
           if (key === " " || e.code === "Space") {
             e.preventDefault();
@@ -2400,8 +2400,8 @@ const App = (() => {
                 </div>
 
                 <div id="anime-quality-badge" style="position: absolute; top: 15px; right: 15px; background: rgba(0, 0, 0, 0.75); border: 1px solid rgba(255, 255, 255, 0.15); color: #00ff88; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; z-index: 10; display: none;"></div>
-                <video id="anime-video-player" controls playsinline webkit-playsinline crossorigin="anonymous" width="100%" height="100%" style="width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; display:block;"></video>
-                <iframe id="anime-iframe-player" width="100%" height="100%" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" style="width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; display:none; border:0;"></iframe>
+                <video id="anime-video-player" class="player-hidden" controls playsinline webkit-playsinline crossorigin="anonymous" width="100%" height="100%" style="width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; display:none;"></video>
+                <iframe id="anime-iframe-player" class="player-hidden" width="100%" height="100%" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" style="width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; display:none; border:0;"></iframe>
                 <button id="skip-intro-btn" class="btn-primary" style="position: absolute; bottom: 60px; left: 20px; z-index: 10; display: none; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer;" onclick="App.skipIntro()">Skip Intro</button>
                 <button id="skip-outro-btn" class="btn-primary" style="position: absolute; bottom: 60px; right: 20px; z-index: 10; display: none; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer;" onclick="App.skipOutro()">Skip Outro</button>
               </div>
@@ -2485,11 +2485,16 @@ const App = (() => {
       video.pause();
       video.src = "";
       if (video.load) video.load();
+      video.classList.add("player-hidden");
+      video.classList.remove("player-visible");
+      video.style.setProperty("display", "none", "important");
     }
     const iframe = document.getElementById("anime-iframe-player");
     if (iframe) {
       iframe.src = "";
-      iframe.style.display = "none";
+      iframe.classList.add("player-hidden");
+      iframe.classList.remove("player-visible");
+      iframe.style.setProperty("display", "none", "important");
     }
     if (_hlsInstance) {
       _hlsInstance.destroy();
@@ -3223,7 +3228,7 @@ const App = (() => {
   // ── Global PostMessage Listener for Embed Players ───────────────────────
   function handleWindowMessage(event) {
     const iframe = document.getElementById("anime-iframe-player");
-    if (!iframe || iframe.style.display === "none") return;
+    if (!iframe || iframe.style.display === "none" || iframe.classList.contains("player-hidden")) return;
 
     // 1. ZokoAnime Message Validation & Dispatch
     if (ZokoAnimeMessageAdapter.validate(event, iframe)) {
@@ -3354,6 +3359,79 @@ const App = (() => {
     }
   }
 
+  function _setAnimePlayerMode(mode, embedUrl = null) {
+    const video = document.getElementById("anime-video-player");
+    let iframe = document.getElementById("anime-iframe-player");
+
+    if (mode === "embed") {
+      if (video) {
+        video.pause();
+        video.onerror = null;
+        video.onloadedmetadata = null;
+        video.src = "";
+        if (video.load) video.load();
+        video.classList.add("player-hidden");
+        video.classList.remove("player-visible");
+        video.style.setProperty("display", "none", "important");
+      }
+      if (iframe) {
+        const parent = iframe.parentNode;
+        const newIframe = document.createElement("iframe");
+        for (const attr of iframe.attributes) {
+          if (attr.name !== "src" && attr.name !== "sandbox" && attr.name !== "style" && attr.name !== "class") {
+            newIframe.setAttribute(attr.name, attr.value);
+          }
+        }
+        newIframe.id = "anime-iframe-player";
+        newIframe.removeAttribute("sandbox");
+        newIframe.setAttribute("allowfullscreen", "true");
+        newIframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
+        newIframe.className = "player-visible";
+        newIframe.style.cssText = "width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; border:0; display:block !important;";
+        if (embedUrl) newIframe.src = embedUrl;
+        parent.replaceChild(newIframe, iframe);
+      }
+    } else if (mode === "video") {
+      if (iframe) {
+        const parent = iframe.parentNode;
+        const newIframe = document.createElement("iframe");
+        for (const attr of iframe.attributes) {
+          if (attr.name !== "src" && attr.name !== "sandbox" && attr.name !== "style" && attr.name !== "class") {
+            newIframe.setAttribute(attr.name, attr.value);
+          }
+        }
+        newIframe.id = "anime-iframe-player";
+        newIframe.className = "player-hidden";
+        newIframe.style.cssText = "display:none !important;";
+        newIframe.src = "";
+        parent.replaceChild(newIframe, iframe);
+      }
+      if (video) {
+        video.classList.remove("player-hidden");
+        video.classList.add("player-visible");
+        video.style.setProperty("display", "block", "important");
+      }
+    } else {
+      // mode === "none" / initial reset
+      if (video) {
+        video.pause();
+        video.onerror = null;
+        video.onloadedmetadata = null;
+        video.src = "";
+        if (video.load) video.load();
+        video.classList.add("player-hidden");
+        video.classList.remove("player-visible");
+        video.style.setProperty("display", "none", "important");
+      }
+      if (iframe) {
+        iframe.src = "";
+        iframe.classList.add("player-hidden");
+        iframe.classList.remove("player-visible");
+        iframe.style.setProperty("display", "none", "important");
+      }
+    }
+  }
+
   async function playAnimeEpisode(episodeId, episodeNumber, audioOverride = null) {
     console.log(">>> Playing anime episode:", episodeId, "Episode Number:", episodeNumber, "Active Provider in memory:", _activeProvider);
 
@@ -3377,15 +3455,7 @@ const App = (() => {
     controlsWrap.style.display = "block";
     controlsWrap.innerHTML = `<div class="loader-spinner"></div>`;
 
-    video.pause();
-    video.onerror = null;
-    video.src = "";
-    if (video.load) video.load();
-
-    if (iframe) {
-      iframe.src = "";
-      iframe.style.display = "none";
-    }
+    _setAnimePlayerMode("none");
 
     if (_hlsInstance) {
       _hlsInstance.destroy();
@@ -3464,14 +3534,10 @@ const App = (() => {
 
       // 4. Handle EMBED vs DIRECT SOURCE
       if (data.type === "embed") {
-        // Embed Provider (Servers 3-8)
-        video.style.display = "none";
-        if (iframe) {
-          const embedUrl = data.embedUrl || (data.sources && data.sources[0]?.url);
-          console.log(">>> Loading embed iframe URL:", embedUrl);
-          iframe.src = embedUrl;
-          iframe.style.display = "block";
-        }
+        // Embed Provider (Servers 2-9, or Server 1 embed)
+        const embedUrl = data.embedUrl || (data.sources && data.sources[0]?.url);
+        console.log(">>> Loading embed iframe URL:", embedUrl);
+        _setAnimePlayerMode("embed", embedUrl);
         _renderPlayerControls(data, null);
       } else {
         // Direct Source / HLS Provider (Server 2 MegaVid, Server 1 Anikoto)
@@ -3839,7 +3905,7 @@ const App = (() => {
 
   function handlePlayerShortcuts(e) {
     const video = document.getElementById("anime-video-player");
-    if (!video || video.style.display === "none") return;
+    if (!video || video.style.display === "none" || video.classList.contains("player-hidden")) return;
 
     if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
       return;
@@ -4036,36 +4102,9 @@ const App = (() => {
     const isMP4 = (sourceObj && !sourceObj.isM3U8 && !sourceObj.isEmbed && url.includes(".mp4")) || url.includes(".mp4") || url.includes("/video.mp4");
     const isEmbed = (sourceObj && sourceObj.isEmbed) || (!isM3U8 && !isMP4 && (url.includes("megaplay.buzz") || url.includes("/stream/") || url.includes("anikoto") || url.includes("/embed") || url.includes("/e/")));
     if (isEmbed) {
-      video.style.display = "none";
-      if (iframe) {
-        const parent = iframe.parentNode;
-        const newIframe = document.createElement("iframe");
-        for (const attr of iframe.attributes) {
-          if (attr.name !== "src" && attr.name !== "sandbox") {
-            newIframe.setAttribute(attr.name, attr.value);
-          }
-        }
-        newIframe.removeAttribute("sandbox");
-        newIframe.setAttribute("allowfullscreen", "true");
-        newIframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
-        newIframe.src = url;
-        newIframe.style.display = "block";
-        parent.replaceChild(newIframe, iframe);
-      }
+      _setAnimePlayerMode("embed", url);
     } else {
-      if (iframe) {
-        const parent = iframe.parentNode;
-        const newIframe = document.createElement("iframe");
-        for (const attr of iframe.attributes) {
-          if (attr.name !== "src") {
-            newIframe.setAttribute(attr.name, attr.value);
-          }
-        }
-        newIframe.src = "";
-        newIframe.style.display = "none";
-        parent.replaceChild(newIframe, iframe);
-      }
-      video.style.display = "block";
+      _setAnimePlayerMode("video");
 
       video.onerror = (e) => {
         if (!isEmbed && video.src) {
@@ -4418,7 +4457,7 @@ const App = (() => {
 
   function captureScreenshot() {
     const video = document.getElementById("anime-video-player");
-    if (!video || video.style.display === "none") {
+    if (!video || video.style.display === "none" || video.classList.contains("player-hidden")) {
       _showToast("No active video source to screenshot!");
       return;
     }
