@@ -50,9 +50,9 @@ self.addEventListener("fetch", event => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Skip non-GET requests, Chrome extension calls, and video streams/hls chunks
+  // Skip non-GET requests, Chrome extension calls, video streams, and Google site verification
   if (req.method !== "GET" || !url.protocol.startsWith("http")) return;
-  if (url.pathname.endsWith(".m3u8") || url.pathname.endsWith(".ts") || url.pathname.endsWith(".mp4")) return;
+  if (url.pathname.startsWith("/google") || url.pathname.endsWith(".m3u8") || url.pathname.endsWith(".ts") || url.pathname.endsWith(".mp4")) return;
 
   // For API requests (TMDB, AniList, streamx-backend): Network-first
   if (url.pathname.includes("/api/") || url.hostname.includes("themoviedb.org") || url.hostname.includes("anilist.co")) {
