@@ -2180,69 +2180,206 @@ const App = (() => {
     const ratingStars = _starsHTML(d.rating);
     const badgeLabel = d.media === "donghua" ? "DONGHUA" : "ANIME";
 
-    // Chronological Season Grouping
-    const currentItem = {
-      id: d.id,
-      title: d.title.userPreferred || d.title.english || d.title.romaji || "Current",
-      format: d.format || "TV",
-      year: d.year || ""
+  function _getCleanAnimeTitle(t) {
+    if (!t) return "";
+    if (typeof t === "string") return t;
+    return t.english || t.userPreferred || t.romaji || t.native || "";
+  }
+
+  function _parseExplicitAnimeSeason(title, format) {
+    const t = _getCleanAnimeTitle(title).trim();
+    const lower = t.toLowerCase();
+
+    if (format === "MOVIE" || lower.includes("the movie") || lower.includes(" movie")) {
+      return { type: "MOVIE", label: "Movie" };
+    }
+    if (format === "OVA" || lower.includes(" ovas") || lower.includes(" ova")) {
+      return { type: "OVA", label: "OVA" };
+    }
+    if (format === "ONA" || lower.includes(" ona") || lower.includes("break time") || lower.includes("kyuukei jikan")) {
+      return { type: "ONA", label: "ONA" };
+    }
+    if (format === "SPECIAL" || lower.includes(" special")) {
+      return { type: "SPECIAL", label: "Special" };
+    }
+
+    const sPartMatch = t.match(/\bseason\s*(\d+)\s*(?:part|cour)\s*(\d+)\b/i);
+    if (sPartMatch) {
+      return { type: "TV", seasonNum: parseInt(sPartMatch[1]), partNum: parseInt(sPartMatch[2]), label: `Season ${sPartMatch[1]} Part ${sPartMatch[2]}` };
+    }
+
+    const sMatch = t.match(/\bseason\s*(\d+)\b/i);
+    if (sMatch) {
+      return { type: "TV", seasonNum: parseInt(sMatch[1]), label: `Season ${sMatch[1]}` };
+    }
+
+    const ordMatch = t.match(/\b(1st|2nd|3rd|4th|5th|6th|first|second|third|fourth|fifth|sixth)\s+season(?:\s+(?:part|cour)\s+(\d+))?/i);
+    if (ordMatch) {
+      const ordMap = { "1st": 1, "first": 1, "2nd": 2, "second": 2, "3rd": 3, "third": 3, "4th": 4, "fourth": 4, "5th": 5, "fifth": 5, "6th": 6, "sixth": 6 };
+      const sNum = ordMap[ordMatch[1].toLowerCase()];
+      const pNum = ordMatch[2] ? parseInt(ordMatch[2]) : null;
+      return { type: "TV", seasonNum: sNum, partNum: pNum, label: pNum ? `Season ${sNum} Part ${pNum}` : `Season ${sNum}` };
+    }
+
+    if (lower.includes("final season")) {
+      const pMatch = t.match(/part\s*(\d+)/i);
+      return { type: "TV", isFinal: true, label: pMatch ? `Final Season Part ${pMatch[1]}` : "Final Season" };
+    }
+
+    const pSolo = t.match(/\bpart\s*(\d+)\b/i);
+    if (pSolo) {
+      return { type: "TV", partNum: parseInt(pSolo[1]), label: `Part ${pSolo[1]}` };
+    }
+
+    return { type: "TV", seasonNum: null, label: null };
+  }
+
+  function _buildAnimeSeasonTabs(currentMedia, relationsList) {
+    if (!currentMedia) return [];
+
+    const currentTitle = _getCleanAnimeTitle(currentMedia.title);
+    const currentId = currentMedia.id;
+
+    const validRelTypes = new Set(["PREQUEL", "SEQUEL", "SIDE_STORY", "SPIN_OFF", "ALTERNATIVE", "PARENT", "SUMMARY"]);
+    const baseWord = currentTitle.split(/[:\-\s]/)[0].toLowerCase();
+
+    const mediaMap = new Map();
+    mediaMap.set(currentId, {
+      id: currentId,
+      title: currentTitle,
+      format: currentMedia.format || "TV",
+      year: currentMedia.year || "",
+      isCurrent: true,
+      relationType: "CURRENT"
+    });
+
+    for (const rel of (relationsList || [])) {
+      if (!rel || !rel.id || mediaMap.has(rel.id)) continue;
+      if (rel.relationType && !validRelTypes.has(rel.relationType)) continue;
+
+      const relTitle = _getCleanAnimeTitle(rel.title);
+      const titleLower = relTitle.toLowerCase();
+      if (baseWord.length > 2 && !titleLower.includes(baseWord)) continue;
+
+      mediaMap.set(rel.id, {
+        id: rel.id,
+        title: relTitle,
+        format: rel.format || "TV",
+        year: rel.year || "",
+        isCurrent: rel.id === currentId,
+        relationType: rel.relationType || ""
+      });
+    }
+
+    const allItems = Array.from(mediaMap.values());
+
+    const isMainline = (item) => {
+      const t = (item.title || "").toLowerCase();
+      const fmt = (item.format || "").toUpperCase();
+      const rel = (item.relationType || "").toUpperCase();
+
+      if (["ONA", "OVA", "MOVIE", "SPECIAL", "MUSIC"].includes(fmt)) return false;
+      if (t.includes("the movie") || t.includes(" movie")) return false;
+      if (t.includes(" ovas") || t.includes(" ova")) return false;
+      if (t.includes("break time") || t.includes("kyuukei jikan") || t.includes("petit")) return false;
+      if (rel === "SPIN_OFF" || rel === "SIDE_STORY") return false;
+
+      return true;
     };
-    const allMedia = [currentItem, ...(d.relations || [])].sort((a, b) => {
+
+    const mainlineItems = [];
+    const sideItems = [];
+
+    allItems.forEach(item => {
+      const parsed = _parseExplicitAnimeSeason(item.title, item.format);
+      const enriched = { ...item, ...parsed };
+      if (isMainline(item) && parsed.type === "TV") {
+        mainlineItems.push(enriched);
+      } else {
+        sideItems.push(enriched);
+      }
+    });
+
+    mainlineItems.sort((a, b) => {
+      const yA = parseInt(a.year) || 0;
+      const yB = parseInt(b.year) || 0;
+      if (yA !== yB) return yA - yB;
+      return (a.seasonNum || 0) - (b.seasonNum || 0);
+    });
+
+    let currentSeasonCounter = 1;
+    const usedSeasonNums = new Set();
+    mainlineItems.forEach(item => {
+      if (item.seasonNum) usedSeasonNums.add(item.seasonNum);
+    });
+
+    mainlineItems.forEach(item => {
+      if (!item.label) {
+        if (item.seasonNum) {
+          item.label = `Season ${item.seasonNum}`;
+        } else {
+          while (usedSeasonNums.has(currentSeasonCounter)) {
+            currentSeasonCounter++;
+          }
+          item.seasonNum = currentSeasonCounter;
+          item.label = `Season ${currentSeasonCounter}`;
+          usedSeasonNums.add(currentSeasonCounter);
+          currentSeasonCounter++;
+        }
+      }
+    });
+
+    sideItems.sort((a, b) => {
       const yA = parseInt(a.year) || 0;
       const yB = parseInt(b.year) || 0;
       return yA - yB;
     });
 
-    let tvSeasonCount = 0;
-    const seasonTabs = allMedia.map(item => {
-      const t = item.title.toLowerCase();
-      let label = "";
-
-      if (item.format === "MOVIE") {
-        label = "Movie";
-      } else if (item.format === "OVA") {
-        label = "OVA";
-      } else if (item.format === "ONA") {
-        label = "ONA";
-      } else if (item.format === "SPECIAL") {
-        label = "Special";
-      } else {
-        const m = item.title.match(/(?:season|series|part|vol|volume)\s*(\d+)/i);
-        if (m) {
-          label = `Season ${m[1]}`;
-        } else if (t.includes("first season") || t.includes("1st season")) {
-          label = "Season 1";
-        } else if (t.includes("second season") || t.includes("2nd season")) {
-          label = "Season 2";
-        } else if (t.includes("third season") || t.includes("3rd season")) {
-          label = "Season 3";
-        } else if (t.includes("fourth season") || t.includes("4th season")) {
-          label = "Season 4";
-        } else if (t.includes("final season") || t.includes("final act")) {
-          label = "Final Season";
-        } else {
-          tvSeasonCount++;
-          label = `Season ${tvSeasonCount}`;
-        }
-      }
-      return { id: item.id, title: item.title, label, isCurrent: item.id === d.id };
+    const labelCounts = {};
+    const finalItems = [...mainlineItems, ...sideItems];
+    finalItems.forEach(item => {
+      const baseLabel = item.label || item.type || "Special";
+      labelCounts[baseLabel] = (labelCounts[baseLabel] || 0) + 1;
     });
 
-    const seasonSelectorHTML = seasonTabs.length > 1 ? `
+    const runningCounts = {};
+    return finalItems.map(item => {
+      let finalLabel = item.label || item.type || "Special";
+      if (labelCounts[finalLabel] > 1 && (item.type === "OVA" || item.type === "ONA" || item.type === "MOVIE" || item.type === "SPECIAL")) {
+        runningCounts[finalLabel] = (runningCounts[finalLabel] || 0) + 1;
+        finalLabel = `${finalLabel} ${runningCounts[finalLabel]}`;
+      }
+      return {
+        id: item.id,
+        title: item.title,
+        label: finalLabel,
+        isCurrent: item.id === currentId
+      };
+    });
+  }
+
+  function _renderSeasonSelectorBar(tabs) {
+    if (!tabs || tabs.length <= 1) return "";
+    return `
       <div class="anime-season-selector-bar">
-        ${seasonTabs.map(tab => `
+        ${tabs.map(tab => `
           <button class="anime-season-selector-tab ${tab.isCurrent ? 'active' : ''}" 
                   onclick="App.openItem({ id: ${tab.id}, media: 'anime', title: '${_esc(tab.title).replace(/'/g, "\\'")}' })">
             ${_esc(tab.label)}
           </button>
         `).join("")}
       </div>
-    ` : "";
+    `;
+  }
+
+    // Season Grouping & Tabs
+    const initialSeasonTabs = _buildAnimeSeasonTabs(d, d.relations || []);
+    const seasonSelectorHTML = _renderSeasonSelectorBar(initialSeasonTabs);
 
     const getRelationTag = rel => {
       const titleLower = rel.title.toLowerCase();
       if (titleLower.includes("final season")) return "Final Season";
-      if (titleLower.includes("season 4")) return "Final Season";
+      if (titleLower.includes("season 4") || titleLower.includes("4th season")) return "Season 4";
       if (titleLower.includes("season 3") || titleLower.includes("3rd season")) return "Season 3";
       if (titleLower.includes("season 2") || titleLower.includes("2nd season")) return "Season 2";
       if (titleLower.includes("season 1") || titleLower.includes("1st season")) return "Season 1";
@@ -2437,7 +2574,9 @@ const App = (() => {
 
             <div id="anime-episodes-section">
               <h3 class="pm-section-title">Episodes</h3>
-              ${seasonSelectorHTML}
+              <div id="anime-season-selector-container">
+                ${seasonSelectorHTML}
+              </div>
               <div id="anime-season-tabs" class="anime-season-tabs" style="display:none;"></div>
               <div class="loader-spinner" id="anime-eps-loader"></div>
               <div class="anime-ep-grid-rich" id="anime-eps-grid"></div>
@@ -2473,7 +2612,20 @@ const App = (() => {
       pmBody.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    // Fetch real episodes from ConsuMet backend
+    // Asynchronously resolve full franchise prequel/sequel chain and update selector tabs
+    if (typeof Anilist.getFranchiseRelations === "function") {
+      Anilist.getFranchiseRelations(d).then(allFranchiseRelations => {
+        if (allFranchiseRelations && allFranchiseRelations.length > (d.relations || []).length) {
+          const fullTabs = _buildAnimeSeasonTabs(d, allFranchiseRelations);
+          const container = document.getElementById("anime-season-selector-container");
+          if (container) {
+            container.innerHTML = _renderSeasonSelectorBar(fullTabs);
+          }
+        }
+      }).catch(err => console.warn("[Franchise] Background resolution failed:", err));
+    }
+
+    // Fetch real episodes from backend
     const preferredProvider = localStorage.getItem("streamx_anime_provider") || null;
     _fetchAnimeEpisodes(d.id, preferredProvider);
     window.addEventListener("keydown", handlePlayerShortcuts);

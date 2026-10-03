@@ -48,6 +48,7 @@ const Anilist = (() => {
       idMal: item.idMal,
       media: forcedMedia || item.media || "anime",
       title: item.title || "Untitled",
+      format: item.format || "TV",
       overview: item.overview || "",
       year: item.year || "",
       rating: item.vote_average || 0,
@@ -106,6 +107,7 @@ const Anilist = (() => {
     const norm = _normalise(data, mediaType);
     if (!norm) return null;
 
+    norm.format = data.format || norm.format || "TV";
     norm.cast = data.cast || [];
     norm.trailer = data.trailer || null;
     norm.recommendations = (data.recommendations || []).map(i => _normalise(i, mediaType));
@@ -114,6 +116,82 @@ const Anilist = (() => {
     norm.relations = data.relations || [];
 
     return norm;
+  }
+
+  // ── Franchise Prequel / Sequel Chain Traversal ──────────────────────────
+  const _franchiseCache = new Map();
+
+  async function getFranchiseRelations(media) {
+    if (!media || !media.id) return [];
+    if (_franchiseCache.has(media.id)) {
+      return _franchiseCache.get(media.id);
+    }
+
+    const collected = new Map();
+    const visited = new Set([media.id]);
+
+    (media.relations || []).forEach(rel => {
+      collected.set(rel.id, rel);
+    });
+
+    // Walk PREQUELs backwards (e.g. S4 -> S3 -> S2 P2 -> S2 -> S1)
+    let currentPrequels = (media.relations || []).filter(r => r.relationType === "PREQUEL");
+    let depth = 0;
+    while (currentPrequels.length > 0 && depth < 8) {
+      depth++;
+      const nextPrequels = [];
+      for (const p of currentPrequels) {
+        if (visited.has(p.id)) continue;
+        visited.add(p.id);
+        try {
+          const pDetails = await getDetails(p.id, media.media || "anime");
+          if (pDetails && pDetails.relations) {
+            pDetails.relations.forEach(rel => {
+              if (!collected.has(rel.id)) collected.set(rel.id, rel);
+              if (rel.relationType === "PREQUEL" && !visited.has(rel.id)) {
+                nextPrequels.push(rel);
+              }
+            });
+          }
+        } catch (e) {
+          console.warn("[Franchise] Prequel lookup failed:", e.message);
+        }
+      }
+      currentPrequels = nextPrequels;
+    }
+
+    // Walk SEQUELs forwards (e.g. S1 -> S2 -> S3 -> S4)
+    let currentSequels = (media.relations || []).filter(r => r.relationType === "SEQUEL");
+    depth = 0;
+    while (currentSequels.length > 0 && depth < 8) {
+      depth++;
+      const nextSequels = [];
+      for (const s of currentSequels) {
+        if (visited.has(s.id)) continue;
+        visited.add(s.id);
+        try {
+          const sDetails = await getDetails(s.id, media.media || "anime");
+          if (sDetails && sDetails.relations) {
+            sDetails.relations.forEach(rel => {
+              if (!collected.has(rel.id)) collected.set(rel.id, rel);
+              if (rel.relationType === "SEQUEL" && !visited.has(rel.id)) {
+                nextSequels.push(rel);
+              }
+            });
+          }
+        } catch (e) {
+          console.warn("[Franchise] Sequel lookup failed:", e.message);
+        }
+      }
+      currentSequels = nextSequels;
+    }
+
+    const results = Array.from(collected.values());
+    visited.forEach(vId => {
+      _franchiseCache.set(vId, results);
+    });
+
+    return results;
   }
 
   async function search(query, page = 1) {
@@ -131,6 +209,7 @@ const Anilist = (() => {
     getList,
     getPopular,
     getDetails,
+    getFranchiseRelations,
     search,
     _normalise
   };
