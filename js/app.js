@@ -3370,14 +3370,39 @@ const App = (() => {
     grid.innerHTML = "";
 
     try {
-      const backendUrl = getBackendUrl();
+      let backendUrl = getBackendUrl();
+      const targetProvider = provider || _activeProvider || "server1";
       const url = new URL(`${backendUrl}/api/anime/episodes/${animeId}`);
-      if (provider) {
-        url.searchParams.set("provider", provider);
+      if (targetProvider) {
+        url.searchParams.set("provider", targetProvider);
       }
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-      const data = await res.json();
+
+      let data = null;
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 7000);
+        const res = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(t);
+        if (res.ok) data = await res.json();
+      } catch (fetchErr) {
+        console.warn(`[Anime Episodes] Primary fetch to ${url} failed (${fetchErr.message}). Trying failover...`);
+        const altBase = window.handleBackendFailover ? window.handleBackendFailover(backendUrl) : null;
+        if (altBase && altBase !== backendUrl) {
+          try {
+            const altUrl = new URL(`${altBase}/api/anime/episodes/${animeId}`);
+            if (targetProvider) altUrl.searchParams.set("provider", targetProvider);
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 7000);
+            const res = await fetch(altUrl, { signal: ctrl.signal });
+            clearTimeout(t);
+            if (res.ok) data = await res.json();
+          } catch (altErr) {
+            console.warn("[Anime Episodes] Failover backend also failed:", altErr.message);
+          }
+        }
+      }
+
+      if (!data) throw new Error("Could not connect to anime episode service. Please check your connection or choose another server.");
 
       _currentEpisodesList = data.episodes || [];
       if (provider) {
@@ -3761,12 +3786,32 @@ const App = (() => {
       const url = `${backendUrl}/api/anime/sources/${encodeURIComponent(episodeId)}?provider=${targetServer}&animeId=${animeId}&episodeNumber=${_activeEpisodeNumber}&type=${requestedAudio}&start=${startPos}`;
       console.log(">>> Requesting episode sources from:", url);
 
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      let data = null;
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 7000);
+        const res = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(t);
+        if (res.ok) data = await res.json();
+      } catch (srcErr) {
+        console.warn(`[Sources] Primary fetch to ${url} failed (${srcErr.message}). Trying failover...`);
+        const altBase = window.handleBackendFailover ? window.handleBackendFailover(backendUrl) : null;
+        if (altBase && altBase !== backendUrl) {
+          try {
+            const altUrl = `${altBase}/api/anime/sources/${encodeURIComponent(episodeId)}?provider=${targetServer}&animeId=${animeId}&episodeNumber=${_activeEpisodeNumber}&type=${requestedAudio}&start=${startPos}`;
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 7000);
+            const res = await fetch(altUrl, { signal: ctrl.signal });
+            clearTimeout(t);
+            if (res.ok) data = await res.json();
+          } catch (altErr) {
+            console.warn("[Sources] Failover backend also failed:", altErr.message);
+          }
+        }
+      }
 
-      if (data.success === false) {
-        throw new Error(data.error || "No streaming sources resolved");
+      if (!data || data.success === false) {
+        throw new Error((data && data.error) || "No streaming sources resolved");
       }
 
       // 3. Update active provider and capabilities
@@ -4992,7 +5037,10 @@ const App = (() => {
     if (!statusEl) return;
     statusEl.innerHTML = `<span style="color:#94a3b8">Testing connection…</span>`;
     try {
-      const res = await fetch(`${getStreamXBackendUrl()}/`, { method: "GET", cache: "no-store" });
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 4000);
+      const res = await fetch(`${getStreamXBackendUrl()}/`, { method: "GET", cache: "no-store", signal: ctrl.signal });
+      clearTimeout(t);
       if (res.ok) {
         statusEl.innerHTML = `<span style="color:#10b981; font-weight:600;">🟢 Online &amp; Operational (${getStreamXBackendUrl()})</span>`;
       } else {

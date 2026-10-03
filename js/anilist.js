@@ -13,7 +13,8 @@ const Anilist = (() => {
   }
 
   async function _fetch(endpoint, params = {}) {
-    const url = new URL(`${_getApiBase()}${endpoint}`);
+    const primaryBase = _getApiBase();
+    const url = new URL(`${primaryBase}${endpoint}`);
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null) {
         url.searchParams.set(k, v);
@@ -27,18 +28,44 @@ const Anilist = (() => {
       return cached.data;
     }
 
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`AniList Backend ${res.status}: ${endpoint}`);
+    // Attempt 1: Fetch with 7s timeout
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 7000);
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+
+      if (res.ok) {
+        const data = await res.json();
+        _cache.set(cacheKey, { data, ts: Date.now() });
+        return data;
+      }
+      throw new Error(`AniList Backend HTTP ${res.status}`);
+    } catch (err) {
+      console.warn(`[AniList] Primary fetch to ${url.pathname} failed (${err.message}). Trying failover...`);
+
+      // Attempt 2: Failover to alternate backend if available
+      const altBase = window.handleBackendFailover ? window.handleBackendFailover(primaryBase) : null;
+      if (altBase && `${altBase}/api/anime` !== primaryBase) {
+        try {
+          const altUrl = new URL(`${altBase}/api/anime${endpoint}`);
+          url.searchParams.forEach((v, k) => altUrl.searchParams.set(k, v));
+          const ctrl = new AbortController();
+          const t = setTimeout(() => ctrl.abort(), 7000);
+          const res = await fetch(altUrl, { signal: ctrl.signal });
+          clearTimeout(t);
+          if (res.ok) {
+            const data = await res.json();
+            _cache.set(cacheKey, { data, ts: Date.now() });
+            return data;
+          }
+        } catch (altErr) {
+          console.warn("[AniList] Failover backend also failed:", altErr.message);
+        }
+      }
+
+      throw err;
     }
-
-    const data = await res.json();
-    _cache.set(cacheKey, {
-      data,
-      ts: Date.now()
-    });
-
-    return data;
   }
 
   function _normalise(item, forcedMedia) {

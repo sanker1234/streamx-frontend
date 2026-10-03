@@ -16,36 +16,63 @@ const TMDB = (() => {
   }
 
   async function _fetch(endpoint, params = {}) {
-    const url = new URL(`${_getApiBase()}${endpoint}`);
+    const primaryBase = _getApiBase();
+    const url = new URL(`${primaryBase}${endpoint}`);
 
-  url.searchParams.set("language", "en-US");
+    url.searchParams.set("language", "en-US");
 
-  Object.entries(params).forEach(([k, v]) =>
-    url.searchParams.set(k, v)
-  );
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) {
+        url.searchParams.set(k, v);
+      }
+    });
 
-  const cacheKey = url.toString();
-  const cached = _cache.get(cacheKey);
+    const cacheKey = url.toString();
+    const cached = _cache.get(cacheKey);
 
-  if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    return cached.data;
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      return cached.data;
+    }
+
+    // Attempt 1: Fetch with 7s timeout
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 7000);
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+
+      if (res.ok) {
+        const data = await res.json();
+        _cache.set(cacheKey, { data, ts: Date.now() });
+        return data;
+      }
+      throw new Error(`Backend HTTP ${res.status}`);
+    } catch (err) {
+      console.warn(`[TMDB] Primary fetch to ${url.pathname} failed (${err.message}). Trying failover...`);
+
+      // Attempt 2: Failover to alternate backend if available
+      const altBase = window.handleBackendFailover ? window.handleBackendFailover(primaryBase) : null;
+      if (altBase && `${altBase}/api` !== primaryBase) {
+        try {
+          const altUrl = new URL(`${altBase}/api${endpoint}`);
+          url.searchParams.forEach((v, k) => altUrl.searchParams.set(k, v));
+          const ctrl = new AbortController();
+          const t = setTimeout(() => ctrl.abort(), 7000);
+          const res = await fetch(altUrl, { signal: ctrl.signal });
+          clearTimeout(t);
+          if (res.ok) {
+            const data = await res.json();
+            _cache.set(cacheKey, { data, ts: Date.now() });
+            return data;
+          }
+        } catch (altErr) {
+          console.warn("[TMDB] Failover backend also failed:", altErr.message);
+        }
+      }
+
+      throw err;
+    }
   }
-
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    throw new Error(`Backend ${res.status}: ${endpoint}`);
-  }
-
-  const data = await res.json();
-
-  _cache.set(cacheKey, {
-    data,
-    ts: Date.now()
-  });
-
-  return data;
-}
 
   // ── Image helpers ─────────────────────────────────────────────────────
   function posterUrl(path, size = "poster_md") {

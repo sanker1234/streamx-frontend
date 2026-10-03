@@ -555,7 +555,10 @@ const Player = (() => {
     const episodeStr = isTV ? `&episode=${_episode}` : "";
 
     try {
-      const response = await fetch(`${_getApiBase()}/movie/sources/${mediaType}/${_details.id}?provider=${serverKey}${seasonStr}${episodeStr}`);
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 4000); // 4s timeout so player never hangs
+      const response = await fetch(`${_getApiBase()}/movie/sources/${mediaType}/${_details.id}?provider=${serverKey}${seasonStr}${episodeStr}`, { signal: ctrl.signal });
+      clearTimeout(t);
       const data = await response.json();
       if (data.success && (data.embedUrl || (data.sources && data.sources.length > 0))) {
         return {

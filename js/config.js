@@ -92,6 +92,17 @@ const STREAM_SERVERS = [
     tv     : (id, s, e)  => `https://vidbolt.pro/tv/${id}/${s}/${e}`,
   },
   {
+    key    : "vidlink",
+    label  : "VidLink",
+    recommended: true,
+    icon   : "▶",
+    desc   : "Ultra Fast · Auto Sub/Dub · 1080p",
+    color  : "#7c3aed",
+    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
+    movie  : (id)        => `https://vidlink.pro/movie/${id}`,
+    tv     : (id, s, e)  => `https://vidlink.pro/tv/${id}/${s}/${e}`,
+  },
+  {
     key    : "codespecters",
     label  : "CodeSpecters",
     icon   : "💎",
@@ -100,16 +111,6 @@ const STREAM_SERVERS = [
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
     movie  : (id)        => `https://api.codespecters.com/embed/movie/${id}?apikey=DEMO_36c18c68`,
     tv     : (id, s, e)  => `https://api.codespecters.com/embed/tv/${id}/${s}/${e}?apikey=DEMO_36c18c69`,
-  },
-  {
-    key    : "streamflizo",
-    label  : "StreamFliz",
-    icon   : "🔥",
-    desc   : "Multi-Audio · Sub/Dub",
-    color  : "#ff2a5f",
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://streamflizoapi.top/stream/tmdb/${id}`,
-    tv     : (id, s, e)  => `https://streamflizoapi.top/stream/tmdb/${id}/${s}/${e}/multi`,
   },
   {
     key    : "cinesrc",
@@ -180,6 +181,16 @@ const STREAM_SERVERS = [
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
     movie  : (id)        => `https://embedmaster.link/movie/${id}`,
     tv     : (id, s, e)  => `https://embedmaster.link/tv/${id}/${s}/${e}`,
+  },
+  {
+    key    : "streamflizo",
+    label  : "StreamFliz",
+    icon   : "🔥",
+    desc   : "Multi-Audio · Backup Node",
+    color  : "#ff2a5f",
+    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
+    movie  : (id)        => `https://streamflizoapi.top/stream/tmdb/${id}`,
+    tv     : (id, s, e)  => `https://streamflizoapi.top/stream/tmdb/${id}/${s}/${e}/multi`,
   }
 ];
 
@@ -526,18 +537,66 @@ const STREAMX_NAV_SECTIONS = [
   }
 ];
 
-// ── BACKEND API RESOLVER ──────────────────────────────────────────────────
+// ── BACKEND API RESOLVER WITH DYNAMIC FAILOVER & HEALTH RESILIENCE ────────
+const PROD_STREAMX_BACKEND = "https://streamx-backend-ih2r.onrender.com";
+const LOCAL_STREAMX_BACKEND = "http://127.0.0.1:3000";
+
+let _verifiedBackendUrl = null;
+let _backendFailoverTried = false;
+
 function getStreamXBackendUrl() {
   const custom = localStorage.getItem("streamx_backend_url");
   if (custom && custom.trim()) {
     return custom.trim().replace(/\/+$/, "");
   }
-  return window.location.hostname === "127.0.0.1" ||
+
+  if (_verifiedBackendUrl) {
+    return _verifiedBackendUrl;
+  }
+
+  const isLocal = window.location.hostname === "127.0.0.1" ||
     window.location.hostname === "localhost" ||
     window.location.hostname === "" ||
-    window.location.protocol === "file:"
-    ? "http://127.0.0.1:3000"
-    : "https://streamx-backend-ih2r.onrender.com";
+    window.location.protocol === "file:";
+
+  if (isLocal) {
+    _probeLocalBackendAsync();
+    // Default to production cloud backend until local is confirmed alive
+    // This prevents instant "Failed to fetch" if user runs frontend without starting node on port 3000
+    return _verifiedBackendUrl || PROD_STREAMX_BACKEND;
+  }
+
+  return PROD_STREAMX_BACKEND;
+}
+
+async function _probeLocalBackendAsync() {
+  if (_backendFailoverTried) return;
+  _backendFailoverTried = true;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 600);
+    const res = await fetch(`${LOCAL_STREAMX_BACKEND}/`, { signal: ctrl.signal, cache: "no-store" });
+    clearTimeout(t);
+    if (res.ok) {
+      _verifiedBackendUrl = LOCAL_STREAMX_BACKEND;
+    }
+  } catch (e) {
+    _verifiedBackendUrl = PROD_STREAMX_BACKEND;
+  }
+}
+
+function handleBackendFailover(failedUrl) {
+  if (failedUrl && failedUrl.includes("127.0.0.1:3000")) {
+    console.warn("[Backend Failover] Local backend unreachable, switching to production cloud backend:", PROD_STREAMX_BACKEND);
+    _verifiedBackendUrl = PROD_STREAMX_BACKEND;
+    return PROD_STREAMX_BACKEND;
+  } else if (failedUrl && failedUrl.includes("onrender.com")) {
+    console.warn("[Backend Failover] Production backend error, trying local backend:", LOCAL_STREAMX_BACKEND);
+    _verifiedBackendUrl = LOCAL_STREAMX_BACKEND;
+    return LOCAL_STREAMX_BACKEND;
+  }
+  return PROD_STREAMX_BACKEND;
 }
 
 window.getStreamXBackendUrl = getStreamXBackendUrl;
+window.handleBackendFailover = handleBackendFailover;
