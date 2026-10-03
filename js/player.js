@@ -56,17 +56,27 @@ const Player = (() => {
     }
   }
 
-  function close() {
+  function close(skipHashPush = false) {
     const frame = document.getElementById("stream-frame");
     if (frame) frame.src = "";
-    $("player-modal-bg").classList.remove("open");
+    const bg = $("player-modal-bg");
+    if (bg) {
+      bg.classList.remove("open");
+      bg.innerHTML = "";
+    }
     document.body.style.overflow = "";
     _item    = null;
     _details = null;
-    // Restore URL hash to home
-    if (window.location.hash && window.location.hash !== "#/") {
+    // Restore URL hash to home only if not already navigating or instructed to skip
+    if (!skipHashPush && window.location.hash && window.location.hash !== "#/") {
       history.pushState(null, "", "#/");
     }
+  }
+
+  function _handleBackdropClick(e) {
+    if (!e || !e.isTrusted) return;
+    if (window._streamxLastLayoutChange && (Date.now() - window._streamxLastLayoutChange < 400)) return;
+    if (e.target === $("player-modal-bg")) close();
   }
 
   // ── Skeleton ──────────────────────────────────────────────────────────
@@ -88,7 +98,7 @@ const Player = (() => {
           <div class="pm-content"><div class="loader-spinner"></div></div>
         </div>
       </div>`;
-    $("player-modal-bg").onclick = e => { if (e.target === $("player-modal-bg")) close(); };
+    $("player-modal-bg").onclick = _handleBackdropClick;
   }
 
   function _renderError(msg) {
@@ -217,7 +227,7 @@ const Player = (() => {
         </div>
       </div>`;
 
-    $("player-modal-bg").onclick = e => { if (e.target === $("player-modal-bg")) close(); };
+    $("player-modal-bg").onclick = _handleBackdropClick;
   }
 
   // ── TV Controls ───────────────────────────────────────────────────────

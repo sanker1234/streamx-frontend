@@ -1708,7 +1708,7 @@ nav {
 }
 
 #player-modal-bg.open {
-  display: flex;
+  display: flex !important;
 }
 
 .player-modal {
@@ -7082,8 +7082,9 @@ img.loaded {
    Ensure the open modal always stays on top.
    ══════════════════════════════════════════════════════ */
 
-/* Global: ensure the open player modal is ALWAYS on top regardless of orientation */
+/* Global: ensure the open player modal is ALWAYS visible and on top */
 #player-modal-bg.open {
+  display: flex !important;
   z-index: 99999 !important;
 }
 
@@ -7102,6 +7103,7 @@ img.loaded {
   /* FIX 8 — When the modal is open on any narrow/medium screen (portrait or
      landscape), force it to cover the full screen completely with solid bg */
   #player-modal-bg.open {
+    display: flex !important;
     position: fixed !important;
     inset: 0 !important;
     width: 100vw !important;
@@ -7109,5 +7111,54 @@ img.loaded {
     min-height: 100dvh !important;
     z-index: 99999 !important;
     background: #080b13 !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   MOBILE LANDSCAPE FULLSCREEN FIX (Fix 4 & Fix 9)
+   When device rotates to landscape (height <= 600px):
+   - Disable expensive body::before blur to prevent GPU thrashing
+   - Ensure player modal fills 100% of viewport seamlessly
+   - Zero padding/margins, solid background so home page never bleeds through
+   ══════════════════════════════════════════════════════ */
+@media (orientation: landscape) and (max-height: 600px) {
+  body::before {
+    display: none !important;
+  }
+
+  #player-modal-bg {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #080b13 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #player-modal-bg.open {
+    display: flex !important;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    background: #080b13 !important;
+    z-index: 99999 !important;
+  }
+
+  #player-modal-bg.open .player-modal {
+    width: 100vw !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    min-width: 100vw !important;
+    min-height: 100dvh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
   }
 }

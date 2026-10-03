@@ -357,12 +357,9 @@ const App = (() => {
       }
     });
 
-    // ── Fullscreen lifecycle: fix body.overflow on fullscreen exit ────────
-    // When browser fullscreen exits (e.g. user presses Escape, or rotates on mobile),
-    // restore body.overflow based on whether the player modal is still open.
-    // This fixes: (1) desktop scroll lock after fullscreen session, and
-    // (2) mobile landscape → home regression caused by stale overflow state.
+    // ── Fullscreen & layout lifecycle: prevent stale scroll lock & accidental taps ──
     const _onFullscreenChange = () => {
+      window._streamxLastLayoutChange = Date.now();
       const isFullscreen = !!(
         document.fullscreenElement ||
         document.webkitFullscreenElement ||
@@ -382,10 +379,18 @@ const App = (() => {
     document.addEventListener("mozfullscreenchange", _onFullscreenChange);
     document.addEventListener("MSFullscreenChange", _onFullscreenChange);
 
+    // Track orientation and resize changes to block accidental backdrop clicks
+    window.addEventListener("resize", () => {
+      window._streamxLastLayoutChange = Date.now();
+    }, { passive: true });
+    window.addEventListener("orientationchange", () => {
+      window._streamxLastLayoutChange = Date.now();
+    }, { passive: true });
+
     // iOS Safari: <video> native fullscreen exit (webkitendfullscreen)
     // iOS fires this on the video element, not document. Delegate via capture.
-    // When native iOS fullscreen exits, ensure body.overflow matches player state.
     document.addEventListener("webkitendfullscreen", (e) => {
+      window._streamxLastLayoutChange = Date.now();
       const bg = document.getElementById("player-modal-bg");
       const playerIsOpen = bg && bg.classList.contains("open");
       // Restore overflow — do NOT navigate or close the player
@@ -1821,6 +1826,17 @@ const App = (() => {
     const hash = window.location.hash || "";
     const path = hash.startsWith("#") ? hash.slice(1) : hash;
 
+    // FIX 3 & FIX 12: If navigating away from a player modal via browser Back or route change, cleanly close player and restore scroll
+    const isPlayerRoute = /^\/(movie|tv|anime|donghua)\//.test(path);
+    if (!isPlayerRoute) {
+      const bg = document.getElementById("player-modal-bg");
+      if (bg && bg.classList.contains("open")) {
+        if (window.Player && typeof Player.close === "function") Player.close(true);
+        if (typeof _closeAnimeDetail === "function") _closeAnimeDetail(true);
+      }
+      document.body.style.overflow = "";
+    }
+
     // Home
     if (!path || path === "/" || path === "/home") {
       if (_currentPage !== "home") {
@@ -1947,6 +1963,16 @@ const App = (() => {
   // ── Page routing ──────────────────────────────────────────────────────
   function _showPage(page, skipHashPush = false) {
     _currentPage = page;
+
+    // FIX 2 & FIX 3: Always restore body scroll on page navigation
+    document.body.style.overflow = "";
+
+    // If navigating to a normal page while a player modal is active, cleanly close it
+    const bgModal = document.getElementById("player-modal-bg");
+    if (bgModal && bgModal.classList.contains("open")) {
+      if (window.Player && typeof Player.close === "function") Player.close(true);
+      if (typeof _closeAnimeDetail === "function") _closeAnimeDetail(true);
+    }
 
     const topHeader = document.getElementById("top-header");
     const sidebar = document.getElementById("desktop-sidebar");
@@ -2118,7 +2144,7 @@ const App = (() => {
           <div class="pm-content"><div class="loader-spinner"></div></div>
         </div>
       </div>`;
-    bg.onclick = e => { if (e.target === bg) _closeAnimeDetail(); };
+    bg.onclick = _handleAnimeBackdropClick;
 
     try {
       const d = await Anilist.getDetails(item.id, item.media);
@@ -2140,15 +2166,11 @@ const App = (() => {
     }
   }
 
-  function _closeAnimeDetail() {
+  function _handleAnimeBackdropClick(e) {
+    if (!e || !e.isTrusted) return;
+    if (window._streamxLastLayoutChange && (Date.now() - window._streamxLastLayoutChange < 400)) return;
     const bg = document.getElementById("player-modal-bg");
-    bg.classList.remove("open");
-    bg.innerHTML = "";
-    document.body.style.overflow = "";
-    // Restore hash to home (or search if we came from search)
-    if (window.location.hash && window.location.hash !== "#/") {
-      history.pushState(null, "", "#/");
-    }
+    if (e.target === bg) _closeAnimeDetail();
   }
 
   function _renderAnimeDetail(d) {
@@ -2428,7 +2450,7 @@ const App = (() => {
         </div>
       </div>`;
 
-    bg.onclick = e => { if (e.target === bg) _closeAnimeDetail(); };
+    bg.onclick = _handleAnimeBackdropClick;
 
     // Register double-click for fullscreen
     const videoEl = document.getElementById("anime-video-player");
@@ -2457,10 +2479,12 @@ const App = (() => {
     window.addEventListener("keydown", handlePlayerShortcuts);
   }
 
-  function _closeAnimeDetail() {
+  function _closeAnimeDetail(skipHashPush = false) {
     const video = document.getElementById("anime-video-player");
     if (video) {
       video.pause();
+      video.src = "";
+      if (video.load) video.load();
     }
     const iframe = document.getElementById("anime-iframe-player");
     if (iframe) {
@@ -2473,15 +2497,17 @@ const App = (() => {
     }
     window.removeEventListener("keydown", handlePlayerShortcuts);
     const bg = document.getElementById("player-modal-bg");
-    bg.classList.remove("open");
-    bg.innerHTML = "";
-    bg._currentAnimeItem = null;
+    if (bg) {
+      bg.classList.remove("open");
+      bg.innerHTML = "";
+      bg._currentAnimeItem = null;
+    }
     _activeEpisodeId = null;
     _activeEpisodeNumber = null;
     _autoPlayEpisodeNumber = null;
     document.body.style.overflow = "";
-    // Restore URL hash to home
-    if (window.location.hash && window.location.hash !== "#/") {
+    // Restore URL hash to home only if not already navigating or instructed to skip
+    if (!skipHashPush && window.location.hash && window.location.hash !== "#/") {
       history.pushState(null, "", "#/");
     }
   }
