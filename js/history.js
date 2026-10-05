@@ -81,6 +81,10 @@ const History = (() => {
   function getRecentlyViewed()  { return _cleanList(_load(RECENT_KEY)); }
   function clearRecentlyViewed(){ _save(RECENT_KEY, []); }
 
+  function removeFromRecent(id, media) {
+    _save(RECENT_KEY, _load(RECENT_KEY).filter(i => !(i.id === id && i.media === media)));
+  }
+
   // Last watched season/episode for a TV show or anime
   function getLastEpisode(id, audio = null) {
     const normAudio = audio ? String(audio).toUpperCase().replace("-", "_") : null;
@@ -123,6 +127,7 @@ const History = (() => {
     recordView,
     getRecentlyViewed,
     clearRecentlyViewed,
+    removeFromRecent,
     getLastEpisode,
     updateProgress,
     getProgress,

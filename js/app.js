@@ -1056,10 +1056,15 @@ const App = (() => {
   }
 
   function removeFromHistory(id, media) {
-    if (window.StreamXHistory && typeof StreamXHistory.removeFromWatch === "function") {
-      StreamXHistory.removeFromWatch(id, media);
+    if (window.StreamXHistory) {
+      if (typeof StreamXHistory.removeFromWatch === "function") {
+        StreamXHistory.removeFromWatch(id, media);
+      }
+      if (typeof StreamXHistory.removeFromRecent === "function") {
+        StreamXHistory.removeFromRecent(id, media);
+      }
       _renderHistoryRows();
-      _showToast("Removed from Continue Watching");
+      _showToast("Removed successfully");
     }
   }
 

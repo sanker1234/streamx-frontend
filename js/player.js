@@ -395,6 +395,8 @@ const Player = (() => {
       episode: _episode || 1
     };
 
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
     const tvLabel = isTv ? ` · Season ${_season || 1}, Episode ${_episode || 1}` : "";
 
     return `
@@ -402,6 +404,16 @@ const Player = (() => {
       <div class="pm-dl-grid">
         ${DOWNLOAD_SERVERS.map(dl => {
           const url = typeof dl.url === "function" ? dl.url(item, _season || 1, _episode || 1) : "#";
+          if (isMobile) {
+            return `<a class="dl-btn" href="${url}" onclick="event.preventDefault(); var w = window.open('${url}', '_blank'); if (!w || w.closed) { window.location.href = '${url}'; }" rel="noopener noreferrer">
+              <div class="dl-icon">${dl.icon}</div>
+              <div class="srv-info">
+                <div class="dl-name">${_esc(dl.label)}</div>
+                <div class="srv-desc">${_esc(isTv ? `Direct Download (Season ${_season || 1}, Episode ${_episode || 1}) · VidVault` : dl.desc)}</div>
+              </div>
+              <span class="dl-arrow">↗</span>
+            </a>`;
+          }
           return `<a class="dl-btn" href="${url}" target="_blank" rel="noopener noreferrer">
             <div class="dl-icon">${dl.icon}</div>
             <div class="srv-info">
