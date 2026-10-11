@@ -123,8 +123,9 @@ const App = (() => {
     _renderHistoryRows();
     _syncUserProfileUI();
 
-    // Routing: listen for hash changes (back/forward)
+    // Routing: listen for hash & popstate changes (browser back/forward & gestures)
     window.addEventListener("hashchange", _handleRoute);
+    window.addEventListener("popstate", _handleRoute);
 
     // Bind click outside search autocomplete history & profile dropdown to close them
     document.addEventListener("click", (e) => {
@@ -459,6 +460,16 @@ const App = (() => {
         currentItemId: null,
         videoLayerId: "anime-hero-video-layer",
         soundBtnId: "anime-hero-sound-btn",
+      },
+      detail: {
+        ytPlayer: null,
+        token: 0,
+        isMuted: true,
+        isPlaying: false,
+        currentKey: null,
+        currentItemId: null,
+        videoLayerId: "pm-hero-video-layer",
+        soundBtnId: "pm-hero-sound-btn",
       }
     };
 
@@ -750,10 +761,18 @@ const App = (() => {
     function pauseAll() {
       pause("general");
       pause("anime");
+      pause("detail");
     }
 
-    return {
+    function destroyAll() {
+      destroy("general");
+      destroy("anime");
+      destroy("detail");
+    }
+
+    const controllerObj = {
       destroy,
+      destroyAll,
       loadTrailerForItem,
       toggleSound,
       isMuted,
@@ -761,6 +780,9 @@ const App = (() => {
       resume,
       pauseAll,
     };
+
+    window.HeroTrailerController = controllerObj;
+    return controllerObj;
   })();
 
   // ── Hero banner (General Entertainment: Movies / Series / Dramas) ─────────
@@ -2396,7 +2418,7 @@ const App = (() => {
     const path = hash.startsWith("#") ? hash.slice(1) : hash;
 
     // FIX 3 & FIX 12: If navigating away from a player modal via browser Back or route change, cleanly close player and restore scroll
-    const isPlayerRoute = /^\/(movie|tv|anime|donghua)\//.test(path);
+    const isPlayerRoute = /^\/(movie|tv|drama|anime|donghua)\//.test(path);
     if (!isPlayerRoute) {
       const bg = document.getElementById("player-modal-bg");
       if (bg && bg.classList.contains("open")) {
@@ -2410,6 +2432,9 @@ const App = (() => {
     if (!path || path === "/" || path === "/home") {
       if (_currentPage !== "home") {
         _showPage("home", true);
+      }
+      if (!document.getElementById("home-rows")?.children.length) {
+        _loadGeneralHomeContent().catch(() => {});
       }
       return false;
     }
@@ -2480,10 +2505,10 @@ const App = (() => {
       return true;
     }
 
-    // Movie/TV detail: #/movie/:id or #/tv/:id
-    const mediaMatch = path.match(/^\/(movie|tv)\/(\d+)$/);
+    // Movie/TV/Drama detail: #/movie/:id or #/tv/:id or #/drama/:id
+    const mediaMatch = path.match(/^\/(movie|tv|drama)\/(\d+)$/);
     if (mediaMatch) {
-      const media = mediaMatch[1];
+      const media = mediaMatch[1] === "drama" ? "tv" : mediaMatch[1];
       const id = parseInt(mediaMatch[2]);
       const item = { id, media, title: "Loading…", poster: "", backdrop: "" };
       Player.open(item, true /* skipHashPush */);
@@ -2685,10 +2710,7 @@ const App = (() => {
     if (media === "anime" || media === "donghua") {
       _openAnimeDetail(item);
     } else {
-      const cleanMedia = (media === "drama" || media === "tv") ? "tv" : "movie";
       const normalizedItem = (media === "drama") ? { ...item, media: "tv" } : item;
-      const newHash = `#/${cleanMedia}/${item.id}`;
-      if (window.location.hash !== newHash) history.pushState(null, "", newHash);
       Player.open(normalizedItem);
     }
   }
@@ -2705,7 +2727,7 @@ const App = (() => {
     // Push hash so refresh restores this anime
     if (!skipHashPush) {
       const newHash = `#/${item.media || "anime"}/${item.id}`;
-      if (window.location.hash !== newHash) history.pushState(null, "", newHash);
+      if (window.location.hash !== newHash) history.pushState({ streamx: true }, "", newHash);
     }
 
     // Track recently viewed
@@ -3248,9 +3270,13 @@ const App = (() => {
     _activeEpisodeNumber = null;
     _autoPlayEpisodeNumber = null;
     document.body.style.overflow = "";
-    // Restore URL hash to home only if not already navigating or instructed to skip
-    if (!skipHashPush && window.location.hash && window.location.hash !== "#/") {
-      history.pushState(null, "", "#/");
+    // Cleanly pop history back to origin if pushed by StreamX, else fallback to home
+    if (!skipHashPush) {
+      if (window.history.length > 1 && window.history.state && window.history.state.streamx) {
+        window.history.back();
+      } else if (window.location.hash && window.location.hash !== "#/") {
+        window.location.hash = "#/";
+      }
     }
   }
 

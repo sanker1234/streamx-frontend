@@ -1,30 +1,70 @@
 /**
  * StreamX v2 — player.js
- * Handles the detail modal, server picker, season/episode selectors,
- * download tab, watchlist toggle, and cast section.
- * All content data arrives via TMDB.getDetails() — nothing is hard-coded.
+ * Cinematic Movie & Series Detail Page with Dynamic Autoplaying Trailers,
+ * Sound Controls, Full Playback Integration, Episode Cards, Cast & Recommendations.
  */
 
 const Player = (() => {
-  let _item      = null;   // current normalised item
-  let _details   = null;   // full TMDB detail response
-  let _season    = 1;
-  let _episode   = 1;
-  let _tab       = "stream";
-  let _seasons   = [];     // season list from TMDB
+  let _item            = null;   // current normalised item
+  let _details         = null;   // full TMDB detail response
+  let _season          = 1;
+  let _episode         = 1;
+  let _tab             = "stream";
+  let _seasons         = [];     // season list from TMDB
+  let _currentEpisodes = [];     // episodes of currently selected season
+  let _loadToken       = 0;      // prevents race conditions when switching titles quickly
+
+  // ── SVGs ──────────────────────────────────────────────────────────────
+  const _VOLUME_X_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
+  const _VOLUME_2_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
+  const _PLAY_SVG     = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
+  const _PLUS_SVG     = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
+  const _CHECK_SVG    = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
 
   // ── DOM refs ──────────────────────────────────────────────────────────
   const $ = id => document.getElementById(id);
 
-  // ── Open modal ────────────────────────────────────────────────────────
-  async function open(item) {
-    _item    = item;
-    _season  = 1;
-    _episode = 1;
-    _tab     = "stream";
+  // ── Open Cinematic Detail Modal ───────────────────────────────────────
+  async function open(item, skipHashPush = false) {
+    if (!item || !item.id) return;
+
+    const myToken = ++_loadToken;
+    _item            = item;
+    _season          = 1;
+    _episode         = 1;
+    _tab             = "stream";
+    _currentEpisodes = [];
+
+    const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : "movie";
+
+    // If the exact same title is already open and loaded, avoid redundant reloads
+    const bg = $("player-modal-bg");
+    if (_details && _details.id === item.id && _details.media === cleanMedia && bg && bg.classList.contains("open")) {
+      return;
+    }
+
+    // Stop any existing detail trailer and background playback immediately
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.destroy("detail");
+      window.HeroTrailerController.pause("general");
+      window.HeroTrailerController.pause("anime");
+    }
+
+    const prevFrame = document.getElementById("stream-frame");
+    if (prevFrame) prevFrame.src = "";
+
+    // Push hash so refresh restores this title
+    const newHash = `#/${cleanMedia}/${item.id}`;
+    if (!skipHashPush && window.location.hash !== newHash) {
+      history.pushState({ streamx: true }, "", newHash);
+    }
 
     // Show skeleton immediately
-    $("player-modal-bg").classList.add("open");
+    if (bg) {
+      bg.classList.add("open");
+      bg.classList.add("has-cinematic-detail");
+      bg.scrollTop = 0;
+    }
     document.body.style.overflow = "hidden";
     _renderSkeleton(item);
 
@@ -32,42 +72,88 @@ const Player = (() => {
     StreamXHistory.recordView(item);
 
     // Restore last watched episode if TV
-    if (item.media === "tv") {
+    if (cleanMedia === "tv") {
       const last = StreamXHistory.getLastEpisode(item.id);
-      if (last) { _season = last.season || 1; _episode = last.episode || 1; }
+      if (last) {
+        _season = last.season || 1;
+        _episode = last.episode || 1;
+      }
     }
 
     try {
-         _details = await TMDB.getDetails(item.media, item.id);
-        _seasons = _details.season_list || [];
+      _details = await TMDB.getDetails(cleanMedia, item.id);
+      if (myToken !== _loadToken) return;
 
-        _renderFull();
+      _seasons = _details.season_list || [];
 
-        if (_details.media === "tv" && _seasons.length) {
-          onSeasonChange(_season);
-        } else if (_selectedServer) {
-          _updateServerLinks();
+      // Ensure valid trailer resolution
+      if (!_details.trailer) {
+        _details.trailer = await TMDB.getTrailer(cleanMedia, item.id);
+      }
+      if (myToken !== _loadToken) return;
+
+      // Populate initial season episodes if TV
+      if (_details.media === "tv" && _seasons.length > 0) {
+        const seasonExists = _seasons.some(s => s.season_number === _season);
+        if (!seasonExists) _season = _seasons[0].season_number;
+        try {
+          const sData = await TMDB.getSeason(_details.id, _season);
+          if (myToken !== _loadToken) return;
+          _currentEpisodes = sData.episodes || [];
+        } catch (e) {
+          _currentEpisodes = [];
         }
+      }
+
+      _renderFull();
+
+      // Dynamically mount title's own autoplaying trailer in background
+      if (window.HeroTrailerController) {
+        window.HeroTrailerController.loadTrailerForItem("detail", _details);
+      }
     } catch (err) {
-      console.error("Player: detail fetch failed", err);
-      _renderError(err.message);
+      if (myToken !== _loadToken) return;
+      console.error("[Player] Detail fetch failed:", err);
+      _renderError(err.message || "Failed to load title details.");
     }
   }
 
+  // ── Close Detail Page ─────────────────────────────────────────────────
   function close(skipHashPush = false) {
+    _loadToken++;
+
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.destroy("detail");
+    }
+
     const frame = document.getElementById("stream-frame");
     if (frame) frame.src = "";
+
     const bg = $("player-modal-bg");
     if (bg) {
       bg.classList.remove("open");
+      bg.classList.remove("has-cinematic-detail");
       bg.innerHTML = "";
     }
     document.body.style.overflow = "";
-    _item    = null;
-    _details = null;
-    // Restore URL hash to home only if not already navigating or instructed to skip
-    if (!skipHashPush && window.location.hash && window.location.hash !== "#/") {
-      history.pushState(null, "", "#/");
+
+    _item            = null;
+    _details         = null;
+    _currentEpisodes = [];
+
+    // Resume homepage trailer if returning to home view
+    if (window.HeroTrailerController) {
+      if (window._currentPage === "home") window.HeroTrailerController.resume("general");
+      else if (window._currentPage === "anime") window.HeroTrailerController.resume("anime");
+    }
+
+    // Cleanly pop history back to origin if pushed by StreamX, else fallback to home
+    if (!skipHashPush) {
+      if (window.history.length > 1 && window.history.state && window.history.state.streamx) {
+        window.history.back();
+      } else if (window.location.hash && window.location.hash !== "#/") {
+        window.location.hash = "#/";
+      }
     }
   }
 
@@ -77,23 +163,28 @@ const Player = (() => {
     if (e.target === $("player-modal-bg")) close();
   }
 
-  // ── Skeleton ──────────────────────────────────────────────────────────
+  // ── Skeleton Loader ───────────────────────────────────────────────────
   function _renderSkeleton(item) {
+    const backdropUrl = item.backdrop || item.poster || "";
     $("player-modal-bg").innerHTML = `
-      <div class="player-modal" role="dialog" aria-modal="true">
-        <div class="pm-header">
-          <button class="pm-close" onclick="Player.close()" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-          <span class="pm-header-title">${_esc(item.title)}</span>
-        </div>
-        <div class="pm-body">
-          <div class="pm-hero skeleton-hero" style="background-image:url('${item.backdrop||""}')">
-            <div class="pm-hero-overlay"></div>
-            <div class="pm-hero-info">
-              <div class="skeleton-line w60"></div>
-              <div class="skeleton-line w40" style="margin-top:8px"></div>
-            </div>
+      <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true" aria-label="${_esc(item.title || "Loading...")}">
+        <div class="pm-cinematic-hero skeleton-hero" style="background-image:url('${backdropUrl}')">
+          <div class="pm-hero-vignette"></div>
+          <div class="pm-hero-top-bar">
+            <button class="pm-hero-back-btn" onclick="Player.close()" aria-label="Go back">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>Back</span>
+            </button>
           </div>
-          <div class="pm-content"><div class="loader-spinner"></div></div>
+          <div class="pm-hero-content">
+            <div class="skeleton-line" style="width:120px;height:24px;border-radius:6px;margin-bottom:12px;"></div>
+            <h1 class="pm-hero-title">${_esc(item.title || "")}</h1>
+            <div class="skeleton-line" style="width:65%;height:16px;border-radius:4px;margin-top:10px;"></div>
+            <div class="skeleton-line" style="width:45%;height:16px;border-radius:4px;margin-top:8px;"></div>
+          </div>
+        </div>
+        <div class="pm-cinematic-body">
+          <div class="loader-spinner" style="margin:40px auto;"></div>
         </div>
       </div>`;
     $("player-modal-bg").onclick = _handleBackdropClick;
@@ -101,25 +192,22 @@ const Player = (() => {
 
   function _renderError(msg) {
     $("player-modal-bg").innerHTML = `
-      <div class="player-modal">
-        <div class="pm-header">
-          <button class="pm-close" onclick="Player.close()" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-          <span class="pm-header-title">Error</span>
-        </div>
-        <div class="pm-body" style="padding:40px;text-align:center;color:var(--text3)">
-          <p style="font-size:32px;margin-bottom:12px">Error</p>
-          <p>${_esc(msg)}</p>
-          ${msg.includes("API key") ? `<p style="margin-top:12px;font-size:12px">Open <code>js/config.js</code> and add your backend key.</p>` : ""}
+      <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true">
+        <div class="pm-cinematic-body" style="padding:60px 20px;text-align:center;color:var(--text3)">
+          <p style="font-size:36px;margin-bottom:12px">⚠️</p>
+          <h2 style="font-size:22px;color:#fff;margin-bottom:8px">Unable to Load Title</h2>
+          <p style="margin-bottom:20px">${_esc(msg)}</p>
+          <button class="btn-primary" onclick="Player.close()">Return to Browse</button>
         </div>
       </div>`;
   }
 
-  // ── Full render ───────────────────────────────────────────────────────
+  // ── Full Cinematic Detail Render ──────────────────────────────────────
   function _renderFull() {
     const d  = _details;
     const wl = Watchlist.has(d.id, d.media);
 
-    // Genre labels from TMDB data
+    // Genre labels
     const genreNames = d.genres.length
       ? d.genres.slice(0, 3).join(" · ")
       : d.genre_ids.map(gid => (GENRE_MAP[d.media]?.[gid] || "")).filter(Boolean).slice(0,3).join(" · ");
@@ -127,72 +215,105 @@ const Player = (() => {
     const ratingStars = _starsHTML(d.rating);
     const is4k = d.rating >= 7.5;
 
+    // Detect badge label
+    const contentType = _getContentType(d);
+    let badgeLabel = d.media === "movie" ? "MOVIE" : "TV SHOW";
+    if (contentType === "kdrama") badgeLabel = "K-DRAMA";
+    else if (contentType === "cdrama") badgeLabel = "C-DRAMA";
+    else if (contentType === "jdrama") badgeLabel = "J-DRAMA";
+
+    // Clean synopsis
+    const shortOverview = d.overview ? (d.overview.length > 280 ? d.overview.slice(0, 280) + "…" : d.overview) : "";
+
     $("player-modal-bg").innerHTML = `
-      <div class="player-modal" role="dialog" aria-modal="true" aria-label="${_esc(d.title)}">
-        <div class="pm-header">
-          <button class="pm-close" onclick="Player.close()" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-          <span class="pm-header-title">${_esc(d.title)}</span>
-          <div class="pm-header-actions">
-            <button class="pm-wl-btn${wl?" added":""}" onclick="Player.toggleWL()" id="pm-wl-btn">
-              ${wl ? "Saved" : "Watchlist"}
+      <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true" aria-label="${_esc(d.title)}">
+
+        <!-- 1. Large Cinematic Trailer Hero -->
+        <div class="pm-cinematic-hero" style="background-image:url('${d.backdrop || d.poster || ""}')">
+          <!-- Autoplaying Video Trailer Layer -->
+          <div class="pm-hero-video-layer" id="pm-hero-video-layer"></div>
+          <!-- Dark Gradients Vignette -->
+          <div class="pm-hero-vignette"></div>
+
+          <!-- Top Controls Bar -->
+          <div class="pm-hero-top-bar">
+            <button class="pm-hero-back-btn" onclick="Player.close()" aria-label="Go back">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>Back</span>
+            </button>
+
+            <!-- Working Sound Toggle -->
+            <button class="pm-hero-sound-btn" id="pm-hero-sound-btn" onclick="Player.toggleSound()" aria-label="Unmute trailer" title="Unmute trailer" style="display:none">
+              <span class="hero-sound-icon">${_VOLUME_X_SVG}</span>
+              <span class="hero-sound-text">Muted</span>
             </button>
           </div>
-        </div>
 
-        <div class="pm-body">
-          <!-- Hero backdrop -->
-          <div class="pm-hero" style="${window.innerWidth <= 768 ? 'display:none!important;' : ''} background-image:url('${d.backdrop||""}')">
-            <div class="pm-hero-overlay"></div>
-            <div class="pm-hero-info">
-              <h2 class="pm-title">${_esc(d.title)}</h2>
-              ${d.tagline ? `<p class="pm-tagline">"${_esc(d.tagline)}"</p>` : ""}
-              <div class="pm-badges">
-                <span class="badge badge-${d.media}">${d.media === "movie" ? "MOVIE" : "TV"}</span>
-                ${is4k ? '<span class="badge badge-4k">4K</span>' : ""}
-                ${d.year ? `<span class="badge badge-year">${d.year}</span>` : ""}
-                ${d.runtime ? `<span class="badge badge-meta">${d.runtime}m</span>` : ""}
-                ${d.seasons ? `<span class="badge badge-meta">${d.seasons} Season${d.seasons>1?"s":""}</span>` : ""}
-                ${d.status ? `<span class="badge badge-meta">${_esc(d.status)}</span>` : ""}
-              </div>
-              <div class="pm-rating-row">
-                ${ratingStars}
-                <span class="pm-rating-num">${d.rating.toFixed(1)}</span>
-                <span class="pm-votes">(${_fmtNum(d.votes)} votes)</span>
-              </div>
-              <div class="pm-hero-cta-row">
-                <button class="btn-primary pm-cta-btn" onclick="Player.switchTab('stream'); document.getElementById('pm-tab-stream')?.scrollIntoView({behavior:'smooth', block:'nearest'});">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                  <span>Watch Now</span>
-                </button>
-                <button class="btn-secondary pm-cta-btn" onclick="Player.switchTab('download'); document.getElementById('pm-tab-download')?.scrollIntoView({behavior:'smooth', block:'nearest'});">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
-                  <span>Download</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="pm-content">
-            <!-- Mobile Info Bar (Visible on mobile when hero banner is hidden) -->
-            <div class="pm-mobile-bar" style="${window.innerWidth <= 768 ? 'display:flex!important;' : 'display:none;'}">
-              <span class="badge badge-${d.media}">${d.media === "movie" ? "MOVIE" : "TV"}</span>
-              ${is4k ? '<span class="badge badge-4k">4K</span>' : ""}
+          <!-- Overlaid Content Details in Lower-Left Area -->
+          <div class="pm-hero-content">
+            <div class="pm-hero-badges">
+              <span class="badge badge-${d.media}">${badgeLabel}</span>
+              ${is4k ? '<span class="badge badge-4k">4K ULTRA HD</span>' : '<span class="badge badge-hd">HD</span>'}
               ${d.year ? `<span class="badge badge-year">${d.year}</span>` : ""}
               ${d.runtime ? `<span class="badge badge-meta">${d.runtime}m</span>` : ""}
               ${d.seasons ? `<span class="badge badge-meta">${d.seasons} Season${d.seasons>1?"s":""}</span>` : ""}
-              <span class="pm-rating-num" style="margin-left:auto; color:var(--gold); font-weight:700;">★ ${d.rating.toFixed(1)}</span>
+              ${genreNames ? `<span class="pm-hero-genres">${_esc(genreNames)}</span>` : ""}
             </div>
 
-            <!-- Tabs -->
+            <h1 class="pm-hero-title">${_esc(d.title)}</h1>
+            ${d.tagline ? `<p class="pm-hero-tagline">"${_esc(d.tagline)}"</p>` : ""}
+            ${shortOverview ? `<p class="pm-hero-overview">${_esc(shortOverview)}</p>` : ""}
+
+            <div class="pm-hero-rating">
+              ${ratingStars}
+              <span class="pm-rating-num">${d.rating.toFixed(1)}</span>
+              <span class="pm-votes">(${_fmtNum(d.votes)} votes)</span>
+            </div>
+
+            <div class="pm-hero-actions">
+              <button class="pm-play-btn" onclick="Player.watchNow()">
+                ${_PLAY_SVG}
+                <span>${d.media === "tv" ? `Watch S${_season} E${_episode}` : "Watch Now"}</span>
+              </button>
+              <button class="pm-wl-action-btn${wl ? " added" : ""}" id="pm-hero-wl-btn" onclick="Player.toggleWL()">
+                ${wl ? _CHECK_SVG : _PLUS_SVG}
+                <span>${wl ? "In Watchlist" : "Add to List"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Content Sections Underneath Hero -->
+        <div class="pm-cinematic-body">
+
+          <!-- Full Playback Stream & Download Container (Reveals when Watch is triggered) -->
+          <div id="pm-player-section" style="display:none;">
+            <div class="pm-player-header-row">
+              <span class="pm-current-playing-badge" id="pm-playing-badge">
+                ${d.media === "tv" ? `Season ${_season}, Episode ${_episode}` : "Now Streaming"}
+              </span>
+
+              ${d.media === "tv" ? `
+              <div class="pm-player-nav-btns">
+                <button class="pm-nav-btn" onclick="Player.playPrevEpisode()" title="Previous Episode">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                  <span>Prev</span>
+                </button>
+                <button class="pm-nav-btn" onclick="Player.playNextEpisode()" title="Next Episode">
+                  <span>Next</span>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                </button>
+              </div>` : ""}
+            </div>
+
             <div class="pm-tabs">
               <button class="pm-tab${_tab==="stream"?" active":""}" onclick="Player.switchTab('stream')">Stream</button>
               <button class="pm-tab${_tab==="download"?" active":""}" onclick="Player.switchTab('download')">Download</button>
-              ${d.trailer ? `<button class="pm-tab" onclick="Player.openTrailer()">Trailer</button>` : ""}
             </div>
 
             <div id="pm-tab-stream" class="pm-tab-content${_tab==="stream"?" active":""}">
               <div class="pm-player-wrap">
-                  <iframe
+                <iframe
                   id="stream-frame"
                   width="100%"
                   height="100%"
@@ -200,108 +321,208 @@ const Player = (() => {
                   frameborder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                   allowfullscreen>
-                  </iframe>
+                </iframe>
               </div>
-
               ${_renderStreamServers()}
             </div>
+
             <div id="pm-tab-download" class="pm-tab-content${_tab==="download"?" active":""}">
               ${_renderDownloadServers()}
             </div>
-
-            <!-- TV season/episode selector -->
-            ${d.media === "tv" ? _renderTVControls() : ""}
-
-            <!-- Overview -->
-            ${d.overview ? `<p class="pm-overview">${_esc(d.overview)}</p>` : ""}
-            ${genreNames ? `<p class="pm-genres"><span class="pm-label">Genres:</span> ${_esc(genreNames)}</p>` : ""}
-
-            <!-- Cast -->
-            ${d.cast?.length ? _renderCast(d.cast) : ""}
-
-            <!-- Recommendations -->
-            ${d.recommendations?.length ? _renderRecommendations(d.recommendations) : ""}
           </div>
+
+          <!-- Series Sections (1. Season Selector, 2. Episode Cards) -->
+          ${d.media === "tv" ? `
+            <div class="pm-series-section">
+              <h3 class="pm-section-title">Episodes</h3>
+              ${_renderSeasonSelector()}
+              <div id="pm-episodes-container">
+                ${_renderEpisodesList()}
+              </div>
+            </div>
+          ` : ""}
+
+          <!-- Movie Section (1. Movie Information) -->
+          ${d.media === "movie" ? _renderMovieInfo() : ""}
+
+          <!-- Cast Section -->
+          ${d.cast?.length ? _renderCast(d.cast) : ""}
+
+          <!-- Recommendations Section -->
+          ${d.recommendations?.length ? _renderRecommendations(d.recommendations) : ""}
         </div>
       </div>`;
 
     $("player-modal-bg").onclick = _handleBackdropClick;
   }
 
-  // ── TV Controls ───────────────────────────────────────────────────────
-  function _renderTVControls() {
-    if (!_seasons.length) return "";
-    const seasonOpts = _seasons.map(s =>
-      `<option value="${s.season_number}" ${s.season_number===_season?"selected":""}>${_esc(s.name)}</option>`
-    ).join("");
+  // ── Watch Now Action (Triggers full content streaming) ────────────────
+  function watchNow(seasonNum, episodeNum) {
+    if (typeof seasonNum === "number") _season = seasonNum;
+    if (typeof episodeNum === "number") _episode = episodeNum;
+
+    // Pause trailer preview immediately so sound does not clash
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.pause("detail");
+    }
+
+    const playerSec = document.getElementById("pm-player-section");
+    if (playerSec) {
+      playerSec.style.display = "block";
+      playerSec.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // Update playing badge
+    const badge = document.getElementById("pm-playing-badge");
+    if (badge && _details?.media === "tv") {
+      badge.textContent = `Season ${_season}, Episode ${_episode}`;
+    }
+
+    // Update active highlight on episode cards
+    if (_details?.media === "tv") {
+      document.querySelectorAll(".pm-ep-card").forEach(c => c.classList.remove("active"));
+      const targetCard = document.getElementById(`pm-ep-card-${_episode}`);
+      if (targetCard) targetCard.classList.add("active");
+    }
+
+    _updateServerLinks();
+    _updateDownloadTab();
+    _onStreamClick(_selectedServer);
+  }
+
+  function playEpisode(epNum) {
+    watchNow(_season, parseInt(epNum));
+  }
+
+  // ── Sound Toggle Action ───────────────────────────────────────────────
+  function toggleSound() {
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.toggleSound("detail");
+    }
+  }
+
+  // ── Series Season Selector & Episode Cards ────────────────────────────
+  function _renderSeasonSelector() {
+    if (!_seasons || _seasons.length <= 1) return "";
     return `
-      <div class="pm-tv-ctrl">
-        <select class="ep-sel" id="pm-season-sel" onchange="Player.onSeasonChange(this.value)">
-          ${seasonOpts}
-        </select>
-        <select class="ep-sel" id="pm-episode-sel" onchange="Player.onEpisodeChange(this.value)">
-          <option value="1" ${_episode===1?"selected":""}>Episode 1</option>
-        </select>
-        <button class="btn-primary" id="pm-next-ep-btn" onclick="Player.playNextEpisode()">Next Episode</button>
-      </div>`;
+      <div class="pm-season-selector-row">
+        <span class="pm-season-label">Season:</span>
+        <div class="pm-season-pills">
+          ${_seasons.map(s => `
+            <button class="pm-season-pill${s.season_number === _season ? " active" : ""}"
+              data-season="${s.season_number}"
+              onclick="Player.onSeasonChange(${s.season_number})">
+              ${_esc(s.name || `Season ${s.season_number}`)}
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function _renderEpisodesList() {
+    if (!_currentEpisodes || !_currentEpisodes.length) {
+      return `<div style="padding:24px;text-align:center;color:var(--text3);background:rgba(255,255,255,0.03);border-radius:12px;">No episode information available for this season.</div>`;
+    }
+
+    return `
+      <div class="pm-episodes-grid">
+        ${_currentEpisodes.map(ep => {
+          const isCurrent = ep.episode_number === _episode;
+          const stillUrl = ep.still || _details.backdrop || _details.poster || "";
+          const epTitle = ep.name ? `${ep.episode_number}. ${_esc(ep.name)}` : `Episode ${ep.episode_number}`;
+          const epOverview = ep.overview ? _esc(ep.overview) : "No synopsis available for this episode.";
+          const epMetaParts = [
+            ep.runtime ? `${ep.runtime}m` : null,
+            ep.rating ? `★ ${ep.rating.toFixed(1)}` : null,
+            ep.air_date ? ep.air_date.slice(0, 4) : null,
+          ].filter(Boolean);
+
+          return `
+            <div class="pm-ep-card${isCurrent ? " active" : ""}" id="pm-ep-card-${ep.episode_number}" onclick="Player.playEpisode(${ep.episode_number})">
+              <div class="pm-ep-thumb" style="background-image:url('${stillUrl}')">
+                <div class="pm-ep-thumb-overlay">${_PLAY_SVG}</div>
+                <span class="pm-ep-num-badge">EP ${ep.episode_number}</span>
+              </div>
+              <div class="pm-ep-body">
+                <div class="pm-ep-title-row">
+                  <h4 class="pm-ep-title">${epTitle}</h4>
+                  ${isCurrent ? `<span class="pm-ep-playing-tag">Selected</span>` : ""}
+                </div>
+                ${epMetaParts.length ? `<div class="pm-ep-meta">${epMetaParts.join(" · ")}</div>` : ""}
+                <p class="pm-ep-desc">${epOverview}</p>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  async function onSeasonChange(val) {
+    _season = parseInt(val);
+    _episode = 1;
+
+    // Update pills active state
+    document.querySelectorAll(".pm-season-pill").forEach(p => {
+      p.classList.toggle("active", parseInt(p.getAttribute("data-season")) === _season);
+    });
+
+    const epsContainer = document.getElementById("pm-episodes-container");
+    if (epsContainer) {
+      epsContainer.innerHTML = `<div class="loader-spinner" style="margin:40px auto;"></div>`;
+    }
+
+    try {
+      const seasonData = await TMDB.getSeason(_item.id, _season);
+      _currentEpisodes = seasonData.episodes || [];
+    } catch {
+      _currentEpisodes = [];
+    }
+
+    if (epsContainer) {
+      epsContainer.innerHTML = _renderEpisodesList();
+    }
+
+    // Update watch button text
+    const playBtnText = document.querySelector(".pm-play-btn span");
+    if (playBtnText && _details?.media === "tv") {
+      playBtnText.textContent = `Watch S${_season} E${_episode}`;
+    }
+
+    // If stream player is already open, update it
+    const playerSec = document.getElementById("pm-player-section");
+    if (playerSec && playerSec.style.display !== "none") {
+      _updateServerLinks();
+      _updateDownloadTab();
+    }
   }
 
   function playNextEpisode() {
-    const epSel = document.getElementById("pm-episode-sel");
-    if (!epSel) return;
-    const currentVal = parseInt(epSel.value);
-    const options = Array.from(epSel.options);
-    const currentIndex = options.findIndex(opt => parseInt(opt.value) === currentVal);
-
-    if (currentIndex !== -1 && currentIndex + 1 < options.length) {
-      const nextOption = options[currentIndex + 1];
-      epSel.value = nextOption.value;
-      onEpisodeChange(nextOption.value);
+    if (!_details || _details.media !== "tv" || !_currentEpisodes.length) return;
+    const currentIdx = _currentEpisodes.findIndex(ep => ep.episode_number === _episode);
+    if (currentIdx !== -1 && currentIdx + 1 < _currentEpisodes.length) {
+      const nextEp = _currentEpisodes[currentIdx + 1].episode_number;
+      playEpisode(nextEp);
     } else {
-      const seasonSel = document.getElementById("pm-season-sel");
-      if (seasonSel) {
-        const currentSeason = parseInt(seasonSel.value);
-        const seasonOptions = Array.from(seasonSel.options);
-        const nextSeasonIndex = seasonOptions.findIndex(opt => parseInt(opt.value) === currentSeason) + 1;
-        if (nextSeasonIndex < seasonOptions.length) {
-          const nextSeasonVal = seasonOptions[nextSeasonIndex].value;
-          seasonSel.value = nextSeasonVal;
-          onSeasonChange(nextSeasonVal).then(() => {
-            setTimeout(() => {
-              const freshEpSel = document.getElementById("pm-episode-sel");
-              if (freshEpSel) {
-                freshEpSel.value = "1";
-                onEpisodeChange(1);
-              }
-            }, 600);
-          });
-        }
+      // Go to next season
+      const seasonIdx = _seasons.findIndex(s => s.season_number === _season);
+      if (seasonIdx !== -1 && seasonIdx + 1 < _seasons.length) {
+        const nextSeason = _seasons[seasonIdx + 1].season_number;
+        onSeasonChange(nextSeason).then(() => {
+          setTimeout(() => playEpisode(1), 300);
+        });
       }
     }
   }
 
-  // Async: fetch season detail to populate episode list
-  async function onSeasonChange(val) {
-     console.log("Season changed:", val);
-    _season  = parseInt(val);
-    _episode = 1;
-    const epSel = document.getElementById("pm-episode-sel");
-    if (!epSel) return;
-    epSel.innerHTML = `<option>Loading…</option>`;
-    try {
-      const season = await TMDB.getSeason(_item.id, _season);
-
-        console.log("SEASON DATA:", season);
-        console.log("EPISODE COUNT:", season.episodes?.length);
-
-        epSel.innerHTML = season.episodes.map(ep =>
-        `<option value="${ep.episode_number}">${ep.episode_number}. ${_esc(ep.name)}</option>`
-        ).join("");
-    } catch {
-      epSel.innerHTML = `<option value="1">Episode 1</option>`;
+  function playPrevEpisode() {
+    if (!_details || _details.media !== "tv" || !_currentEpisodes.length) return;
+    const currentIdx = _currentEpisodes.findIndex(ep => ep.episode_number === _episode);
+    if (currentIdx > 0) {
+      const prevEp = _currentEpisodes[currentIdx - 1].episode_number;
+      playEpisode(prevEp);
     }
-    _updateServerLinks();
-    _updateDownloadTab();
   }
 
   function onEpisodeChange(val) {
@@ -310,7 +531,30 @@ const Player = (() => {
     _updateDownloadTab();
   }
 
+  // ── Movie Information Section ─────────────────────────────────────────
+  function _renderMovieInfo() {
+    const d = _details;
+    const items = [];
+    if (d.release_date) items.push(`<div><span class="pm-meta-label">Release Date</span><span class="pm-meta-val">${d.release_date}</span></div>`);
+    if (d.runtime) items.push(`<div><span class="pm-meta-label">Runtime</span><span class="pm-meta-val">${Math.floor(d.runtime / 60)}h ${d.runtime % 60}m (${d.runtime}m)</span></div>`);
+    if (d.genres && d.genres.length) items.push(`<div><span class="pm-meta-label">Genres</span><span class="pm-meta-val">${_esc(d.genres.join(", "))}</span></div>`);
+    if (d.status) items.push(`<div><span class="pm-meta-label">Status</span><span class="pm-meta-val">${_esc(d.status)}</span></div>`);
+    if (d.budget) items.push(`<div><span class="pm-meta-label">Budget</span><span class="pm-meta-val">$${(d.budget / 1e6).toFixed(1)}M</span></div>`);
+    if (d.revenue) items.push(`<div><span class="pm-meta-label">Box Office</span><span class="pm-meta-val">$${(d.revenue / 1e6).toFixed(1)}M</span></div>`);
+    if (d.original_language) items.push(`<div><span class="pm-meta-label">Original Language</span><span class="pm-meta-val">${d.original_language.toUpperCase()}</span></div>`);
 
+    return `
+      <div class="pm-movie-info-card">
+        <h3 class="pm-section-title">About ${_esc(d.title)}</h3>
+        ${d.overview ? `<p class="pm-overview-full">${_esc(d.overview)}</p>` : ""}
+        <div class="pm-meta-grid">
+          ${items.join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  // ── Content Type Classifier ───────────────────────────────────────────
   function _getContentType(details) {
     if (!details) return "hollywood";
 
@@ -396,7 +640,6 @@ const Player = (() => {
     };
 
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-
     const tvLabel = isTv ? ` · Season ${_season || 1}, Episode ${_episode || 1}` : "";
 
     return `
@@ -437,42 +680,45 @@ const Player = (() => {
   // ── Cast ──────────────────────────────────────────────────────────────
   function _renderCast(cast) {
     return `
-      <h3 class="pm-section-title">Cast</h3>
-      <div class="pm-cast-scroll">
-        ${cast.map(p => `
-          <div class="cast-card">
-            <div class="cast-photo" style="background-image:url('${p.photo||""}')">
-              ${!p.photo ? `<span class="cast-initials">${p.name.charAt(0)}</span>` : ""}
-            </div>
-            <div class="cast-name">${_esc(p.name)}</div>
-            <div class="cast-role">${_esc(p.character)}</div>
-          </div>`).join("")}
+      <div class="pm-cast-section">
+        <h3 class="pm-section-title">Cast</h3>
+        <div class="pm-cast-scroll">
+          ${cast.map(p => `
+            <div class="cast-card">
+              <div class="cast-photo" style="background-image:url('${p.photo||""}')">
+                ${!p.photo ? `<span class="cast-initials">${p.name.charAt(0)}</span>` : ""}
+              </div>
+              <div class="cast-name">${_esc(p.name)}</div>
+              <div class="cast-role">${_esc(p.character)}</div>
+            </div>`).join("")}
+        </div>
       </div>`;
   }
 
   // ── Recommendations ───────────────────────────────────────────────────
   function _renderRecommendations(recs) {
     return `
-      <h3 class="pm-section-title">You May Also Like</h3>
-      <div class="pm-rec-scroll">
-        ${recs.map(r => `
-          <div class="rec-card" onclick="Player.open(${_jsonAttr(r)})">
-            <div class="rec-poster" style="background-image:url('${r.poster||""}')">
-              ${!r.poster ? `<span class="rec-no-img">${_esc(r.title.charAt(0))}</span>` : ""}
-              <div class="rec-overlay"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
-            </div>
-            <div class="rec-title">${_esc(r.title)}</div>
-            <div class="rec-year">${r.year} · <svg viewBox="0 0 24 24" width="11" height="11" fill="var(--gold)" style="vertical-align:middle;display:inline-block"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> ${r.rating.toFixed(1)}</div>
-          </div>`).join("")}
+      <div class="pm-recs-section">
+        <h3 class="pm-section-title">You May Also Like</h3>
+        <div class="pm-rec-scroll">
+          ${recs.map(r => `
+            <div class="rec-card" onclick="Player.open(${_jsonAttr(r)})">
+              <div class="rec-poster" style="background-image:url('${r.poster||""}')">
+                ${!r.poster ? `<span class="rec-no-img">${_esc(r.title.charAt(0))}</span>` : ""}
+                <div class="rec-overlay"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+              </div>
+              <div class="rec-title">${_esc(r.title)}</div>
+              <div class="rec-year">${r.year} · <svg viewBox="0 0 24 24" width="11" height="11" fill="var(--gold)" style="vertical-align:middle;display:inline-block"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> ${(r.rating || 0).toFixed(1)}</div>
+            </div>`).join("")}
+        </div>
       </div>`;
   }
 
   // ── Tab switch ────────────────────────────────────────────────────────
   function switchTab(tab) {
     _tab = tab;
-    document.querySelectorAll(".pm-tab").forEach((t, i) => {
-      const tabs = ["stream","download","trailer"];
-      t.classList.toggle("active", tabs[i] === tab);
+    document.querySelectorAll(".pm-tab").forEach(t => {
+      t.classList.toggle("active", t.textContent.trim().toLowerCase() === tab);
     });
     document.querySelectorAll(".pm-tab-content").forEach(c => c.classList.remove("active"));
     const el = document.getElementById(`pm-tab-${tab}`);
@@ -485,7 +731,7 @@ const Player = (() => {
   }
 
   function openTrailer() {
-    if (!_details?.trailer) return;
+    if (!_details?.trailer?.key) return;
     window.open(`https://www.youtube.com/watch?v=${_details.trailer.key}`, "_blank");
   }
 
@@ -493,22 +739,21 @@ const Player = (() => {
   function toggleWL() {
     if (!_item) return;
     const added = Watchlist.toggle(_details || _item);
-    const btn   = document.getElementById("pm-wl-btn");
-    if (btn) {
-      btn.className = `pm-wl-btn${added?" added":""}`;
-      btn.textContent = added ? "Saved" : "Watchlist";
+    const heroBtn = document.getElementById("pm-hero-wl-btn");
+    if (heroBtn) {
+      heroBtn.classList.toggle("added", added);
+      heroBtn.innerHTML = `${added ? _CHECK_SVG : _PLUS_SVG} <span>${added ? "In Watchlist" : "Add to List"}</span>`;
     }
-    // Update card heart if visible
+    // Update card button if visible
     const cardBtn = document.querySelector(`#card-${_item.media}-${_item.id} .card-wl`);
     if (cardBtn) {
       cardBtn.classList.toggle("added", added);
       cardBtn.innerHTML = added ? "Saved" : "Save";
     }
-    // Dispatch global count update
     window.dispatchEvent(new CustomEvent("watchlist:change"));
   }
 
-  // Track stream click → record in history
+  // ── History tracking ──────────────────────────────────────────────────
   function _onStreamClick(serverKey) {
     if (!_details && !_item) return;
     const item = _details || _item;
@@ -523,6 +768,7 @@ const Player = (() => {
   if (_selectedServer === "videm" || !STREAM_SERVERS.some(s => s.key === _selectedServer)) {
     _selectedServer = STREAM_SERVERS[0]?.key || "vidlink";
   }
+
   function _getApiBase() {
     const base = typeof getStreamXBackendUrl === "function" ? getStreamXBackendUrl() : "http://127.0.0.1:3000";
     return `${base}/api`;
@@ -552,7 +798,7 @@ const Player = (() => {
 
     try {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 4000); // 4s timeout so player never hangs
+      const t = setTimeout(() => ctrl.abort(), 4000);
       const response = await fetch(`${_getApiBase()}/movie/sources/${mediaType}/${_details.id}?provider=${serverKey}${seasonStr}${episodeStr}`, { signal: ctrl.signal });
       clearTimeout(t);
       const data = await response.json();
@@ -586,7 +832,6 @@ const Player = (() => {
       : server.movie(_details.id);
   }
 
-  // Handle provider dropdown change & URL loading
   async function onProviderChange(providerKey) {
     if (!providerKey) return;
 
@@ -604,9 +849,8 @@ const Player = (() => {
     localStorage.setItem("streamx_provider", targetProviderKey);
     localStorage.setItem("streamx_server", targetProviderKey);
 
-    // Update select element UI
     const selectEl = document.getElementById("pm-provider-select");
-    if (selectEl) {
+    if (selectEl && selectEl.options) {
       selectEl.value = targetProviderKey;
       Array.from(selectEl.options).forEach(opt => {
         const srv = STREAM_SERVERS.find(s => s.key === opt.value);
@@ -616,9 +860,8 @@ const Player = (() => {
       });
     }
 
-    // Update iframe safely without sandbox restriction
     const frame = document.getElementById("stream-frame");
-    if (frame) {
+    if (frame && frame.parentNode && frame.attributes) {
       const parent = frame.parentNode;
       const newFrame = document.createElement("iframe");
       for (const attr of frame.attributes) {
@@ -626,12 +869,9 @@ const Player = (() => {
           newFrame.setAttribute(attr.name, attr.value);
         }
       }
-
-      // Do not set sandbox attribute so movie/TV stream providers play without restriction
       newFrame.removeAttribute("sandbox");
       newFrame.setAttribute("allowfullscreen", "true");
       newFrame.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
-
       newFrame.src = finalEmbedUrl || "";
       parent.replaceChild(newFrame, frame);
     }
@@ -639,32 +879,25 @@ const Player = (() => {
     _onStreamClick(targetProviderKey);
   }
 
-  // Load server compatibility shim for legacy callers
   async function loadServer(event, url, serverKey) {
     return onProviderChange(serverKey || _selectedServer);
   }
 
-  // Re-render server links with updated S/E
   async function _updateServerLinks() {
     return onProviderChange(_selectedServer);
   }
 
-  // Global postMessage listener for player capabilities (auto-next, etc.)
   window.addEventListener("message", (event) => {
     try {
       const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
       if (!data) return;
-      
       const evt = (data.event || data.type || data.action || "").toLowerCase();
       if (evt === "ended" || evt === "autonext" || evt === "video_ended" || evt === "player_ended") {
-        console.log("[StreamX Player] Received ended event from provider, playing next episode...");
         if (_details && _details.media === "tv") {
           playNextEpisode();
         }
       }
-    } catch (e) {
-      // Ignore non-JSON postMessage data
-    }
+    } catch {}
   });
 
   // ── Utilities ─────────────────────────────────────────────────────────
@@ -687,6 +920,9 @@ const Player = (() => {
   return {
     open,
     close,
+    watchNow,
+    playEpisode,
+    toggleSound,
     toggleWL,
     switchTab,
     openTrailer,
@@ -696,6 +932,7 @@ const Player = (() => {
     _onStreamClick,
     loadServer,
     playNextEpisode,
+    playPrevEpisode,
   };
 })();
 

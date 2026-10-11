@@ -182,7 +182,9 @@ const TMDB = (() => {
 
     // Videos — pick best trailer
     const vids = data.videos?.results || [];
-    norm.trailer = vids.find(v => v.type === "Trailer" && v.site === "YouTube")
+    norm.trailer = vids.find(v => v.type === "Trailer" && v.official && v.site === "YouTube")
+                || vids.find(v => v.type === "Trailer" && v.site === "YouTube")
+                || vids.find(v => v.type === "Teaser" && v.site === "YouTube")
                 || vids.find(v => v.site === "YouTube")
                 || null;
 
