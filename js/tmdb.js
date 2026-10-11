@@ -255,6 +255,33 @@ const TMDB = (() => {
     };
   }
 
+  // ── Dedicated Fast Trailer Resolver ───────────────────────────────────
+  const _trailerCache = new Map();
+  async function getTrailer(mediaType, id) {
+    if (!id) return null;
+    const cleanMedia = (mediaType === "drama" || mediaType === "tv") ? "tv" : "movie";
+    const cacheKey = `${cleanMedia}_${id}`;
+    if (_trailerCache.has(cacheKey)) return _trailerCache.get(cacheKey);
+
+    try {
+      const data = await _fetch(`/${cleanMedia}/${id}/videos`);
+      const vids = data.results || [];
+      const best = vids.find(v => v.type === "Trailer" && v.official && v.site === "YouTube")
+                || vids.find(v => v.type === "Trailer" && v.site === "YouTube")
+                || vids.find(v => v.type === "Teaser" && v.site === "YouTube")
+                || vids.find(v => v.site === "YouTube")
+                || null;
+
+      const res = best ? { site: "YouTube", key: best.key, name: best.name } : null;
+      _trailerCache.set(cacheKey, res);
+      return res;
+    } catch (err) {
+      console.warn(`[TMDB] Trailer fetch for ${cleanMedia}/${id} failed:`, err.message);
+      _trailerCache.set(cacheKey, null);
+      return null;
+    }
+  }
+
   // ── Expose public API ─────────────────────────────────────────────────
   return {
     getTrending,
@@ -262,6 +289,7 @@ const TMDB = (() => {
     discover,
     fetchRow,
     getDetails,
+    getTrailer,
     getSeason,
     search,
     getGenres,

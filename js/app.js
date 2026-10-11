@@ -68,6 +68,8 @@ const App = (() => {
   const _PLUS_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`;
   const _CHECK_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`;
   const _CLOSE_SVG = `<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
+  const _VOLUME_X_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
+  const _VOLUME_2_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
 
   // ── Boot ──────────────────────────────────────────────────────────────
   async function init() {
@@ -149,6 +151,8 @@ const App = (() => {
     if (!handled) {
       await _loadGeneralHomeContent();
     }
+
+    _initHeroVisibilityObserver();
 
     // Keyboard shortcut handlers
     document.addEventListener("keydown", (e) => {
@@ -433,6 +437,332 @@ const App = (() => {
   }
 
 
+  // ── Hero Trailer Controller (YouTube Iframe & Background Video Engine) ───
+  const HeroTrailerController = (() => {
+    const _state = {
+      general: {
+        ytPlayer: null,
+        token: 0,
+        isMuted: true,
+        isPlaying: false,
+        currentKey: null,
+        currentItemId: null,
+        videoLayerId: "hero-video-layer",
+        soundBtnId: "hero-sound-btn",
+      },
+      anime: {
+        ytPlayer: null,
+        token: 0,
+        isMuted: true,
+        isPlaying: false,
+        currentKey: null,
+        currentItemId: null,
+        videoLayerId: "anime-hero-video-layer",
+        soundBtnId: "anime-hero-sound-btn",
+      }
+    };
+
+    let _ytReadyPromise = null;
+
+    function ensureYouTubeAPI() {
+      if (window.YT && window.YT.Player) {
+        return Promise.resolve(window.YT);
+      }
+      if (_ytReadyPromise) return _ytReadyPromise;
+
+      _ytReadyPromise = new Promise((resolve) => {
+        if (!document.getElementById("yt-iframe-api")) {
+          const tag = document.createElement("script");
+          tag.id = "yt-iframe-api";
+          tag.src = "https://www.youtube.com/iframe_api";
+          const firstScript = document.getElementsByTagName("script")[0];
+          if (firstScript && firstScript.parentNode) {
+            firstScript.parentNode.insertBefore(tag, firstScript);
+          } else {
+            document.head.appendChild(tag);
+          }
+        }
+
+        const prevReady = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => {
+          if (typeof prevReady === "function") prevReady();
+          resolve(window.YT);
+        };
+
+        const interval = setInterval(() => {
+          if (window.YT && window.YT.Player) {
+            clearInterval(interval);
+            resolve(window.YT);
+          }
+        }, 100);
+
+        setTimeout(() => {
+          clearInterval(interval);
+          resolve(window.YT || null);
+        }, 4000);
+      });
+
+      return _ytReadyPromise;
+    }
+
+    // Pre-trigger API initialization
+    ensureYouTubeAPI();
+
+    function destroy(instanceKey) {
+      const s = _state[instanceKey];
+      if (!s) return;
+      s.token++;
+      s.currentKey = null;
+      s.currentItemId = null;
+      s.isPlaying = false;
+      s.isMuted = true;
+
+      if (s.ytPlayer) {
+        try {
+          if (typeof s.ytPlayer.stopVideo === "function") s.ytPlayer.stopVideo();
+          if (typeof s.ytPlayer.destroy === "function") s.ytPlayer.destroy();
+        } catch (e) {}
+        s.ytPlayer = null;
+      }
+
+      const layer = document.getElementById(s.videoLayerId);
+      if (layer) {
+        layer.classList.remove("is-playing");
+        layer.innerHTML = "";
+      }
+
+      updateSoundButtonUI(instanceKey, true, false);
+    }
+
+    async function loadTrailerForItem(instanceKey, item) {
+      const s = _state[instanceKey];
+      if (!s || !item) return;
+
+      const thisToken = ++s.token;
+      s.currentItemId = item.id;
+      s.currentKey = null;
+      s.isPlaying = false;
+      s.isMuted = true;
+
+      if (s.ytPlayer) {
+        try {
+          if (typeof s.ytPlayer.stopVideo === "function") s.ytPlayer.stopVideo();
+          if (typeof s.ytPlayer.destroy === "function") s.ytPlayer.destroy();
+        } catch (e) {}
+        s.ytPlayer = null;
+      }
+
+      const layer = document.getElementById(s.videoLayerId);
+      if (layer) {
+        layer.classList.remove("is-playing");
+        layer.innerHTML = "";
+      }
+      updateSoundButtonUI(instanceKey, true, false);
+
+      // Resolve trailer
+      let trailer = item.trailer || null;
+      if (!trailer || !trailer.key) {
+        if (instanceKey === "anime" || item.media === "anime" || item.media === "donghua") {
+          trailer = await Anilist.getTrailer(item.id, item.media);
+        } else {
+          trailer = await TMDB.getTrailer(item.media, item.id);
+        }
+      }
+
+      // Check for race condition
+      if (thisToken !== s.token) return;
+
+      // If no valid trailer, backdrop remains seamlessly
+      if (!trailer || !trailer.key) {
+        updateSoundButtonUI(instanceKey, true, false);
+        return;
+      }
+
+      s.currentKey = trailer.key;
+
+      try {
+        await ensureYouTubeAPI();
+        if (thisToken !== s.token) return;
+
+        const targetLayer = document.getElementById(s.videoLayerId);
+        if (!targetLayer) return;
+
+        targetLayer.innerHTML = `
+          <div class="hero-trailer-iframe-wrap">
+            <div id="${s.videoLayerId}-player"></div>
+          </div>
+        `;
+
+        if (window.YT && window.YT.Player) {
+          s.ytPlayer = new window.YT.Player(`${s.videoLayerId}-player`, {
+            videoId: trailer.key,
+            playerVars: {
+              autoplay: 1,
+              mute: 1,
+              controls: 0,
+              showinfo: 0,
+              rel: 0,
+              loop: 1,
+              playlist: trailer.key,
+              playsinline: 1,
+              modestbranding: 1,
+              iv_load_policy: 3,
+              disablekb: 1,
+              fs: 0,
+              origin: window.location.origin,
+            },
+            events: {
+              onReady: (event) => {
+                if (thisToken !== s.token) {
+                  try { event.target.destroy(); } catch (e) {}
+                  return;
+                }
+                try {
+                  event.target.mute();
+                  event.target.playVideo();
+                } catch (e) {}
+                updateSoundButtonUI(instanceKey, true, true);
+              },
+              onStateChange: (event) => {
+                if (thisToken !== s.token) return;
+                // YT.PlayerState.PLAYING is 1
+                if (event.data === 1) {
+                  s.isPlaying = true;
+                  const lyr = document.getElementById(s.videoLayerId);
+                  if (lyr) lyr.classList.add("is-playing");
+                  updateSoundButtonUI(instanceKey, s.isMuted, true);
+                } else if (event.data === 0) {
+                  try { event.target.playVideo(); } catch (e) {}
+                }
+              },
+              onError: (err) => {
+                console.warn(`[HeroTrailer] Trailer playback failed for "${item.title}":`, err);
+                const lyr = document.getElementById(s.videoLayerId);
+                if (lyr) {
+                  lyr.classList.remove("is-playing");
+                  lyr.innerHTML = "";
+                }
+                updateSoundButtonUI(instanceKey, true, false);
+              }
+            }
+          });
+        } else {
+          // Direct fallback iframe embed
+          targetLayer.innerHTML = `
+            <div class="hero-trailer-iframe-wrap">
+              <iframe id="${s.videoLayerId}-iframe"
+                src="https://www.youtube-nocookie.com/embed/${trailer.key}?enablejsapi=1&autoplay=1&mute=1&controls=0&showinfo=0&rel=0&loop=1&playlist=${trailer.key}&playsinline=1&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowfullscreen
+                tabindex="-1"
+                aria-hidden="true">
+              </iframe>
+            </div>
+          `;
+          setTimeout(() => {
+            if (thisToken === s.token) {
+              targetLayer.classList.add("is-playing");
+              updateSoundButtonUI(instanceKey, true, true);
+            }
+          }, 1200);
+        }
+      } catch (err) {
+        console.warn(`[HeroTrailer] Exception while mounting trailer:`, err);
+        updateSoundButtonUI(instanceKey, true, false);
+      }
+    }
+
+    function toggleSound(instanceKey) {
+      const s = _state[instanceKey];
+      if (!s || !s.currentKey) return;
+
+      const nextMuted = !s.isMuted;
+
+      if (s.ytPlayer) {
+        try {
+          if (nextMuted) {
+            s.ytPlayer.mute();
+            s.isMuted = true;
+          } else {
+            s.ytPlayer.unMute();
+            s.ytPlayer.setVolume(100);
+            s.isMuted = false;
+          }
+        } catch (err) {
+          console.warn("[HeroTrailer] Sound toggle error:", err);
+        }
+      } else {
+        const iframe = document.getElementById(`${s.videoLayerId}-iframe`);
+        if (iframe && iframe.contentWindow) {
+          const cmd = nextMuted ? '{"event":"command","func":"mute","args":""}' : '{"event":"command","func":"unMute","args":""}';
+          iframe.contentWindow.postMessage(cmd, "*");
+          s.isMuted = nextMuted;
+        }
+      }
+
+      updateSoundButtonUI(instanceKey, s.isMuted, true);
+    }
+
+    function updateSoundButtonUI(instanceKey, isMuted, isVisible) {
+      const s = _state[instanceKey];
+      const btn = document.getElementById(s.soundBtnId);
+      if (!btn) return;
+
+      if (!isVisible) {
+        btn.style.display = "none";
+        return;
+      }
+
+      btn.style.display = "inline-flex";
+      btn.classList.toggle("is-unmuted", !isMuted);
+      btn.setAttribute("aria-label", isMuted ? "Unmute trailer" : "Mute trailer");
+      btn.setAttribute("title", isMuted ? "Unmute trailer" : "Mute trailer");
+
+      const iconSpan = btn.querySelector(".hero-sound-icon");
+      const labelSpan = btn.querySelector(".hero-sound-text");
+
+      if (iconSpan) {
+        iconSpan.innerHTML = isMuted ? _VOLUME_X_SVG : _VOLUME_2_SVG;
+      }
+      if (labelSpan) {
+        labelSpan.textContent = isMuted ? "Muted" : "Sound On";
+      }
+    }
+
+    function isMuted(instanceKey) {
+      return _state[instanceKey]?.isMuted ?? true;
+    }
+
+    function pause(instanceKey) {
+      const s = _state[instanceKey];
+      if (s && s.ytPlayer && typeof s.ytPlayer.pauseVideo === "function") {
+        try { s.ytPlayer.pauseVideo(); } catch (e) {}
+      }
+    }
+
+    function resume(instanceKey) {
+      const s = _state[instanceKey];
+      if (s && s.ytPlayer && typeof s.ytPlayer.playVideo === "function" && s.currentKey) {
+        try { s.ytPlayer.playVideo(); } catch (e) {}
+      }
+    }
+
+    function pauseAll() {
+      pause("general");
+      pause("anime");
+    }
+
+    return {
+      destroy,
+      loadTrailerForItem,
+      toggleSound,
+      isMuted,
+      pause,
+      resume,
+      pauseAll,
+    };
+  })();
+
   // ── Hero banner (General Entertainment: Movies / Series / Dramas) ─────────
   async function _loadHero() {
     try {
@@ -470,17 +800,27 @@ const App = (() => {
       .join(" · ");
     const isWl = Watchlist.has(item.id, item.media);
 
-    hero.style.backgroundImage = `url('${item.backdrop}')`;
     hero.innerHTML = `
-      <div class="hero-overlay"></div>
+      <div class="hero-backdrop" style="background-image: url('${item.backdrop || ""}')"></div>
+      <div class="hero-video-layer" id="hero-video-layer"></div>
+      <div class="hero-cinematic-vignette"></div>
+
+      <div class="hero-top-controls">
+        <button class="hero-sound-btn" id="hero-sound-btn" onclick="App.toggleHeroSound('general')" aria-label="Unmute trailer" title="Unmute trailer" style="display:none">
+          <span class="hero-sound-icon">${_VOLUME_X_SVG}</span>
+          <span class="hero-sound-text">Muted</span>
+        </button>
+      </div>
+
       <div class="hero-content">
         <div class="hero-badges">
           <span class="badge badge-${item.media}">${item.media === "movie" ? "MOVIE" : "TV SHOW"}</span>
           ${item.year ? `<span class="badge badge-year">${item.year}</span>` : ""}
+          <span class="badge badge-hd">HD</span>
           ${genreNames ? `<span class="hero-genres">${_esc(genreNames)}</span>` : ""}
         </div>
         <h1 class="hero-title">${_esc(item.title)}</h1>
-        <p class="hero-overview">${_esc(item.overview.slice(0, 220))}${item.overview.length > 220 ? "…" : ""}</p>
+        <p class="hero-overview">${_esc(item.overview.slice(0, 240))}${item.overview.length > 240 ? "…" : ""}</p>
         <div class="hero-rating">
           ${_starsHTML(item.rating)}
           <span class="hero-rating-num">${item.rating.toFixed(1)}</span>
@@ -502,12 +842,12 @@ const App = (() => {
       </div>
       ${window.innerWidth > 768 ? `
       <button class="hero-arrow hero-prev" onclick="App.prevHero()" aria-label="Previous featured title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18L9 12L15 6"/>
         </svg>
       </button>
       <button class="hero-arrow hero-next" onclick="App.nextHero()" aria-label="Next featured title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 18L15 12L9 6"/>
         </svg>
       </button>` : ""}
@@ -518,6 +858,9 @@ const App = (() => {
       </div>`;
 
     _setupHeroTouch(hero, prevHero, nextHero);
+
+    // Resolve and mount trailer for this specific item
+    HeroTrailerController.loadTrailerForItem("general", item);
   }
 
   let _touchStartX = 0;
@@ -550,8 +893,6 @@ const App = (() => {
 
     if (isNowOpen) {
       if (inp) {
-        // Immediate synchronous focus in the direct user tap gesture
-        // Essential for iOS Safari / Android Chrome virtual keyboard activation
         inp.focus();
         requestAnimationFrame(() => {
           inp.focus();
@@ -570,13 +911,15 @@ const App = (() => {
 
   function _startHeroRotation() {
     clearInterval(_heroTimer);
+    if (!HeroTrailerController.isMuted("general")) return; // Pause rotation while user is listening
     _heroTimer = setInterval(() => {
       _heroIdx = (_heroIdx + 1) % _heroItems.length;
       _renderHero();
-    }, 8000);
+    }, 14000);
   }
 
   function goHero(idx) {
+    if (idx === _heroIdx) return;
     _heroIdx = idx;
     _renderHero();
     _startHeroRotation();
@@ -631,18 +974,28 @@ const App = (() => {
     const isWl = Watchlist.has(item.id, item.media);
     const badgeLabel = item.media === "donghua" ? "DONGHUA" : "ANIME";
 
-    hero.style.backgroundImage = `url('${item.backdrop}')`;
     hero.innerHTML = `
-      <div class="hero-overlay anime-hero-overlay"></div>
+      <div class="hero-backdrop" style="background-image: url('${item.backdrop || ""}')"></div>
+      <div class="hero-video-layer" id="anime-hero-video-layer"></div>
+      <div class="hero-cinematic-vignette anime-hero-overlay"></div>
+
+      <div class="hero-top-controls">
+        <button class="hero-sound-btn" id="anime-hero-sound-btn" onclick="App.toggleHeroSound('anime')" aria-label="Unmute trailer" title="Unmute trailer" style="display:none">
+          <span class="hero-sound-icon">${_VOLUME_X_SVG}</span>
+          <span class="hero-sound-text">Muted</span>
+        </button>
+      </div>
+
       <div class="hero-content anime-hero-content">
         <div class="hero-badges">
           <span class="badge badge-${item.media}">${badgeLabel}</span>
           ${item.year ? `<span class="badge badge-year">${item.year}</span>` : ""}
           ${item.episodes ? `<span class="badge badge-ep">${item.episodes} EPS</span>` : ""}
+          <span class="badge badge-hd">HD</span>
           ${genreNames ? `<span class="hero-genres">${_esc(genreNames)}</span>` : ""}
         </div>
         <h1 class="hero-title">${_esc(item.title)}</h1>
-        <p class="hero-overview">${_esc(item.overview.slice(0, 220))}${item.overview.length > 220 ? "…" : ""}</p>
+        <p class="hero-overview">${_esc(item.overview.slice(0, 240))}${item.overview.length > 240 ? "…" : ""}</p>
         <div class="hero-rating">
           ${_starsHTML(item.rating)}
           <span class="hero-rating-num">${item.rating.toFixed(1)}</span>
@@ -664,12 +1017,12 @@ const App = (() => {
       </div>
       ${window.innerWidth > 768 ? `
       <button class="hero-arrow hero-prev" onclick="App.prevAnimeHero()" aria-label="Previous featured anime">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18L9 12L15 6"/>
         </svg>
       </button>
       <button class="hero-arrow hero-next" onclick="App.nextAnimeHero()" aria-label="Next featured anime">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 18L15 12L9 6"/>
         </svg>
       </button>` : ""}
@@ -680,17 +1033,22 @@ const App = (() => {
       </div>`;
 
     _setupHeroTouch(hero, prevAnimeHero, nextAnimeHero);
+
+    // Resolve and mount trailer for this specific anime/donghua item
+    HeroTrailerController.loadTrailerForItem("anime", item);
   }
 
   function _startAnimeHeroRotation() {
     clearInterval(_animeHeroTimer);
+    if (!HeroTrailerController.isMuted("anime")) return; // Pause rotation while user is listening
     _animeHeroTimer = setInterval(() => {
       _animeHeroIdx = (_animeHeroIdx + 1) % _animeHeroItems.length;
       _renderAnimeHero();
-    }, 8500);
+    }, 14000);
   }
 
   function goAnimeHero(idx) {
+    if (idx === _animeHeroIdx) return;
     _animeHeroIdx = idx;
     _renderAnimeHero();
     _startAnimeHeroRotation();
@@ -708,6 +1066,62 @@ const App = (() => {
     _animeHeroIdx = (_animeHeroIdx + 1) % _animeHeroItems.length;
     _renderAnimeHero();
     _startAnimeHeroRotation();
+  }
+
+  function toggleHeroSound(type = "general") {
+    HeroTrailerController.toggleSound(type);
+    if (!HeroTrailerController.isMuted(type)) {
+      if (type === "general") clearInterval(_heroTimer);
+      else clearInterval(_animeHeroTimer);
+    } else {
+      if (type === "general") _startHeroRotation();
+      else _startAnimeHeroRotation();
+    }
+  }
+
+  let _heroObserver = null;
+  function _initHeroVisibilityObserver() {
+    if (_heroObserver) return;
+    if ("IntersectionObserver" in window) {
+      _heroObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const id = entry.target.id;
+          const key = id === "anime-hero" ? "anime" : "general";
+          if (entry.intersectionRatio < 0.2) {
+            HeroTrailerController.pause(key);
+          } else {
+            if ((key === "general" && _currentPage === "home") || (key === "anime" && _currentPage === "anime")) {
+              HeroTrailerController.resume(key);
+            }
+          }
+        });
+      }, { threshold: [0, 0.2, 0.5, 0.8, 1.0] });
+
+      const h1 = document.getElementById("hero");
+      const h2 = document.getElementById("anime-hero");
+      if (h1) _heroObserver.observe(h1);
+      if (h2) _heroObserver.observe(h2);
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        HeroTrailerController.pauseAll();
+      } else {
+        if (_currentPage === "home") HeroTrailerController.resume("general");
+        else if (_currentPage === "anime") HeroTrailerController.resume("anime");
+      }
+    });
+
+    const modalBg = document.getElementById("player-modal-bg");
+    if (modalBg && "MutationObserver" in window) {
+      const modalObserver = new MutationObserver(() => {
+        if (!modalBg.classList.contains("open")) {
+          if (_currentPage === "home") HeroTrailerController.resume("general");
+          else if (_currentPage === "anime") HeroTrailerController.resume("anime");
+        }
+      });
+      modalObserver.observe(modalBg, { attributes: true, attributeFilter: ["class"] });
+    }
   }
 
   let _generalHomeLoaded = false;
@@ -2161,6 +2575,8 @@ const App = (() => {
 
     // Page-specific initializers
     if (page === "home") {
+      HeroTrailerController.resume("general");
+      HeroTrailerController.pause("anime");
       const bGrid = document.getElementById("browse-grid");
       if (bGrid) bGrid.innerHTML = "";
       _renderHistoryRows();
@@ -2169,6 +2585,8 @@ const App = (() => {
       document.getElementById("dest-btn-general")?.classList.add("active");
       document.getElementById("dest-btn-anime")?.classList.remove("active");
     } else if (page === "anime") {
+      HeroTrailerController.resume("anime");
+      HeroTrailerController.pause("general");
       const bGrid = document.getElementById("browse-grid");
       if (bGrid) bGrid.innerHTML = "";
       _loadAnimePageContent();
@@ -2176,6 +2594,7 @@ const App = (() => {
       document.getElementById("anime-dest-btn-general")?.classList.remove("active");
       document.getElementById("anime-dest-btn-anime")?.classList.add("active");
     } else {
+      HeroTrailerController.pauseAll();
       _pauseAllRowAutoScroll();
       if (page === "watchlist") {
         _renderWatchlistPage();
@@ -5205,14 +5624,15 @@ const App = (() => {
   return {
     init,
     goHero,
+    prevHero,
+    nextHero,
+    toggleHeroSound,
     openItem,
     openBrowse,
     toggleWL,
     showPage,
     onSearchInput,
     _renderHistoryRows,
-    prevHero,
-    nextHero,
     _closeAnimeDetail,
     _toggleAnimeWL,
     playAnimeEpisode,

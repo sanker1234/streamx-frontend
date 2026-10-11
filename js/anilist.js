@@ -94,6 +94,7 @@ const Anilist = (() => {
       episodes: item.number_of_episodes || 1,
       status: item.status || "",
       tagline: item.tagline || "",
+      trailer: item.trailer || null,
     };
   }
 
@@ -235,11 +236,30 @@ const Anilist = (() => {
     };
   }
 
+  const _trailerCache = new Map();
+  async function getTrailer(id, mediaType = "anime") {
+    if (!id) return null;
+    const cacheKey = `${mediaType}_${id}`;
+    if (_trailerCache.has(cacheKey)) return _trailerCache.get(cacheKey);
+
+    try {
+      const details = await getDetails(id, mediaType);
+      const trailer = details?.trailer || null;
+      _trailerCache.set(cacheKey, trailer);
+      return trailer;
+    } catch (err) {
+      console.warn(`[AniList] Trailer fetch for ${id} failed:`, err.message);
+      _trailerCache.set(cacheKey, null);
+      return null;
+    }
+  }
+
   return {
     getTrending,
     getList,
     getPopular,
     getDetails,
+    getTrailer,
     getFranchiseRelations,
     search,
     _normalise
