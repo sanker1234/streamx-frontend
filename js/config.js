@@ -485,7 +485,7 @@ const ANIME_ROWS = [
 
 // App settings
 const APP_CONFIG = {
-  name           : "CineJoy",
+  name           : "9CineJoy",
   version        : "2.0",
   items_per_row  : 20,       // items fetched per row
   hero_count     : 8,        // number of hero banner items to rotate

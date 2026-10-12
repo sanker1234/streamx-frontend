@@ -7941,11 +7941,21 @@ img.loaded {
   }
 }
 
-/* ── CineJoy Brand Identity & Episode Search/Sort Enhancements ── */
+/* ── 9CineJoy Brand Identity & Episode Search/Sort Enhancements ── */
 .brand-logo-svg {
   display: inline-block;
   vertical-align: middle;
   flex-shrink: 0;
+}
+
+.brand-num {
+  background: linear-gradient(135deg, #00f2fe 0%, #ff2a6d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  margin-right: 1px;
+  display: inline-block;
+  filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.45));
 }
 
 .brand-accent {

@@ -1,7 +1,7 @@
 {
-  "name": "CineJoy Cinema",
-  "short_name": "CineJoy",
-  "description": "Stream movies, TV series, Asian dramas, anime, and donghua with a cinema-grade glass interface on CineJoy.",
+  "name": "9CineJoy Cinema",
+  "short_name": "9CineJoy",
+  "description": "Stream movies, TV series, Asian dramas, anime, and donghua with a cinema-grade glass interface on 9CineJoy.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -1,5 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 80" width="350" height="80">
   <defs>
+    <linearGradient id="nineMarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#ff2a6d"/>
+    </linearGradient>
     <linearGradient id="logoPrism" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#ff2a6d"/>
       <stop offset="50%" stop-color="#9333ea"/>
@@ -7,18 +12,34 @@
     </linearGradient>
     <linearGradient id="textJoyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#ff2a6d"/>
-      <stop offset="60%" stop-color="#00f2fe"/>
+      <stop offset="65%" stop-color="#00f2fe"/>
+    </linearGradient>
+    <linearGradient id="textNineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="100%" stop-color="#ff2a6d"/>
     </linearGradient>
   </defs>
-  <!-- Mark -->
-  <g transform="translate(10, 10)">
+
+  <!-- Mark Container -->
+  <g transform="translate(8, 10)">
     <rect width="60" height="60" rx="16" fill="#141829" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
-    <path d="M 23 18 C 23 16, 25 15, 27 16 L 43 28 C 45 30, 45 32, 43 34 L 27 46 C 25 47, 23 46, 23 44 Z" fill="url(#logoPrism)"/>
-    <path d="M 18 44 C 23 51, 35 55, 46 50" fill="none" stroke="#00f2fe" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="46" cy="20" r="2.5" fill="#ff2a6d"/>
+    <!-- Stylized "9" stroke -->
+    <path d="M 27 25 C 25 28, 22 30, 19 30 C 15 30, 12 26.5, 12 22.5 C 12 18.5, 15 15, 19 15 C 23 15, 26 18.5, 26 22.5 C 26 32, 21 42, 14 45"
+          fill="none"
+          stroke="url(#nineMarkGrad)"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    <!-- Play Prism -->
+    <path d="M 31 20 C 31 18.5, 33 17.5, 34.5 18.2 L 46 25 C 47.5 26, 47.5 28, 46 29 L 34.5 35.8 C 33 36.5, 31 35.5, 31 34 Z" fill="url(#logoPrism)"/>
+    <!-- Smile Arc -->
+    <path d="M 16 48 C 24 54, 38 53, 46 45" fill="none" stroke="#00f2fe" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Spark Dot -->
+    <circle cx="48" cy="20" r="2.2" fill="#ff2a6d"/>
   </g>
+
   <!-- Wordmark -->
-  <text x="84" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="900" letter-spacing="-0.5">
-    <tspan fill="#ffffff">Cine</tspan><tspan fill="url(#textJoyGrad)">Joy</tspan>
+  <text x="82" y="52" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="900" letter-spacing="-0.5">
+    <tspan fill="url(#textNineGrad)">9</tspan><tspan fill="#ffffff">Cine</tspan><tspan fill="url(#textJoyGrad)">Joy</tspan>
   </text>
 </svg>

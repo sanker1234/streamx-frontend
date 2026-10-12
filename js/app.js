@@ -433,7 +433,7 @@ const App = (() => {
 
     window.addEventListener("appinstalled", () => {
       _deferredPrompt = null;
-      _showToast("🎉 CineJoy installed successfully!");
+      _showToast("🎉 9CineJoy installed successfully!");
     });
   }
 
@@ -1887,7 +1887,7 @@ const App = (() => {
     const grid = document.getElementById("search-grid");
     if (!grid) return;
     _renderFilterPanel();
-    document.getElementById("search-label").textContent = "Search CineJoy";
+    document.getElementById("search-label").textContent = "Search 9CineJoy";
     grid.style.display = "block";
     grid.innerHTML = `
       <div class="empty-state" style="padding: 60px 20px; text-align: center; color: var(--text2);">
@@ -5808,14 +5808,14 @@ const App = (() => {
       _deferredPrompt.prompt();
       const choiceResult = await _deferredPrompt.userChoice;
       if (choiceResult && choiceResult.outcome === "accepted") {
-        _showToast("🎉 CineJoy is being installed!");
+        _showToast("🎉 9CineJoy is being installed!");
       }
       _deferredPrompt = null;
     } else {
       const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
       const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
       if (isStandalone) {
-        _showToast("✅ CineJoy is already running as an installed standalone app!");
+        _showToast("✅ 9CineJoy is already running as an installed standalone app!");
       } else if (isIos) {
         _showToast("📱 On iOS: Tap Share (⎋) in Safari and select 'Add to Home Screen' (➕)");
       } else {
