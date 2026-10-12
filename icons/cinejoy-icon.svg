@@ -1,64 +1,66 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#141829"/>
-      <stop offset="100%" stop-color="#070a12"/>
+    <!-- Background Midnight Gradient -->
+    <linearGradient id="cjBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f1322"/>
+      <stop offset="50%" stop-color="#070913"/>
+      <stop offset="100%" stop-color="#030408"/>
     </linearGradient>
-    <linearGradient id="nineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f2fe"/>
-      <stop offset="45%" stop-color="#a855f7"/>
-      <stop offset="100%" stop-color="#ff2a6d"/>
+
+    <!-- Crimson Cinema Brand Gradient -->
+    <linearGradient id="cjRedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3b65"/>
+      <stop offset="55%" stop-color="#e50914"/>
+      <stop offset="100%" stop-color="#990011"/>
     </linearGradient>
-    <linearGradient id="prismGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff2a6d"/>
-      <stop offset="50%" stop-color="#9333ea"/>
-      <stop offset="100%" stop-color="#00f2fe"/>
+
+    <!-- Crimson Ribbon Aura Glow -->
+    <radialGradient id="cjAura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e50914" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#ff3b65" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#e50914" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 9 Badge Gradient -->
+    <linearGradient id="nineBadgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3b65"/>
+      <stop offset="100%" stop-color="#e50914"/>
     </linearGradient>
-    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff2a6d" stop-opacity="0.6"/>
-      <stop offset="50%" stop-color="#9333ea" stop-opacity="0.3"/>
-      <stop offset="100%" stop-color="#00f2fe" stop-opacity="0"/>
-    </linearGradient>
-    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="20" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+
+    <!-- Soft Glow Filter -->
+    <filter id="cjNeonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
   </defs>
 
-  <!-- Background Obsidian Container -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
-  <rect width="506" height="506" x="3" y="3" rx="109" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+  <!-- Background Container -->
+  <rect width="512" height="512" rx="112" fill="url(#cjBgGrad)"/>
+  <rect width="506" height="506" x="3" y="3" rx="109" fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="3"/>
 
-  <!-- Living Neon Aura Glow -->
-  <circle cx="256" cy="256" r="160" fill="url(#glowGrad)" filter="url(#neonGlow)"/>
+  <!-- Radial Crimson Ambient Aura -->
+  <circle cx="256" cy="256" r="190" fill="url(#cjAura)"/>
 
-  <!-- 9CineJoy Unified Cinema Emblem -->
-  <g>
-    <!-- Stylized Modern "9" Glyph -->
-    <path d="M 212 216 
-             C 202 236, 182 250, 156 250 
-             C 124 250, 100 224, 100 192 
-             C 100 160, 124 134, 156 134 
-             C 188 134, 212 160, 212 192 
-             C 212 268, 172 346, 114 372"
-          fill="none"
-          stroke="url(#nineGrad)"
-          stroke-width="34"
-          stroke-linecap="round"
-          stroke-linejoin="round"/>
+  <!-- Iconic 9CineJoy Ribbon Emblem -->
+  <g transform="translate(256, 256) scale(6.2) translate(-32, -32)">
+    <!-- CineJoy Outer Arc Ribbon -->
+    <path d="M32 8 C18.7 8 8 18.7 8 32 C8 45.3 18.7 56 32 56 C43.2 56 52.4 48.3 55.1 37.8 C55.8 35.3 53.9 33 51.4 33 C49.5 33 47.8 34.4 47.3 36.3 C45.2 43.6 39.1 48.8 32 48.8 C22.7 48.8 15.2 41.3 15.2 32 C15.2 22.7 22.7 15.2 32 15.2 C39.1 15.2 45.2 20.4 47.3 27.7 C47.8 29.6 49.5 31 51.4 31 C53.9 31 55.8 28.7 55.1 26.2 C52.4 15.7 43.2 8 32 8 Z"
+          fill="url(#cjRedGrad)"
+          filter="url(#cjNeonGlow)"/>
 
-    <!-- Joyful Cinema Play Prism -->
-    <path d="M 252 168 C 252 152, 270 142, 284 151 L 384 227 C 398 238, 398 258, 384 269 L 284 345 C 270 354, 252 344, 252 328 Z"
-          fill="url(#prismGrad)"/>
+    <!-- Central Cinema Play Triangle -->
+    <path d="M28 22.5 C28 21.6 29 21 29.8 21.5 L42.8 29 C43.5 29.4 43.5 30.6 42.8 31 L29.8 38.5 C29 39 28 38.4 28 37.5 Z"
+          fill="#ffffff"/>
+  </g>
 
-    <!-- Joy Cinema Accent Smile Arc -->
-    <path d="M 126 398 C 196 454, 314 444, 382 376"
-          fill="none"
-          stroke="#00f2fe"
-          stroke-width="18"
-          stroke-linecap="round"/>
-
-    <!-- Luminous Spark Dot -->
-    <circle cx="406" cy="170" r="15" fill="#ff2a6d"/>
+  <!-- Distinctive "9" Badge in Top Corner -->
+  <g transform="translate(76, 76)">
+    <rect width="84" height="84" rx="26" fill="url(#nineBadgeGrad)" filter="url(#cjNeonGlow)"/>
+    <rect width="84" height="84" rx="26" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2.5"/>
+    <text x="42" y="61" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, sans-serif"
+          font-size="58" font-weight="900" fill="#ffffff" text-anchor="middle">9</text>
   </g>
 </svg>

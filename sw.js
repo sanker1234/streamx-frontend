@@ -1,21 +1,22 @@
-const CACHE_NAME = "nine-cinejoy-v11";
+const CACHE_NAME = "nine-cinejoy-v13";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
-  "./manifest.json",
-  "./css/style.css?v=11.0",
-  "./js/config.js?v=11.0",
-  "./js/tmdb.js?v=11.0",
-  "./js/anilist.js?v=11.0",
-  "./js/watchlist.js?v=11.0",
-  "./js/history.js?v=11.0",
-  "./js/player.js?v=11.0",
-  "./js/app.js?v=11.0",
-  "./icons/cinejoy-icon.svg",
-  "./icons/cinejoy-logo.svg",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./manifest.json?v=13.0",
+  "./favicon.ico",
+  "./css/style.css?v=13.0",
+  "./js/config.js?v=13.0",
+  "./js/tmdb.js?v=13.0",
+  "./js/anilist.js?v=13.0",
+  "./js/watchlist.js?v=13.0",
+  "./js/history.js?v=13.0",
+  "./js/player.js?v=13.0",
+  "./js/app.js?v=13.0",
+  "./icons/cinejoy-icon.svg?v=13.0",
+  "./icons/cinejoy-logo.svg?v=13.0",
+  "./icons/icon-192.png?v=13.0",
+  "./icons/icon-512.png?v=13.0"
 ];
 
 self.addEventListener("message", event => {

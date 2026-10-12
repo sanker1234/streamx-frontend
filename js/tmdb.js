@@ -149,6 +149,54 @@ const TMDB = (() => {
     };
   }
 
+  // ── Streaming Platform Titles (Watch Providers Filtering) ───────────────
+  async function getPlatformTitles(providerId, options = {}) {
+    const {
+      mediaType = "all", // "all", "movie", "tv"
+      sortBy = "popularity.desc",
+      page = 1,
+      region = "US"
+    } = options;
+
+    const baseParams = {
+      with_watch_providers: providerId,
+      watch_region: region,
+      sort_by: sortBy,
+      page: page
+    };
+
+    if (mediaType === "movie") {
+      return await discover("movie", baseParams);
+    } else if (mediaType === "tv") {
+      return await discover("tv", baseParams);
+    } else {
+      // Parallel fetch for movies & TV series
+      const [moviesRes, tvRes] = await Promise.all([
+        discover("movie", baseParams).catch(() => ({ results: [] })),
+        discover("tv", baseParams).catch(() => ({ results: [] }))
+      ]);
+
+      const movies = moviesRes.results || [];
+      const tvShows = tvRes.results || [];
+
+      // Interleave movies & TV series smoothly
+      const combined = [];
+      const maxLen = Math.max(movies.length, tvShows.length);
+      for (let i = 0; i < maxLen; i++) {
+        if (tvShows[i]) combined.push(tvShows[i]);
+        if (movies[i]) combined.push(movies[i]);
+      }
+
+      return {
+        results: combined,
+        movies: movies,
+        tv: tvShows,
+        page: 1,
+        total_pages: Math.max(moviesRes.total_pages || 1, tvRes.total_pages || 1)
+      };
+    }
+  }
+
   // ── Generic row fetcher (driven by HOME_ROWS config) ─────────────────
   async function fetchRow(row, page = 1) {
     // endpoint may include query params already (e.g. /discover/tv?with_genres=16)
@@ -289,6 +337,7 @@ const TMDB = (() => {
     getTrending,
     getList,
     discover,
+    getPlatformTitles,
     fetchRow,
     getDetails,
     getTrailer,

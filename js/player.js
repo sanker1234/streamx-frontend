@@ -143,6 +143,9 @@ const Player = (() => {
       bg.classList.remove("has-cinematic-detail");
       bg.innerHTML = "";
     }
+    if (window.App && typeof window.App.hideActionLoader === "function") {
+      window.App.hideActionLoader();
+    }
     document.body.style.overflow = "";
 
     _item            = null;

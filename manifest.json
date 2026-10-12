@@ -1,8 +1,9 @@
 {
-  "name": "9CineJoy Cinema",
+  "id": "/?v=13.0",
+  "name": "9CineJoy",
   "short_name": "9CineJoy",
   "description": "Stream movies, TV series, Asian dramas, anime, and donghua with a cinema-grade glass interface on 9CineJoy.",
-  "start_url": "./index.html",
+  "start_url": "./index.html?v=13.0",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -11,25 +12,25 @@
   "categories": ["entertainment", "video", "movies"],
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "icons/icon-192.png?v=13.0",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-192.png",
+      "src": "icons/icon-192.png?v=13.0",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/icon-512.png?v=13.0",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/icon-512.png?v=13.0",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -41,28 +42,28 @@
       "short_name": "Movies",
       "description": "Explore trending Hollywood movies",
       "url": "./index.html#/movies",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "icons/icon-192.png?v=13.0", "sizes": "192x192" }]
     },
     {
       "name": "TV Series",
       "short_name": "Series",
       "description": "Watch trending TV shows",
       "url": "./index.html#/series",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "icons/icon-192.png?v=13.0", "sizes": "192x192" }]
     },
     {
       "name": "Anime",
       "short_name": "Anime",
       "description": "Stream anime and donghua",
       "url": "./index.html#/anime",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "icons/icon-192.png?v=13.0", "sizes": "192x192" }]
     },
     {
       "name": "Watchlist",
       "short_name": "Watchlist",
       "description": "View saved titles",
       "url": "./index.html#/watchlist",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "icons/icon-192.png?v=13.0", "sizes": "192x192" }]
     }
   ]
 }

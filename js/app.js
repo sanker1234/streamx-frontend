@@ -146,6 +146,11 @@ const App = (() => {
       }
     });
 
+    // Safety fallback: ensure initial CineJoy loader dismisses within 2.5s
+    setTimeout(() => {
+      _dismissLoader();
+    }, 2500);
+
     // Parse initial hash before loading home content
     const handled = await _handleRoute();
 
@@ -153,19 +158,26 @@ const App = (() => {
       await _loadGeneralHomeContent();
     }
 
+    _dismissLoader();
+
     _initHeroVisibilityObserver();
 
     // Keyboard shortcut handlers
     document.addEventListener("keydown", (e) => {
-      // "/" focuses the search bar (only if not already typing in inputs)
+      // ⌘K or Ctrl+K or "/" focuses search bar
       if (
-        e.key === "/" &&
-        document.activeElement.tagName !== "INPUT" &&
-        document.activeElement.tagName !== "TEXTAREA" &&
-        document.activeElement.tagName !== "SELECT"
+        ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") ||
+        (e.key === "/" &&
+          document.activeElement.tagName !== "INPUT" &&
+          document.activeElement.tagName !== "TEXTAREA" &&
+          document.activeElement.tagName !== "SELECT")
       ) {
         e.preventDefault();
-        document.getElementById("search-input")?.focus();
+        const searchInput = document.getElementById("search-input");
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
         return;
       }
 
@@ -536,6 +548,8 @@ const App = (() => {
       if (!s) return;
       s.isMuted = true;
       s.isPlaying = false;
+      const lyr = document.getElementById(s.videoLayerId);
+      if (lyr) lyr.classList.remove("is-playing");
       if (s.ytPlayer) {
         try {
           if (typeof s.ytPlayer.mute === "function") s.ytPlayer.mute();
@@ -629,6 +643,7 @@ const App = (() => {
       }
 
       s.currentKey = trailer.key;
+      updateSoundButtonUI(instanceKey, s.isMuted, true);
 
       try {
         await ensureYouTubeAPI();
@@ -709,8 +724,10 @@ const App = (() => {
                     event.target.seekTo(0);
                     event.target.playVideo();
                   } catch (e) {}
-                } else if (event.data === 2) {
-                  // Paused state: hide layer so paused overlays/buttons never show
+                } else {
+                  // State 2 (PAUSED), State 3 (BUFFERING), State -1 (UNSTARTED), State 5 (CUED)
+                  // Immediately hide layer so YouTube pause icon || or play button is NEVER visible!
+                  s.isPlaying = false;
                   const lyr = document.getElementById(s.videoLayerId);
                   if (lyr) lyr.classList.remove("is-playing");
                 }
@@ -787,28 +804,34 @@ const App = (() => {
 
     function updateSoundButtonUI(instanceKey, isMuted, isVisible) {
       const s = _state[instanceKey];
-      const btn = document.getElementById(s.soundBtnId);
-      if (!btn) return;
+      const buttons = [
+        document.getElementById(s.soundBtnId),
+        instanceKey === "general" ? document.getElementById("hero-action-sound-btn") : null
+      ].filter(Boolean);
 
-      if (!isVisible) {
-        btn.style.display = "none";
-        return;
-      }
+      if (!buttons.length) return;
 
-      btn.style.display = "inline-flex";
-      btn.classList.toggle("is-unmuted", !isMuted);
-      btn.setAttribute("aria-label", isMuted ? "Unmute trailer" : "Mute trailer");
-      btn.setAttribute("title", isMuted ? "Unmute trailer" : "Mute trailer");
+      buttons.forEach(btn => {
+        if (!isVisible) {
+          btn.style.display = "none";
+          return;
+        }
 
-      const iconSpan = btn.querySelector(".hero-sound-icon");
-      const labelSpan = btn.querySelector(".hero-sound-text");
+        btn.style.display = "inline-flex";
+        btn.classList.toggle("is-unmuted", !isMuted);
+        btn.setAttribute("aria-label", isMuted ? "Unmute trailer" : "Mute trailer");
+        btn.setAttribute("title", isMuted ? "Unmute trailer" : "Mute trailer");
 
-      if (iconSpan) {
-        iconSpan.innerHTML = isMuted ? _VOLUME_X_SVG : _VOLUME_2_SVG;
-      }
-      if (labelSpan) {
-        labelSpan.textContent = isMuted ? "Muted" : "Sound On";
-      }
+        const iconSpan = btn.querySelector(".hero-sound-icon");
+        const labelSpan = btn.querySelector(".hero-sound-text");
+
+        if (iconSpan) {
+          iconSpan.innerHTML = isMuted ? _VOLUME_X_SVG : _VOLUME_2_SVG;
+        }
+        if (labelSpan) {
+          labelSpan.textContent = isMuted ? "Muted" : "Sound On";
+        }
+      });
     }
 
     function isMuted(instanceKey) {
@@ -817,7 +840,11 @@ const App = (() => {
 
     function pause(instanceKey) {
       const s = _state[instanceKey];
-      if (s && s.ytPlayer && typeof s.ytPlayer.pauseVideo === "function") {
+      if (!s) return;
+      s.isPlaying = false;
+      const lyr = document.getElementById(s.videoLayerId);
+      if (lyr) lyr.classList.remove("is-playing");
+      if (s.ytPlayer && typeof s.ytPlayer.pauseVideo === "function") {
         try { s.ytPlayer.pauseVideo(); } catch (e) {}
       }
       const iframe = document.getElementById(`${s.videoLayerId}-iframe`);
@@ -906,48 +933,54 @@ const App = (() => {
       .filter(Boolean)
       .join(" · ");
     const isWl = Watchlist.has(item.id, item.media);
+    const ratingVal = typeof item.rating === "number" && !isNaN(item.rating) && item.rating > 0
+      ? item.rating.toFixed(1) : null;
 
     hero.innerHTML = `
       <div class="hero-backdrop" style="background-image: url('${item.backdrop || ""}')"></div>
       <div class="hero-video-layer" id="hero-video-layer"></div>
       <div class="hero-cinematic-vignette"></div>
 
-      <div class="hero-top-controls">
-        <button class="hero-sound-btn" id="hero-sound-btn" onclick="App.toggleHeroSound('general')" aria-label="Unmute trailer" title="Unmute trailer" style="display:none">
+      <div class="hero-top-controls hero-sound-controls">
+        <button class="hero-sound-btn" id="hero-sound-btn" onclick="App.toggleHeroSound('general')" aria-label="Toggle trailer sound" title="Toggle trailer sound" style="display:none">
           <span class="hero-sound-icon">${_VOLUME_X_SVG}</span>
           <span class="hero-sound-text">Muted</span>
         </button>
       </div>
 
       <div class="hero-content">
-        <div class="hero-badges">
-          <span class="badge badge-${item.media}">${item.media === "movie" ? "MOVIE" : "TV SHOW"}</span>
-          ${item.year ? `<span class="badge badge-year">${item.year}</span>` : ""}
-          <span class="badge badge-hd">HD</span>
-          ${genreNames ? `<span class="hero-genres">${_esc(genreNames)}</span>` : ""}
-        </div>
         <h1 class="hero-title">${_esc(item.title)}</h1>
-        <p class="hero-overview">${_esc(item.overview.slice(0, 240))}${item.overview.length > 240 ? "…" : ""}</p>
-        <div class="hero-rating">
-          ${_starsHTML(item.rating)}
-          <span class="hero-rating-num">${item.rating.toFixed(1)}</span>
+        <div class="hero-meta-bar">
+          ${ratingVal ? `
+          <span class="hero-meta-item hero-meta-rating">
+            <svg class="star-icon" viewBox="0 0 24 24" width="14" height="14" fill="#f59e0b"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <span>${ratingVal}</span>
+          </span>
+          <span class="hero-meta-sep"></span>` : ""}
+          ${item.year ? `<span class="hero-meta-item hero-meta-year">${item.year}</span><span class="hero-meta-sep"></span>` : ""}
+          <span class="hero-meta-item hero-meta-type">${item.media === "movie" ? "Movie" : "TV Show"}</span>
+          ${genreNames ? `<span class="hero-meta-sep"></span><span class="hero-meta-item hero-meta-genre">${_esc(genreNames)}</span>` : ""}
         </div>
+        <p class="hero-overview">${_esc(item.overview.slice(0, 240))}${item.overview.length > 240 ? "…" : ""}</p>
         <div class="hero-btns">
-          <button class="btn-primary" onclick="App.openItem(${_jsonAttr(item)})">
+          <button class="btn-primary hero-btn-watch" onclick="App.openItem(${_jsonAttr(item)})">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
             <span>Watch Now</span>
           </button>
-          <button class="btn-secondary" onclick="App.toggleWL(${_jsonAttr(item)}); App._renderHero();">
+          <button class="btn-secondary hero-btn-add" onclick="App.toggleWL(${_jsonAttr(item)}); App._renderHero();">
             ${isWl ? _CHECK_SVG : _PLUS_SVG}
             <span>${isWl ? "In Watchlist" : "Add to List"}</span>
           </button>
-          <button class="btn-secondary" onclick="App.openItem(${_jsonAttr(item)})">
+          <button class="btn-secondary hero-btn-info" onclick="App.openItem(${_jsonAttr(item)})">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-            <span>Details</span>
+            <span>More Info</span>
+          </button>
+          <button class="btn-secondary hero-btn-sound" id="hero-action-sound-btn" onclick="App.toggleHeroSound('general')" aria-label="Toggle trailer sound" title="Toggle trailer sound" style="display:none">
+            <span class="hero-sound-icon">${_VOLUME_X_SVG}</span>
+            <span class="hero-sound-text">Muted</span>
           </button>
         </div>
       </div>
-      ${window.innerWidth > 768 ? `
       <button class="hero-arrow hero-prev" onclick="App.prevHero()" aria-label="Previous featured title">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18L9 12L15 6"/>
@@ -957,7 +990,7 @@ const App = (() => {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 18L15 12L9 6"/>
         </svg>
-      </button>` : ""}
+      </button>
       <div class="hero-dots">
         ${_heroItems.map((_, i) =>
           `<button class="hero-dot${i === _heroIdx ? " active" : ""}"
@@ -1079,7 +1112,9 @@ const App = (() => {
       ? item.genres.slice(0, 3).join(" · ")
       : "";
     const isWl = Watchlist.has(item.id, item.media);
-    const badgeLabel = item.media === "donghua" ? "DONGHUA" : "ANIME";
+    const badgeLabel = item.media === "donghua" ? "Donghua" : "Anime";
+    const ratingVal = typeof item.rating === "number" && !isNaN(item.rating) && item.rating > 0
+      ? item.rating.toFixed(1) : null;
 
     hero.innerHTML = `
       <div class="hero-backdrop" style="background-image: url('${item.backdrop || ""}')"></div>
@@ -1094,35 +1129,35 @@ const App = (() => {
       </div>
 
       <div class="hero-content anime-hero-content">
-        <div class="hero-badges">
-          <span class="badge badge-${item.media}">${badgeLabel}</span>
-          ${item.year ? `<span class="badge badge-year">${item.year}</span>` : ""}
-          ${item.episodes ? `<span class="badge badge-ep">${item.episodes} EPS</span>` : ""}
-          <span class="badge badge-hd">HD</span>
-          ${genreNames ? `<span class="hero-genres">${_esc(genreNames)}</span>` : ""}
-        </div>
         <h1 class="hero-title">${_esc(item.title)}</h1>
-        <p class="hero-overview">${_esc(item.overview.slice(0, 240))}${item.overview.length > 240 ? "…" : ""}</p>
-        <div class="hero-rating">
-          ${_starsHTML(item.rating)}
-          <span class="hero-rating-num">${item.rating.toFixed(1)}</span>
+        <div class="hero-meta-bar">
+          ${ratingVal ? `
+          <span class="hero-meta-item hero-meta-rating">
+            <svg class="star-icon" viewBox="0 0 24 24" width="14" height="14" fill="#f59e0b"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <span>${ratingVal}</span>
+          </span>
+          <span class="hero-meta-sep"></span>` : ""}
+          ${item.year ? `<span class="hero-meta-item hero-meta-year">${item.year}</span><span class="hero-meta-sep"></span>` : ""}
+          <span class="hero-meta-item hero-meta-type">${badgeLabel}</span>
+          ${item.episodes ? `<span class="hero-meta-sep"></span><span class="hero-meta-item hero-meta-ep">${item.episodes} EPS</span>` : ""}
+          ${genreNames ? `<span class="hero-meta-sep"></span><span class="hero-meta-item hero-meta-genre">${_esc(genreNames)}</span>` : ""}
         </div>
+        <p class="hero-overview">${_esc(item.overview.slice(0, 240))}${item.overview.length > 240 ? "…" : ""}</p>
         <div class="hero-btns">
-          <button class="btn-primary anime-btn-primary" onclick="App.openItem(${_jsonAttr(item)})">
+          <button class="btn-primary hero-btn-watch anime-btn-primary" onclick="App.openItem(${_jsonAttr(item)})">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
             <span>Watch Anime</span>
           </button>
-          <button class="btn-secondary" onclick="App.toggleWL(${_jsonAttr(item)}); App._renderAnimeHero();">
+          <button class="btn-secondary hero-btn-add" onclick="App.toggleWL(${_jsonAttr(item)}); App._renderAnimeHero();">
             ${isWl ? _CHECK_SVG : _PLUS_SVG}
             <span>${isWl ? "In Watchlist" : "Add to List"}</span>
           </button>
-          <button class="btn-secondary" onclick="App.openItem(${_jsonAttr(item)})">
+          <button class="btn-secondary hero-btn-info" onclick="App.openItem(${_jsonAttr(item)})">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
             <span>Details</span>
           </button>
         </div>
       </div>
-      ${window.innerWidth > 768 ? `
       <button class="hero-arrow hero-prev" onclick="App.prevAnimeHero()" aria-label="Previous featured anime">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18L9 12L15 6"/>
@@ -1132,7 +1167,7 @@ const App = (() => {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 18L15 12L9 6"/>
         </svg>
-      </button>` : ""}
+      </button>
       <div class="hero-dots">
         ${_animeHeroItems.map((_, i) =>
           `<button class="hero-dot${i === _animeHeroIdx ? " active" : ""}"
@@ -1258,7 +1293,8 @@ const App = (() => {
     _generalHomeLoaded = true;
     await Promise.all([
       _loadHero(),
-      _renderHomeRows()
+      _renderHomeRows(),
+      _renderStreamingPlatformSection()
     ]);
   }
 
@@ -1311,6 +1347,52 @@ const App = (() => {
     }
   }
 
+  // ── CineJoy Branded Initial Loader Dismiss ─────────────────────────────
+  let _loaderDismissed = false;
+  function _dismissLoader() {
+    if (_loaderDismissed) return;
+    _loaderDismissed = true;
+    const loader = document.getElementById("cinejoy-loader");
+    if (!loader) return;
+    loader.classList.add("loaded");
+    setTimeout(() => {
+      loader.style.display = "none";
+    }, 600);
+  }
+
+  // ── Floating Category Switcher (Reference: All / Movies / TV Shows / Anime)
+  function filterCategory(cat) {
+    document.querySelectorAll(".cat-pill").forEach(btn => {
+      const isTarget = btn.id === `cat-pill-${cat}` || (cat === "movie" && btn.id === "cat-pill-movies");
+      btn.classList.toggle("active", isTarget);
+      btn.setAttribute("aria-selected", isTarget ? "true" : "false");
+    });
+
+    if (cat === "anime") {
+      _showPage("anime");
+      return;
+    }
+
+    _showPage("home");
+    const sections = document.querySelectorAll("#home-rows .row-section");
+    sections.forEach(sec => {
+      const secCat = sec.getAttribute("data-category") || "all";
+      if (cat === "all" || secCat === "all" || secCat === cat) {
+        sec.style.display = "";
+      } else {
+        sec.style.display = "none";
+      }
+    });
+
+    // Smooth scroll to the first matching category section if filtering
+    if (cat !== "all") {
+      const firstVisible = document.querySelector("#home-rows .row-section:not([style*='display: none'])");
+      if (firstVisible) {
+        firstVisible.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }
+
   // ── Unified Row Data Fetcher (TMDB for general, AniList for anime/donghua)
   async function _fetchRowData(row, page = 1) {
     if (row.media === "anime" || row.media === "donghua") {
@@ -1335,6 +1417,237 @@ const App = (() => {
     } else {
       return await TMDB.fetchRow(row, page);
     }
+  }
+
+  // ── Interactive Streaming Platform Sections (Netflix, Hulu, Prime Video, etc.) ────
+  let _activePlatformId = "hulu";
+  let _platformMediaType = "all";
+  const _platformCache = new Map();
+  let _platformFetchToken = 0;
+
+  function _renderStreamingPlatformSection() {
+    const container = document.getElementById("streaming-platform-section");
+    if (!container) return;
+
+    const platforms = typeof STREAMING_PLATFORMS !== "undefined" ? STREAMING_PLATFORMS : [];
+    if (!platforms.length) return;
+
+    const current = platforms.find(p => p.id === _activePlatformId) || platforms[0];
+    if (!current) return;
+
+    container.innerHTML = `
+      <div class="platform-header-row">
+        <div class="platform-title-group">
+          <h2 class="platform-title">
+            <span>Only on</span>
+            <span class="platform-accent-name" id="platform-accent-name" style="color: ${current.accentColor}">${_esc(current.name)}</span>
+          </h2>
+          <p class="platform-subtitle" id="platform-subtitle">${_esc(current.tagline)}</p>
+        </div>
+        <div class="platform-header-actions" role="tablist" aria-label="Filter content type">
+          <button class="platform-type-pill ${_platformMediaType === 'all' ? 'active' : ''}" data-type="all" onclick="App.setPlatformMediaType('all')" role="tab" aria-selected="${_platformMediaType === 'all'}">All</button>
+          <button class="platform-type-pill ${_platformMediaType === 'movie' ? 'active' : ''}" data-type="movie" onclick="App.setPlatformMediaType('movie')" role="tab" aria-selected="${_platformMediaType === 'movie'}">Movies</button>
+          <button class="platform-type-pill ${_platformMediaType === 'tv' ? 'active' : ''}" data-type="tv" onclick="App.setPlatformMediaType('tv')" role="tab" aria-selected="${_platformMediaType === 'tv'}">TV Shows</button>
+        </div>
+      </div>
+
+      <div class="platform-selector-scroll-wrap">
+        <div class="platform-selector-scroll" id="platform-selector-scroll" role="tablist" aria-label="Select streaming service">
+          ${platforms.map(p => `
+            <button class="platform-pill ${p.id === _activePlatformId ? 'active' : ''}"
+                    data-platform="${p.id}"
+                    role="tab"
+                    aria-selected="${p.id === _activePlatformId}"
+                    aria-label="${_esc(p.name)}"
+                    onclick="App.selectPlatform('${p.id}')">
+              ${p.logoHtml}
+            </button>
+          `).join("")}
+        </div>
+      </div>
+
+      <div class="platform-rail-wrap">
+        <button class="platform-arrow platform-arrow-prev" onclick="App.scrollPlatformRail(-1)" aria-label="Scroll platform titles left">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+        </button>
+        <div class="platform-rail" id="platform-cards-rail">
+          ${_renderPlatformSkeletons()}
+        </div>
+        <button class="platform-arrow platform-arrow-next" onclick="App.scrollPlatformRail(1)" aria-label="Scroll platform titles right">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </button>
+      </div>
+    `;
+
+    _loadPlatformContent(_activePlatformId);
+  }
+
+  function _renderPlatformSkeletons() {
+    return Array(6).fill(0).map(() => `
+      <div class="platform-skeleton-card">
+        <div class="platform-skeleton-img"></div>
+        <div class="platform-skeleton-meta">
+          <div class="platform-skeleton-line"></div>
+          <div class="platform-skeleton-line short"></div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  async function _loadPlatformContent(platformId) {
+    const rail = document.getElementById("platform-cards-rail");
+    if (!rail) return;
+
+    const platforms = typeof STREAMING_PLATFORMS !== "undefined" ? STREAMING_PLATFORMS : [];
+    const platform = platforms.find(p => p.id === platformId);
+    if (!platform) return;
+
+    // Fast memory cache check
+    if (_platformCache.has(platformId)) {
+      _displayPlatformCards(_platformCache.get(platformId));
+      return;
+    }
+
+    // Render skeleton loaders while fetching
+    rail.innerHTML = _renderPlatformSkeletons();
+
+    const thisToken = ++_platformFetchToken;
+
+    try {
+      const data = await TMDB.getPlatformTitles(platform.providerId, {
+        mediaType: "all",
+        region: "US",
+        sortBy: "popularity.desc",
+        page: 1
+      });
+
+      if (thisToken !== _platformFetchToken) return;
+
+      _platformCache.set(platformId, data);
+      _displayPlatformCards(data);
+    } catch (err) {
+      if (thisToken !== _platformFetchToken) return;
+      console.warn(`[Platform] Error fetching titles for ${platform.name}:`, err);
+      rail.innerHTML = `
+        <div class="platform-empty-state">
+          <p>No streaming titles currently verified for ${platform.name} in this region.</p>
+        </div>
+      `;
+    }
+  }
+
+  function _displayPlatformCards(data) {
+    const rail = document.getElementById("platform-cards-rail");
+    if (!rail) return;
+
+    let items = [];
+    if (_platformMediaType === "movie") {
+      items = (data.movies && data.movies.length) ? data.movies : (data.results || []).filter(i => i.media === "movie");
+    } else if (_platformMediaType === "tv") {
+      items = (data.tv && data.tv.length) ? data.tv : (data.results || []).filter(i => i.media === "tv");
+    } else {
+      items = data.results || [];
+    }
+
+    if (!items.length) {
+      const platforms = typeof STREAMING_PLATFORMS !== "undefined" ? STREAMING_PLATFORMS : [];
+      const current = platforms.find(p => p.id === _activePlatformId);
+      rail.innerHTML = `
+        <div class="platform-empty-state">
+          <p>No verified titles found for this filter on ${current ? current.name : "this service"}.</p>
+        </div>
+      `;
+      return;
+    }
+
+    rail.innerHTML = items.map((item, idx) => {
+      const backdrop = item.backdrop || item.poster || "";
+      const rating = item.rating > 0 ? item.rating.toFixed(1) : null;
+      const mediaLabel = item.media === "tv" ? "TV Show" : "Movie";
+
+      // Authentic UI badges matching reference screenshot
+      let badgeHtml = "";
+      if (item.media === "tv" && (idx % 3 === 0)) {
+        badgeHtml = `<span class="platform-card-badge badge-new">New episode</span>`;
+      } else if (idx % 4 === 1) {
+        badgeHtml = `<span class="platform-card-badge badge-recent">Recently added</span>`;
+      }
+
+      return `
+        <div class="platform-card" onclick="App.openItem(${_jsonAttr(item)})" role="button" tabindex="0" onkeydown="if(event.key==='Enter')App.openItem(${_jsonAttr(item)})" aria-label="${_esc(item.title)}">
+          <div class="platform-card-img-wrap">
+            <img class="platform-card-img" src="${backdrop}" alt="${_esc(item.title)}" loading="lazy" onerror="this.src='${item.poster || ""}'" />
+            ${badgeHtml}
+            <div class="platform-card-play-overlay">
+              <div class="platform-play-circle">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="platform-card-meta">
+            <div class="platform-card-title">${_esc(item.title)}</div>
+            <div class="platform-card-sub">
+              ${rating ? `<span><svg class="platform-star-icon" viewBox="0 0 24 24" width="12" height="12" fill="#f59e0b" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> ${rating}</span> <span>&bull;</span>` : ""}
+              ${item.year ? `<span>${item.year}</span> <span>&bull;</span>` : ""}
+              <span>${mediaLabel}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function selectPlatform(platformId) {
+    if (_activePlatformId === platformId) return;
+    _activePlatformId = platformId;
+
+    const platforms = typeof STREAMING_PLATFORMS !== "undefined" ? STREAMING_PLATFORMS : [];
+    const platform = platforms.find(p => p.id === platformId);
+    if (!platform) return;
+
+    // Update active pill state
+    const pills = document.querySelectorAll(".platform-pill");
+    pills.forEach(p => {
+      const isActive = p.getAttribute("data-platform") === platformId;
+      p.classList.toggle("active", isActive);
+      p.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+
+    // Update headline accent and subtitle
+    const titleAccent = document.getElementById("platform-accent-name");
+    if (titleAccent) {
+      titleAccent.textContent = platform.name;
+      titleAccent.style.color = platform.accentColor;
+    }
+    const sub = document.getElementById("platform-subtitle");
+    if (sub) {
+      sub.textContent = platform.tagline;
+    }
+
+    _loadPlatformContent(platformId);
+  }
+
+  function setPlatformMediaType(type) {
+    _platformMediaType = type;
+    const buttons = document.querySelectorAll(".platform-type-pill");
+    buttons.forEach(b => {
+      const isActive = b.getAttribute("data-type") === type;
+      b.classList.toggle("active", isActive);
+      b.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+
+    if (_platformCache.has(_activePlatformId)) {
+      _displayPlatformCards(_platformCache.get(_activePlatformId));
+    } else {
+      _loadPlatformContent(_activePlatformId);
+    }
+  }
+
+  function scrollPlatformRail(dir) {
+    const rail = document.getElementById("platform-cards-rail");
+    if (!rail) return;
+    const amount = (rail.clientWidth || 600) * 0.75 * dir;
+    rail.scrollBy({ left: amount, behavior: "smooth" });
   }
 
   // ── Home rows (General Entertainment: Movies / Series / Dramas) ───────────
@@ -1367,21 +1680,49 @@ const App = (() => {
     }
   }
 
+  // ── Date formatter for metadata (e.g. "Oct 6") ────────────────────────
+  function _formatShortDate(str) {
+    if (!str) return "";
+    try {
+      const parts = str.split("-");
+      if (parts.length >= 3) {
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        if (months[m] && !isNaN(d)) return `${months[m]} ${d}`;
+      }
+    } catch { }
+    return str.slice(0, 4);
+  }
+
   function _createRowSection(row) {
+    const isBackdrop = row.cardType === "backdrop";
     const section = document.createElement("section");
-    section.className = "row-section";
+    section.className = `row-section ${isBackdrop ? "row-backdrop-style" : ""}`;
     section.id = `row-${row.id}`;
+    if (row.category) section.setAttribute("data-category", row.category);
+
+    const subtitleHTML = row.subtitle ? `<span class="row-subtitle">${_esc(row.subtitle)}</span>` : "";
+
     section.innerHTML = `
       <div class="row-header">
-        <h2 class="row-title">${_esc(_plainLabel(row.label))}</h2>
-        <button class="row-see-all" onclick="App.openBrowse('${row.id}')">Explore All →</button>
+        <div class="row-title-wrap">
+          <h2 class="row-title">${_esc(_plainLabel(row.label))}</h2>
+          ${subtitleHTML}
+        </div>
+        <button class="row-see-all" onclick="App.openBrowse('${row.id}')">
+          <span>View all</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </button>
       </div>
       <div class="row-rail-wrap">
         <button class="row-arrow row-arrow-prev" onclick="App.scrollRow('row-scroll-${row.id}', -1)" aria-label="Scroll left">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
         </button>
-        <div class="row-scroll" id="row-scroll-${row.id}">
-          ${Array(8).fill('<div class="card card-skeleton"><div class="card-poster"></div><div class="card-info"><div class="skeleton-line" style="height:12px;width:75%;margin-top:8px"></div><div class="skeleton-line" style="height:10px;width:40%;margin-top:6px"></div></div></div>').join("")}
+        <div class="row-scroll ${isBackdrop ? "row-scroll-backdrop" : ""}" id="row-scroll-${row.id}">
+          ${Array(8).fill(isBackdrop
+            ? '<div class="card card-backdrop-type card-skeleton"><div class="card-backdrop-poster"></div><div class="card-info"><div class="skeleton-line" style="height:14px;width:70%;margin-top:8px"></div><div class="skeleton-line" style="height:10px;width:40%;margin-top:6px"></div></div></div>'
+            : '<div class="card card-skeleton"><div class="card-poster"></div><div class="card-info"><div class="skeleton-line" style="height:12px;width:75%;margin-top:8px"></div><div class="skeleton-line" style="height:10px;width:40%;margin-top:6px"></div></div></div>').join("")}
         </div>
         <button class="row-arrow row-arrow-next" onclick="App.scrollRow('row-scroll-${row.id}', 1)" aria-label="Scroll right">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
@@ -1397,9 +1738,10 @@ const App = (() => {
 
       const scroll = section.querySelector(`#row-scroll-${row.id}`);
       if (!scroll) return;
+      const isBackdrop = row.cardType === "backdrop";
       scroll.innerHTML = data.results
-        .filter(i => i.poster)
-        .map(i => _cardHTML(i))
+        .filter(i => (isBackdrop ? (i.backdrop || i.poster) : i.poster))
+        .map(i => (isBackdrop ? _backdropCardHTML(i) : _cardHTML(i)))
         .join("");
 
       // Observe lazy images
@@ -1438,10 +1780,11 @@ const App = (() => {
         state.total = data.total_pages;
         loader.remove();
 
+        const isBackdrop = row.cardType === "backdrop";
         const frag = document.createDocumentFragment();
-        data.results.filter(i => i.poster).forEach(i => {
+        data.results.filter(i => (isBackdrop ? (i.backdrop || i.poster) : i.poster)).forEach(i => {
           const div = document.createElement("div");
-          div.innerHTML = _cardHTML(i);
+          div.innerHTML = isBackdrop ? _backdropCardHTML(i) : _cardHTML(i);
           const card = div.firstElementChild;
           frag.appendChild(card);
           card.querySelectorAll("img[data-src]").forEach(img => _observeImg(img));
@@ -1454,7 +1797,47 @@ const App = (() => {
     obs.observe(sentinel);
   }
 
-  // ── Card HTML ─────────────────────────────────────────────────────────
+  // ── Landscape 16:9 Backdrop Card HTML (Reference: Current & Upcoming TV) ─
+  function _backdropCardHTML(item) {
+    const wl = Watchlist.has(item.id, item.media);
+    const ratingVal = typeof item.rating === "number" && !isNaN(item.rating) && item.rating > 0
+      ? item.rating.toFixed(1) : null;
+    const imgUrl = item.backdrop || item.poster || "";
+    const epBadgeText = item.media === "tv" ? "New Episode" : "New Season";
+
+    const epCode = item.season_episode || (item.media === "tv" ? "TV Series" : "HD");
+    const dateStr = item.release_date ? _formatShortDate(item.release_date) : (item.year ? item.year : "");
+
+    return `
+      <div class="card card-backdrop-type" id="card-${item.media}-${item.id}" onclick="App.openItem(${_jsonAttr(item)})" role="button" tabindex="0" aria-label="${_esc(item.title)}">
+        <div class="card-backdrop-poster">
+          <img data-src="${imgUrl}" alt="${_esc(item.title)}" class="card-img lazy" loading="lazy">
+          <div class="card-no-img" style="display:${imgUrl ? "none" : "flex"}">${_esc((item.title || "?").charAt(0))}</div>
+          <div class="card-overlay">
+            <div class="card-backdrop-watch-btn" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              <span>Watch Now</span>
+            </div>
+          </div>
+          <span class="card-pill-badge">${epBadgeText}</span>
+          <button class="card-wl${wl ? " added" : ""}"
+            onclick="event.stopPropagation();App.toggleWL(${_jsonAttr(item)})"
+            aria-label="${wl ? "Remove from" : "Add to"} watchlist" title="${wl ? "In Watchlist" : "Save to Watchlist"}">
+            ${wl ? _CHECK_SVG : _PLUS_SVG}
+          </button>
+        </div>
+        <div class="card-info">
+          <div class="card-title" title="${_esc(item.title)}">${_esc(item.title)}</div>
+          <div class="card-meta backdrop-meta">
+            ${ratingVal ? `<span class="card-rating"><svg class="star-icon" viewBox="0 0 24 24" width="12" height="12" fill="#f59e0b"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> <span>${ratingVal}</span></span>` : ""}
+            ${epCode ? `<span class="card-ep-code">${epCode}</span>` : ""}
+            ${dateStr ? `<span class="card-date">${dateStr}</span>` : ""}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── Standard 2:3 Portrait Card HTML (Reference: Trending This Week) ───────
   function _cardHTML(item) {
     const wl = Watchlist.has(item.id, item.media);
     let badgeText = "MOVIE";
@@ -1490,7 +1873,7 @@ const App = (() => {
         <div class="card-info">
           <div class="card-title" title="${_esc(item.title)}">${_esc(item.title)}</div>
           <div class="card-meta">
-            ${ratingVal ? `<span class="card-rating">${_STAR_SVG} <span>${ratingVal}</span></span>` : ""}
+            ${ratingVal ? `<span class="card-rating"><svg class="star-icon" viewBox="0 0 24 24" width="12" height="12" fill="#f59e0b"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> <span>${ratingVal}</span></span>` : ""}
             ${item.year ? `<span class="card-year">${item.year}</span>` : ""}
           </div>
         </div>
@@ -1609,6 +1992,16 @@ const App = (() => {
 
   // ── Home Page Section Continuous Auto-Horizontal Scroll Manager ──────────
   const _rowAutoScrolls = new Map();
+  let _vertScrollTimer = null;
+
+  // Pause horizontal autoscrolls while user is actively scrolling vertically
+  window.addEventListener("scroll", () => {
+    _pauseAllRowAutoScroll();
+    if (_vertScrollTimer) clearTimeout(_vertScrollTimer);
+    _vertScrollTimer = setTimeout(() => {
+      _resumeAllRowAutoScroll();
+    }, 350);
+  }, { passive: true });
 
   function _clearAllRowAutoScroll() {
     _rowAutoScrolls.forEach((state) => {
@@ -1660,15 +2053,24 @@ const App = (() => {
       isInteracting: false,
       isVisible: false,
       lastTimestamp: null,
-      // Continuous speed in pixels per second: ~30-44px/s, gently staggered per row
-      speedPxPerSec: 30 + ((index % 4) * 4),
+      cachedMaxScroll: 0,
+      // Calm, cinematic speed in pixels per second (~20-26px/s)
+      speedPxPerSec: 20 + ((index % 3) * 3),
       subpixelAccumulator: scrollEl.scrollLeft,
+
+      updateMetrics() {
+        if (!this.scrollEl) return;
+        this.cachedMaxScroll = Math.max(0, this.scrollEl.scrollWidth - this.scrollEl.clientWidth);
+      },
 
       startLoop() {
         if (this.rafId) return; // already active
         if (!this.isVisible || this.isHovered || this.isInteracting || !_isAutoScrollPage() || document.hidden) {
           return;
         }
+
+        this.updateMetrics();
+        if (this.cachedMaxScroll <= 20) return;
 
         this.lastTimestamp = null;
         this.subpixelAccumulator = this.scrollEl.scrollLeft;
@@ -1685,10 +2087,8 @@ const App = (() => {
             return;
           }
 
-          const maxScroll = el.scrollWidth - el.clientWidth;
-          if (maxScroll <= 20) {
-            // Content hasn't overflowed yet, recheck next frame
-            this.rafId = requestAnimationFrame(loop);
+          if (this.cachedMaxScroll <= 20) {
+            this.stopLoop();
             return;
           }
 
@@ -1696,19 +2096,19 @@ const App = (() => {
             this.lastTimestamp = timestamp;
           }
 
-          // Compute delta time in seconds, clamped to avoid jumps when tab wakes
-          const dt = Math.min((timestamp - this.lastTimestamp) / 1000, 0.08);
+          // Compute delta time in seconds, clamped to avoid jumps
+          const dt = Math.min((timestamp - this.lastTimestamp) / 1000, 0.05);
           this.lastTimestamp = timestamp;
 
           // Advance continuous subpixel scroll
           this.subpixelAccumulator += this.speedPxPerSec * dt;
 
           // If reached end, roll back to beginning smoothly
-          if (this.subpixelAccumulator >= maxScroll - 2) {
+          if (this.subpixelAccumulator >= this.cachedMaxScroll - 2) {
             this.subpixelAccumulator = 0;
             el.scrollLeft = 0;
           } else {
-            el.scrollLeft = this.subpixelAccumulator;
+            el.scrollLeft = Math.round(this.subpixelAccumulator);
           }
 
           this.rafId = requestAnimationFrame(loop);
@@ -1731,7 +2131,10 @@ const App = (() => {
         if (this.resumeTimer) clearTimeout(this.resumeTimer);
         this.resumeTimer = setTimeout(() => {
           this.isInteracting = false;
-          if (this.scrollEl) this.subpixelAccumulator = this.scrollEl.scrollLeft;
+          if (this.scrollEl) {
+            this.subpixelAccumulator = this.scrollEl.scrollLeft;
+            this.updateMetrics();
+          }
           if (!this.isHovered && this.isVisible && _isAutoScrollPage()) {
             this.startLoop();
           }
@@ -1752,7 +2155,10 @@ const App = (() => {
         if (state.resumeTimer) clearTimeout(state.resumeTimer);
         state.resumeTimer = setTimeout(() => {
           if (!state.isHovered && !state.isInteracting && state.isVisible && _isAutoScrollPage()) {
-            if (state.scrollEl) state.subpixelAccumulator = state.scrollEl.scrollLeft;
+            if (state.scrollEl) {
+              state.subpixelAccumulator = state.scrollEl.scrollLeft;
+              state.updateMetrics();
+            }
             state.startLoop();
           }
         }, 500);
@@ -1777,13 +2183,14 @@ const App = (() => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           state.isVisible = true;
+          state.updateMetrics();
           state.startLoop();
         } else {
           state.isVisible = false;
           state.stopLoop();
         }
       });
-    }, { threshold: 0.05, rootMargin: "100px 0px" });
+    }, { threshold: 0.3, rootMargin: "0px" });
 
     state.observer.observe(section || scrollEl);
 
@@ -2409,10 +2816,31 @@ const App = (() => {
     if (bGrid) bGrid.style.display = "grid";
     if (bRows) bRows.style.display = "none";
 
-    const row = HOME_ROWS.find(r => r.id === rowId) || ANIME_ROWS.find(r => r.id === rowId);
+    let targetRowId = rowId;
+    if (targetRowId === "movies") targetRowId = "trending_movies";
+    if (targetRowId === "series" || targetRowId === "tv") targetRowId = "trending_tv";
+
+    let row = HOME_ROWS.find(r => r.id === targetRowId) ||
+              ANIME_ROWS.find(r => r.id === targetRowId) ||
+              HOME_ROWS.find(r => r.id === rowId);
+
+    if (!row) {
+      if (targetRowId && targetRowId.includes("movie")) {
+        row = HOME_ROWS.find(r => r.id === "trending_movies") || HOME_ROWS.find(r => r.id === "popular_movies");
+      } else if (targetRowId && (targetRowId.includes("tv") || targetRowId.includes("series"))) {
+        row = HOME_ROWS.find(r => r.id === "trending_tv") || HOME_ROWS.find(r => r.id === "popular_tv");
+      }
+    }
     if (!row) return;
+
     _showPage("browse", true);
-    document.getElementById("browse-title").textContent = _plainLabel(row.label);
+    let pageTitle = _plainLabel(row.label);
+    if (rowId === "movies" || targetRowId === "trending_movies") pageTitle = "Movies";
+    if (rowId === "series" || rowId === "tv" || targetRowId === "trending_tv") pageTitle = "TV Shows";
+    const titleEl = document.getElementById("browse-title");
+    if (titleEl) titleEl.textContent = pageTitle;
+    _updateActiveNavLinks("browse", targetRowId);
+
     document.getElementById("browse-grid").innerHTML =
       Array(12).fill('<div class="card card-skeleton"></div>').join("");
 
@@ -2555,11 +2983,11 @@ const App = (() => {
       setTimeout(() => scrollToAnimeRow("donghua_trending"), 150);
       return true;
     }
-    if (path === "/movies") {
+    if (path === "/movies" || path === "/movie") {
       openBrowse("trending_movies", true);
       return true;
     }
-    if (path === "/series" || path === "/tv") {
+    if (path === "/series" || path === "/tv" || path === "/shows" || path === "/tvshows") {
       openBrowse("trending_tv", true);
       return true;
     }
@@ -2760,6 +3188,22 @@ const App = (() => {
   }
 
   function _updateActiveNavLinks(page, rowId = null) {
+    // 0. Floating Glass Navbar items (Reference Design)
+    document.querySelectorAll(".glass-nav-item").forEach(item => {
+      item.classList.remove("active");
+    });
+    if (page === "home") {
+      document.getElementById("nav-link-home")?.classList.add("active");
+    } else if (page === "anime") {
+      document.getElementById("nav-link-anime")?.classList.add("active");
+    } else if (page === "browse" && rowId) {
+      if (rowId.includes("movie")) {
+        document.getElementById("nav-link-movies")?.classList.add("active");
+      } else if (rowId.includes("tv") || rowId.includes("series")) {
+        document.getElementById("nav-link-tv")?.classList.add("active");
+      }
+    }
+
     // 1. Desktop links
     const desktopLinks = document.querySelectorAll(".nav-links .nav-link");
     desktopLinks.forEach(link => {
@@ -2807,14 +3251,51 @@ const App = (() => {
     if (btn) { btn.classList.toggle("added", added); btn.innerHTML = added ? "Saved" : "Save"; }
   }
 
+  // ── Smooth Action & Card Click Loader ──────────────────────────
+  let _actionLoaderTimer = null;
+  let _actionLoaderHideTimer = null;
+
+  function showActionLoader(msg = "Opening cinema experience...") {
+    const el = document.getElementById("cinejoy-action-loader");
+    if (!el) return;
+    const txt = document.getElementById("action-loader-text");
+    if (txt) txt.textContent = msg;
+    if (_actionLoaderHideTimer) clearTimeout(_actionLoaderHideTimer);
+    el.style.display = "flex";
+    requestAnimationFrame(() => el.classList.add("active"));
+
+    // Absolute fallback: auto-hide after 1800ms so no error or delay can ever trap the user
+    if (_actionLoaderTimer) clearTimeout(_actionLoaderTimer);
+    _actionLoaderTimer = setTimeout(() => {
+      hideActionLoader();
+    }, 1800);
+  }
+
+  function hideActionLoader() {
+    const el = document.getElementById("cinejoy-action-loader");
+    if (!el) return;
+    el.classList.remove("active");
+    if (_actionLoaderHideTimer) clearTimeout(_actionLoaderHideTimer);
+    _actionLoaderHideTimer = setTimeout(() => {
+      el.style.display = "none";
+    }, 240);
+  }
+
   // ── Open item (route to correct detail handler) ───────────────────────
   function openItem(item) {
+    if (!item) return;
+    const title = item.title || item.name || "Title";
+    showActionLoader(`Loading ${title}...`);
+
     const media = item.media || item.type || "";
     if (media === "anime" || media === "donghua") {
-      _openAnimeDetail(item);
+      _openAnimeDetail(item).finally(() => {
+        setTimeout(hideActionLoader, 300);
+      });
     } else {
       const normalizedItem = (media === "drama") ? { ...item, media: "tv" } : item;
       Player.open(normalizedItem);
+      setTimeout(hideActionLoader, 300);
     }
   }
 
@@ -3453,6 +3934,7 @@ const App = (() => {
       bg.innerHTML = "";
       bg._currentAnimeItem = null;
     }
+    hideActionLoader();
     _activeEpisodeId = null;
     _activeEpisodeNumber = null;
     _autoPlayEpisodeNumber = null;
@@ -6058,7 +6540,17 @@ const App = (() => {
     removeFromHistory,
     pauseRowAutoScroll: (rowId, ms) => _rowAutoScrolls.get(rowId)?.pauseTemporarily(ms),
     resumeRowAutoScroll: (rowId) => _rowAutoScrolls.get(rowId)?.startLoop(),
-    _renderHero
+    filterCategory,
+    dismissLoadingScreen: _dismissLoader,
+    showActionLoader,
+    hideActionLoader,
+    _renderHero,
+
+    // Streaming Platform Showcase
+    selectPlatform,
+    setPlatformMediaType,
+    scrollPlatformRail,
+    renderStreamingPlatformSection: _renderStreamingPlatformSection
   };
 })();
 
@@ -6074,7 +6566,7 @@ document.addEventListener("DOMContentLoaded", () => App.init());
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("./sw.js?v=6.0")
+      .register("./sw.js?v=13.0")
       .then(reg => {
         reg.update();
         if (reg.waiting) {

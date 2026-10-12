@@ -314,27 +314,109 @@ const GENRE_MAP = {
 // Anime keyword ID on TMDB
 const ANIME_KEYWORD_ID = 210024;
 
+// ── STREAMING PLATFORMS (Interactive Showcase / Watch Providers) ──────────
+const STREAMING_PLATFORMS = [
+  {
+    id: "netflix",
+    name: "Netflix",
+    headline: "Only on Netflix",
+    tagline: "Popular movies, award-winning series & originals",
+    providerId: "8",
+    color: "#e50914",
+    accentColor: "#ff2a44",
+    badgeLabel: "Netflix Original",
+    logoHtml: `<span class="platform-logo-txt netflix-txt">NETFLIX</span>`
+  },
+  {
+    id: "prime",
+    name: "Prime Video",
+    headline: "Only on Prime Video",
+    tagline: "Blockbuster movies, hit originals & entertainment included with Prime",
+    providerId: "9|119|2100",
+    color: "#00A8E1",
+    accentColor: "#00b8ff",
+    badgeLabel: "Prime Original",
+    logoHtml: `<div class="prime-logo-box"><span class="prime-logo-txt">prime video</span><svg class="prime-arrow-svg" width="36" height="7" viewBox="0 0 36 7" fill="none"><path d="M2 2 C 13 6, 24 6, 32 2" stroke="#00A8E1" stroke-width="2" stroke-linecap="round"/><path d="M29 1 L33 2 L31 5" stroke="#00A8E1" stroke-width="1.8" stroke-linecap="round"/></svg></div>`
+  },
+  {
+    id: "max",
+    name: "HBO Max",
+    headline: "Only on HBO Max",
+    tagline: "Blockbuster movies, iconic DC universe & legendary HBO originals",
+    providerId: "1899|384",
+    color: "#9933FF",
+    accentColor: "#a855f7",
+    badgeLabel: "Max Original",
+    logoHtml: `<span class="platform-logo-txt max-txt">HBO<span class="max-sub">MAX</span></span>`
+  },
+  {
+    id: "disney",
+    name: "Disney+",
+    headline: "Only on Disney+",
+    tagline: "The best stories from Disney, Pixar, Marvel, Star Wars & National Geographic",
+    providerId: "337",
+    color: "#113CCF",
+    accentColor: "#3b82f6",
+    badgeLabel: "Disney+ Original",
+    logoHtml: `<span class="platform-logo-txt disney-txt">Disney<span class="disney-plus">+</span></span>`
+  },
+  {
+    id: "apple",
+    name: "Apple TV+",
+    headline: "Only on Apple TV+",
+    tagline: "Award-winning Apple Original films, documentaries & groundbreaking series",
+    providerId: "350",
+    color: "#FFFFFF",
+    accentColor: "#f3f4f6",
+    badgeLabel: "Apple Original",
+    logoHtml: `<span class="platform-logo-txt apple-txt">tv+</span>`
+  },
+  {
+    id: "paramount",
+    name: "Paramount+",
+    headline: "Only on Paramount+",
+    tagline: "A mountain of entertainment, blockbuster hits, live sports & originals",
+    providerId: "2303|2616|582|531",
+    color: "#0064FF",
+    accentColor: "#38bdf8",
+    badgeLabel: "Paramount+ Original",
+    logoHtml: `<span class="platform-logo-txt paramount-txt">Paramount<span class="paramount-plus">+</span></span>`
+  },
+  {
+    id: "hulu",
+    name: "Hulu",
+    headline: "Only on Hulu",
+    tagline: "Popular titles on this streaming service",
+    providerId: "15",
+    color: "#1CE783",
+    accentColor: "#1ee380",
+    badgeLabel: "Hulu Original",
+    logoHtml: `<span class="platform-logo-txt hulu-txt">hulu</span>`
+  }
+];
+
 // Home page row configuration — drives what TMDB endpoints are called
 const HOME_ROWS = [
-  { id: "trending_all",    label: "Trending Now",         endpoint: "/trending/all/week",                                          media: "mixed"  },
-  { id: "trending_movies", label: "Trending Movies",      endpoint: "/trending/movie/week",                                         media: "movie"  },
-  { id: "trending_tv",     label: "Trending TV Shows",    endpoint: "/trending/tv/week",                                            media: "tv"     },
-  { id: "popular_movies",  label: "Popular Movies",       endpoint: "/movie/popular",                                               media: "movie"  },
-  { id: "popular_tv",      label: "Popular TV Shows",     endpoint: "/tv/popular",                                                  media: "tv"     },
-  { id: "top_movies",      label: "Top Rated Movies",     endpoint: "/movie/top_rated",                                             media: "movie"  },
-  { id: "top_tv",          label: "Top Rated TV Shows",   endpoint: "/tv/top_rated",                                                media: "tv"     },
-  { id: "now_playing",     label: "Now Playing",          endpoint: "/movie/now_playing",                                           media: "movie"  },
-  { id: "upcoming",        label: "Coming Soon",          endpoint: "/movie/upcoming",                                              media: "movie"  },
-  { id: "action",          label: "Action & Thriller",    endpoint: "/discover/movie?with_genres=28,53",                            media: "movie"  },
-  { id: "scifi",           label: "Sci-Fi & Fantasy",     endpoint: "/discover/movie?with_genres=878,14",                           media: "movie"  },
-  { id: "kdrama",          label: "K-Drama",              endpoint: "/discover/tv?with_origin_country=KR&with_genres=18",           media: "tv"     },
-  { id: "cdrama",          label: "C-Drama",              endpoint: "/discover/tv?with_origin_country=CN&with_genres=18",           media: "tv" },
-  { id: "jdrama",          label: "J-Drama",              endpoint: "/discover/tv?with_origin_country=JP&with_genres=18",           media: "tv" },
-  { id: "bollywood",       label: "Bollywood",            endpoint: "/discover/movie?with_origin_country=IN&with_original_language=hi", media: "movie" },
-  { id: "tollywood",       label: "Tollywood",            endpoint: "/discover/movie?with_origin_country=IN&with_original_language=te", media: "movie" },
-  { id: "kollywood",       label: "Kollywood",            endpoint: "/discover/movie?with_origin_country=IN&with_original_language=ta", media: "movie" },
-  { id: "mollywood",       label: "Mollywood",            endpoint: "/discover/movie?with_origin_country=IN&with_original_language=ml", media: "movie" },
-  { id: "sandalwood",      label: "Kannada",              endpoint: "/discover/movie?with_origin_country=IN&with_original_language=kn", media: "movie" },
+  { id: "upcoming_tv",     label: "Current & Upcoming TV Shows", endpoint: "/tv/on_the_air",                                           media: "tv",    cardType: "backdrop", category: "tv" },
+  { id: "trending_week",   label: "Trending This Week",          subtitle: "What everyone is watching this week", endpoint: "/trending/all/week", media: "mixed", cardType: "poster", category: "all" },
+  { id: "trending_movies", label: "Trending Movies",             endpoint: "/trending/movie/week",                                         media: "movie", cardType: "poster", category: "movie" },
+  { id: "trending_tv",     label: "Trending TV Shows",           endpoint: "/trending/tv/week",                                            media: "tv",    cardType: "poster", category: "tv" },
+  { id: "popular_movies",  label: "Popular Movies",              endpoint: "/movie/popular",                                               media: "movie", cardType: "poster", category: "movie" },
+  { id: "popular_tv",      label: "Popular TV Shows",            endpoint: "/tv/popular",                                                  media: "tv",    cardType: "poster", category: "tv" },
+  { id: "top_movies",      label: "Top 10 / Most Watched",       endpoint: "/movie/top_rated",                                             media: "movie", cardType: "poster", category: "movie" },
+  { id: "top_tv",          label: "Top Rated TV Shows",          endpoint: "/tv/top_rated",                                                media: "tv",    cardType: "poster", category: "tv" },
+  { id: "now_playing",     label: "Now Playing in Theatres",     endpoint: "/movie/now_playing",                                           media: "movie", cardType: "poster", category: "movie" },
+  { id: "upcoming",        label: "Coming Soon",                 endpoint: "/movie/upcoming",                                              media: "movie", cardType: "poster", category: "movie" },
+  { id: "action",          label: "Action & Thriller",           endpoint: "/discover/movie?with_genres=28,53",                            media: "movie", cardType: "poster", category: "movie" },
+  { id: "scifi",           label: "Sci-Fi & Fantasy",            endpoint: "/discover/movie?with_genres=878,14",                           media: "movie", cardType: "poster", category: "movie" },
+  { id: "kdrama",          label: "K-Drama Hits",                endpoint: "/discover/tv?with_origin_country=KR&with_genres=18",           media: "tv",    cardType: "poster", category: "tv" },
+  { id: "cdrama",          label: "C-Drama",                     endpoint: "/discover/tv?with_origin_country=CN&with_genres=18",           media: "tv",    cardType: "poster", category: "tv" },
+  { id: "jdrama",          label: "J-Drama",                     endpoint: "/discover/tv?with_origin_country=JP&with_genres=18",           media: "tv",    cardType: "poster", category: "tv" },
+  { id: "bollywood",       label: "Bollywood Hits",              endpoint: "/discover/movie?with_origin_country=IN&with_original_language=hi", media: "movie", cardType: "poster", category: "movie" },
+  { id: "tollywood",       label: "Tollywood Hits",              endpoint: "/discover/movie?with_origin_country=IN&with_original_language=te", media: "movie", cardType: "poster", category: "movie" },
+  { id: "kollywood",       label: "Kollywood",                   endpoint: "/discover/movie?with_origin_country=IN&with_original_language=ta", media: "movie", cardType: "poster", category: "movie" },
+  { id: "mollywood",       label: "Mollywood",                   endpoint: "/discover/movie?with_origin_country=IN&with_original_language=ml", media: "movie", cardType: "poster", category: "movie" },
+  { id: "sandalwood",      label: "Kannada",                     endpoint: "/discover/movie?with_origin_country=IN&with_original_language=kn", media: "movie", cardType: "poster", category: "movie" },
   // ===== Bollywood =====
 {
   id: "bollywood_trending",
