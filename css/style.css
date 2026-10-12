@@ -13,20 +13,29 @@
 }
 
 :root {
-  --primary: #e50914;
-  --primary-hover: #f40612;
-  --primary-glow: rgba(229, 9, 20, 0.28);
-  --primary-glass: rgba(229, 9, 20, 0.16);
-  --primary-glass-border: rgba(229, 9, 20, 0.38);
-  --red: var(--primary);
+  --primary: #ff2a6d;
+  --primary-hover: #ff4785;
+  --primary-glow: rgba(255, 42, 109, 0.35);
+  --primary-glass: rgba(255, 42, 109, 0.14);
+  --primary-glass-border: rgba(255, 42, 109, 0.36);
+  --red: #ff2a6d;
   --blue: #3b82f6;
   --purple: #8b5cf6;
+  --indigo: #6366f1;
+  --cyan: #00f2fe;
   --green: #10b981;
   --gold: #f59e0b;
   --gold-glow: rgba(245, 158, 11, 0.2);
 
+  /* CineJoy Signature Gradients */
+  --cinejoy-grad-prism: linear-gradient(135deg, #ff2a6d 0%, #9333ea 50%, #00f2fe 100%);
+  --cinejoy-grad-primary: linear-gradient(135deg, #ff2a6d 0%, #7928ca 100%);
+  --cinejoy-grad-hover: linear-gradient(135deg, #ff4785 0%, #9333ea 100%);
+  --cinejoy-grad-anime: linear-gradient(135deg, #00f2fe 0%, #3b82f6 100%);
+  --cinejoy-grad-glass: linear-gradient(135deg, rgba(255, 42, 109, 0.2) 0%, rgba(124, 58, 237, 0.15) 100%);
+
   /* macOS Liquid Glass Palette (Glass instead of flat black) */
-  --bg: #090c16;
+  --bg: #070913;
   --surface: rgba(18, 24, 40, 0.65);
   --surface-hover: rgba(26, 36, 58, 0.75);
   --surface2: rgba(22, 30, 48, 0.6);
@@ -55,7 +64,7 @@
   --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.25);
   --glass-shadow-md: 0 14px 36px rgba(0, 0, 0, 0.42);
   --glass-shadow-lg: 0 28px 72px rgba(0, 0, 0, 0.65);
-  --glass-glow-card: 0 20px 48px -10px rgba(0, 0, 0, 0.75), 0 0 28px -4px rgba(229, 9, 20, 0.3);
+  --glass-glow-card: 0 20px 48px -10px rgba(0, 0, 0, 0.75), 0 0 28px -4px rgba(255, 42, 109, 0.25);
 
   --border: var(--glass-border);
   --border-strong: var(--glass-border-light);
@@ -96,13 +105,13 @@ html {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: #080a12;
+  background-color: #070913;
   background-image: 
-    radial-gradient(1000px 650px at 8% 6%, rgba(59, 130, 246, 0.22), transparent 60%),
-    radial-gradient(1200px 750px at 92% 14%, rgba(139, 92, 246, 0.18), transparent 60%),
-    radial-gradient(1100px 700px at 50% 48%, rgba(229, 9, 20, 0.14), transparent 65%),
-    radial-gradient(900px 600px at 85% 82%, rgba(14, 165, 233, 0.16), transparent 60%),
-    radial-gradient(1000px 700px at 12% 88%, rgba(99, 102, 241, 0.16), transparent 60%);
+    radial-gradient(1000px 650px at 8% 6%, rgba(59, 130, 246, 0.18), transparent 60%),
+    radial-gradient(1200px 750px at 92% 14%, rgba(139, 92, 246, 0.16), transparent 60%),
+    radial-gradient(1100px 700px at 50% 48%, rgba(255, 42, 109, 0.08), transparent 65%),
+    radial-gradient(900px 600px at 85% 82%, rgba(0, 242, 254, 0.12), transparent 60%),
+    radial-gradient(1000px 700px at 12% 88%, rgba(99, 102, 241, 0.14), transparent 60%);
   background-attachment: fixed;
   color: var(--text);
   min-height: 100vh;
@@ -120,10 +129,10 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background: 
-    radial-gradient(circle 800px at 18% 18%, rgba(59, 130, 246, 0.14), transparent 65%),
+    radial-gradient(circle 800px at 18% 18%, rgba(59, 130, 246, 0.12), transparent 65%),
     radial-gradient(circle 750px at 82% 28%, rgba(168, 85, 247, 0.12), transparent 65%),
-    radial-gradient(circle 700px at 48% 68%, rgba(229, 9, 20, 0.08), transparent 65%),
-    radial-gradient(circle 850px at 78% 88%, rgba(14, 165, 233, 0.12), transparent 65%);
+    radial-gradient(circle 700px at 48% 68%, rgba(255, 42, 109, 0.06), transparent 65%),
+    radial-gradient(circle 850px at 78% 88%, rgba(0, 242, 254, 0.08), transparent 65%);
   filter: blur(50px);
   opacity: 0.9;
 }
@@ -525,7 +534,7 @@ nav {
   height: 56.25vw; /* 16:9 aspect ratio */
   min-height: 100%;
   min-width: 177.78vh; /* 16:9 ratio guarantee */
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(1.35);
   pointer-events: none;
 }
 
@@ -596,11 +605,11 @@ nav {
 }
 
 .hero-sound-btn.is-unmuted {
-  background: rgba(229, 9, 20, 0.32);
-  border-color: rgba(229, 9, 20, 0.65);
-  border-top-color: rgba(255, 120, 120, 0.85);
+  background: rgba(255, 42, 109, 0.28);
+  border-color: rgba(255, 42, 109, 0.65);
+  border-top-color: rgba(255, 140, 180, 0.85);
   color: #ffffff;
-  box-shadow: 0 0 24px rgba(229, 9, 20, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 24px rgba(255, 42, 109, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 #anime-hero .hero-sound-btn.is-unmuted {
@@ -758,7 +767,7 @@ nav {
   background: rgba(255, 255, 255, 0.22);
   border-color: rgba(255, 255, 255, 0.45);
   transform: translateY(-50%) scale(1.12);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(229, 9, 20, 0.35), inset 0 1px 0 #ffffff;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 42, 109, 0.35), inset 0 1px 0 #ffffff;
 }
 
 .hero-dots {
@@ -828,17 +837,18 @@ nav {
 }
 
 .dest-btn.active {
-  background: linear-gradient(135deg, rgba(229, 9, 20, 0.28) 0%, rgba(229, 9, 20, 0.12) 100%);
-  border-color: var(--primary);
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.22) 0%, rgba(139, 92, 246, 0.18) 100%);
+  border-color: rgba(255, 42, 109, 0.55);
   color: #ffffff;
-  box-shadow: 0 0 24px var(--primary-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 24px rgba(255, 42, 109, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
-#dest-btn-anime.active {
-  background: linear-gradient(135deg, rgba(53, 213, 191, 0.26) 0%, rgba(14, 165, 233, 0.16) 100%);
-  border-color: #35d5bf;
+#dest-btn-anime.active,
+#anime-dest-btn-anime.active {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.22) 0%, rgba(139, 92, 246, 0.16) 100%);
+  border-color: #00f2fe;
   color: #ffffff;
-  box-shadow: 0 0 24px rgba(53, 213, 191, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 24px rgba(0, 242, 254, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* ── Content Destination Sections ──────────────────── */
@@ -1039,21 +1049,21 @@ nav {
   gap: 8px;
   padding: 11px 24px;
   border-radius: var(--radius);
-  background: var(--primary);
+  background: linear-gradient(135deg, #ff2a6d 0%, #7928ca 100%);
   color: #ffffff;
   font-size: 14px;
   font-weight: 700;
   border: 1px solid rgba(255, 255, 255, 0.24);
-  border-top: 1px solid rgba(255, 255, 255, 0.38);
-  box-shadow: 0 8px 22px var(--primary-glow), inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(255, 42, 109, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.32);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
 .btn-primary:hover {
-  background: var(--primary-hover);
+  background: linear-gradient(135deg, #ff4785 0%, #9333ea 100%);
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px var(--primary-glow), 0 0 20px rgba(229, 9, 20, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  box-shadow: 0 12px 32px rgba(255, 42, 109, 0.5), 0 0 20px rgba(147, 51, 234, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .btn-primary:active {
@@ -1111,10 +1121,10 @@ nav {
 }
 
 .badge-movie {
-  background: rgba(229, 9, 20, 0.28);
+  background: rgba(255, 42, 109, 0.22);
   color: #ffffff;
-  border-color: rgba(229, 9, 20, 0.5);
-  box-shadow: 0 4px 14px rgba(229, 9, 20, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 42, 109, 0.48);
+  box-shadow: 0 4px 14px rgba(255, 42, 109, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .badge-tv {
@@ -1277,7 +1287,7 @@ nav {
   background: rgba(255, 255, 255, 0.22);
   border-color: rgba(255, 255, 255, 0.45);
   transform: scale(1.14);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65), 0 0 18px rgba(229, 9, 20, 0.35), inset 0 1px 0 #ffffff;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65), 0 0 18px rgba(255, 42, 109, 0.35), inset 0 1px 0 #ffffff;
 }
 
 .row-arrow svg {
@@ -1388,7 +1398,7 @@ nav {
 
 .card:hover .card-poster {
   border-color: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.85), 0 0 25px -4px rgba(229, 9, 20, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.85), 0 0 25px -4px rgba(255, 42, 109, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .history-poster {
@@ -1599,8 +1609,8 @@ nav {
 
 .history-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ff1744, #e50914, #ff5252);
-  box-shadow: 0 0 10px rgba(229, 9, 20, 0.75);
+  background: linear-gradient(90deg, #ff2a6d, #9333ea, #00f2fe);
+  box-shadow: 0 0 12px rgba(255, 42, 109, 0.7);
   border-radius: 0 3px 3px 0;
   transition: width 0.3s ease;
 }
@@ -1891,7 +1901,7 @@ nav {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.75), 0 0 50px -10px rgba(229, 9, 20, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 0 30px rgba(255, 255, 255, 0.02);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.75), 0 0 50px -10px rgba(255, 42, 109, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 0 30px rgba(255, 255, 255, 0.02);
 }
 
 .pm-header {
@@ -2763,9 +2773,9 @@ footer a:hover {
 }
 
 .srv-btn.active {
-  border: 2px solid #e50914;
-  background: rgba(229, 9, 20, 0.18);
-  box-shadow: 0 0 12px rgba(229, 9, 20, 0.35);
+  border: 2px solid #ff2a6d;
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.22) 0%, rgba(139, 92, 246, 0.16) 100%);
+  box-shadow: 0 0 16px rgba(255, 42, 109, 0.35);
   transform: translateY(-2px);
 }
 
@@ -2822,7 +2832,7 @@ footer a:hover {
   }
 
   .hero-arrow:hover {
-    background: rgba(229, 9, 20, .95);
+    background: linear-gradient(135deg, rgba(255, 42, 109, 0.9), rgba(121, 40, 202, 0.9));
     transform: translateY(-50%) scale(1.1);
   }
 }
@@ -2840,9 +2850,9 @@ footer a:hover {
 }
 
 .anime-ep-card.active {
-  background: rgba(229, 9, 20, 0.15) !important;
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 10px rgba(229, 9, 20, 0.2);
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.16) 0%, rgba(139, 92, 246, 0.12) 100%) !important;
+  border-color: #00f2fe !important;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
 }
 
 .pm-player-wrap {
@@ -2853,7 +2863,7 @@ footer a:hover {
   border-radius: var(--radius);
   overflow: hidden;
   margin: 15px 0;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 35px -5px rgba(229, 9, 20, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 35px -5px rgba(255, 42, 109, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-top: 1px solid rgba(255, 255, 255, 0.25);
 }
@@ -2939,14 +2949,14 @@ footer a:hover {
 }
 
 .anime-ep-card-rich.playing-active {
-  border-color: var(--primary) !important;
-  background: rgba(229, 9, 20, 0.08) !important;
+  border-color: #00f2fe !important;
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.16) 0%, rgba(139, 92, 246, 0.12) 100%) !important;
 }
 
 .playing-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(229, 9, 20, 0.7);
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.85) 0%, rgba(121, 40, 202, 0.85) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3108,10 +3118,11 @@ footer a:hover {
 }
 
 .anime-season-tab.active {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(229, 9, 20, 0.25);
+  background: linear-gradient(135deg, #00f2fe 0%, #3b82f6 100%);
+  color: #04121a;
+  border-color: #00f2fe;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 242, 254, 0.35);
 }
 
 .anime-ep-grid-rich {
@@ -3142,9 +3153,9 @@ footer a:hover {
 }
 
 .anime-ep-card-rich.active {
-  background: rgba(229, 9, 20, 0.06);
-  border-color: var(--primary);
-  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.2);
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.14) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border-color: #00f2fe;
+  box-shadow: 0 4px 16px rgba(0, 242, 254, 0.25);
 }
 
 .anime-ep-thumb-wrapper {
@@ -3347,14 +3358,14 @@ footer a:hover {
 }
 
 .anime-ep-card-rich.playing-active {
-  border-color: var(--primary) !important;
-  background: rgba(229, 9, 20, 0.08) !important;
+  border-color: #00f2fe !important;
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.16) 0%, rgba(139, 92, 246, 0.12) 100%) !important;
 }
 
 .playing-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(229, 9, 20, 0.7);
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.85) 0%, rgba(121, 40, 202, 0.85) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3615,9 +3626,9 @@ footer a:hover {
 
 .drawer-link.active {
   color: #ffffff;
-  background: rgba(229, 9, 20, 0.16);
-  border: 1px solid rgba(229, 9, 20, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 16px rgba(229, 9, 20, 0.25);
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.18) 0%, rgba(139, 92, 246, 0.14) 100%);
+  border: 1px solid rgba(255, 42, 109, 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 16px rgba(255, 42, 109, 0.25);
   font-weight: 600;
 }
 
@@ -3686,7 +3697,7 @@ footer a:hover {
 
 /* ── Theme custom properties variables ──────────────── */
 :root {
-  --primary: #e50914;
+  --primary: #ff2a6d;
 }
 
 body {
@@ -3707,6 +3718,11 @@ body.theme-emerald {
 
 body.theme-nordic {
   --primary: #00bcd4;
+}
+
+body.theme-cinejoy,
+body:not([class*="theme-"]) {
+  --primary: #ff2a6d;
 }
 
 /* ── Layout Offsets (Screens >= 768px) ─────────────── */
@@ -3902,15 +3918,15 @@ body.theme-nordic {
 
 .sidebar-link.active {
   color: #ffffff;
-  background: rgba(229, 9, 20, 0.16);
-  border: 1px solid rgba(229, 9, 20, 0.36);
-  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.18) 0%, rgba(139, 92, 246, 0.14) 100%);
+  border: 1px solid rgba(255, 42, 109, 0.38);
+  box-shadow: 0 4px 16px rgba(255, 42, 109, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   font-weight: 600;
 }
 
 .sidebar-link.active svg {
-  color: #ff4d58 !important;
-  filter: drop-shadow(0 0 6px rgba(229, 9, 20, 0.5));
+  color: #ff2a6d !important;
+  filter: drop-shadow(0 0 8px rgba(255, 42, 109, 0.6));
 }
 
 .sidebar-icon-svg {
@@ -4519,9 +4535,9 @@ body.theme-nordic {
 }
 
 .player-mini-drawer .mini-ep-item.active {
-  background: rgba(229, 9, 20, 0.16);
-  border-color: rgba(229, 9, 20, 0.4);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 14px rgba(229, 9, 20, 0.25);
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.18) 0%, rgba(139, 92, 246, 0.12) 100%);
+  border-color: rgba(255, 42, 109, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 14px rgba(255, 42, 109, 0.25);
 }
 
 .player-mini-drawer .mini-ep-thumb {
@@ -4593,7 +4609,7 @@ img.loaded {
   -webkit-backdrop-filter: blur(28px) saturate(190%);
   border-radius: 14px !important;
   overflow: hidden;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 40px -5px rgba(229, 9, 20, 0.25);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 40px -5px rgba(255, 42, 109, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.1);
   margin: 14px 0;
 }
@@ -4890,7 +4906,7 @@ img.loaded {
 
 .season-poster-card.active {
   border-color: var(--primary);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 16px rgba(229, 9, 20, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 16px rgba(255, 42, 109, 0.4);
 }
 
 .season-poster-img {
@@ -5691,8 +5707,8 @@ img.loaded {
 }
 
 .footer-logo svg {
-  fill: var(--primary, #e50914);
-  filter: drop-shadow(0 0 10px var(--primary-glow, rgba(229, 9, 20, 0.6)));
+  fill: var(--primary, #ff2a6d);
+  filter: drop-shadow(0 0 10px var(--primary-glow, rgba(255, 42, 109, 0.6)));
 }
 
 .footer-tagline {
@@ -5944,9 +5960,9 @@ img.loaded {
 }
 
 .disclaimer-header-badge {
-  background: rgba(229, 9, 20, 0.18);
-  border: 1px solid rgba(229, 9, 20, 0.45);
-  color: var(--primary, #ff3344);
+  background: rgba(255, 42, 109, 0.18);
+  border: 1px solid rgba(255, 42, 109, 0.45);
+  color: var(--primary, #ff2a6d);
   padding: 3px 8px;
   border-radius: 6px;
   font-size: 10px;
@@ -7289,7 +7305,7 @@ img.loaded {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(1.35);
   width: 100vw;
   height: 56.25vw;
   min-height: 100%;
@@ -7359,6 +7375,27 @@ img.loaded {
   background: rgba(255, 255, 255, 0.18);
   border-color: rgba(255, 255, 255, 0.4);
   transform: translateX(-2px);
+}
+
+.pm-cinematic-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background: rgba(16, 22, 38, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pm-cinematic-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
 }
 
 .pm-hero-sound-btn {
@@ -7483,18 +7520,35 @@ img.loaded {
   font-size: 15px;
   font-weight: 700;
   border-radius: 12px;
-  background: var(--primary, #e50914);
+  background: linear-gradient(135deg, #ff2a6d 0%, #7928ca 100%);
   color: #fff;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-top: 1px solid rgba(255, 255, 255, 0.38);
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(229, 9, 20, 0.45);
+  box-shadow: 0 6px 22px rgba(255, 42, 109, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.28);
   transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .pm-play-btn:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 28px rgba(229, 9, 20, 0.65);
-  background: #ff1e27;
+  box-shadow: 0 12px 32px rgba(255, 42, 109, 0.55), 0 0 20px rgba(121, 40, 202, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, #ff4d82 0%, #8b5cf6 100%);
+}
+
+/* Dedicated Anime & Donghua Modal Play Button */
+.anime-detail-modal .pm-play-btn,
+.pm-play-btn.anime-play-btn {
+  background: linear-gradient(135deg, #00f2fe 0%, #3b82f6 100%) !important;
+  color: #04121a !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  box-shadow: 0 6px 22px rgba(0, 242, 254, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+}
+
+.anime-detail-modal .pm-play-btn:hover,
+.pm-play-btn.anime-play-btn:hover {
+  background: linear-gradient(135deg, #38bdf8 0%, #00f2fe 100%) !important;
+  color: #04121a !important;
+  box-shadow: 0 12px 32px rgba(0, 242, 254, 0.55), 0 0 20px rgba(56, 189, 248, 0.45) !important;
 }
 
 .pm-wl-action-btn {
@@ -7667,9 +7721,9 @@ img.loaded {
 }
 
 .pm-ep-card.active {
-  border-color: var(--primary, #e50914);
-  background: rgba(229, 9, 20, 0.08);
-  box-shadow: 0 0 20px rgba(229, 9, 20, 0.35);
+  border-color: #ff2a6d;
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%);
+  box-shadow: 0 0 20px rgba(255, 42, 109, 0.3);
 }
 
 .pm-ep-thumb {
@@ -7736,11 +7790,12 @@ img.loaded {
   font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
-  padding: 2px 6px;
-  background: var(--primary, #e50914);
+  padding: 2px 7px;
+  background: linear-gradient(135deg, #ff2a6d 0%, #7928ca 100%);
   color: #fff;
   border-radius: 4px;
   white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(255, 42, 109, 0.35);
 }
 
 .pm-ep-meta {
@@ -7867,4 +7922,154 @@ img.loaded {
   #pm-player-section {
     padding: 14px !important;
   }
+
+  .pm-episodes-header-row,
+  .anime-episodes-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .pm-episodes-controls,
+  .anime-episodes-controls {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+  .pm-ep-search-box {
+    flex: 1 !important;
+  }
+  .pm-ep-search-input {
+    width: 100% !important;
+  }
+}
+
+/* ── CineJoy Brand Identity & Episode Search/Sort Enhancements ── */
+.brand-logo-svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.brand-accent {
+  background: linear-gradient(135deg, #ff2a6d 0%, #00f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pm-episodes-header-row,
+.anime-episodes-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pm-episodes-controls,
+.anime-episodes-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pm-ep-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pm-ep-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text3);
+  pointer-events: none;
+}
+
+.pm-ep-search-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 30px 8px 34px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  width: 180px;
+  transition: all 0.2s ease;
+}
+
+.pm-ep-search-input:focus {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: #ff2a6d;
+  box-shadow: 0 0 0 2px rgba(255, 42, 109, 0.25);
+  width: 220px;
+}
+
+.pm-ep-search-clear {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--text3);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pm-ep-search-clear:hover {
+  color: #fff;
+}
+
+.pm-ep-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text2);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.pm-ep-sort-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.pm-ep-sort-btn.desc .pm-sort-icon {
+  transform: rotate(180deg);
+}
+
+.pm-episodes-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text3);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+/* Strict trailer layer non-interaction to eliminate third-party playback controls */
+.hero-video-layer,
+.anime-hero-video-layer,
+.pm-hero-video-layer,
+.hero-trailer-iframe-wrap,
+.hero-trailer-iframe-wrap iframe,
+.hero-trailer-iframe-wrap div,
+.pm-hero-video-layer iframe {
+  pointer-events: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  touch-action: none !important;
 }

@@ -135,3 +135,4 @@ const History = (() => {
 })();
 
 window.StreamXHistory = History;
+window.CineJoyHistory = History;

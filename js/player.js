@@ -13,6 +13,8 @@ const Player = (() => {
   let _seasons         = [];     // season list from TMDB
   let _currentEpisodes = [];     // episodes of currently selected season
   let _loadToken       = 0;      // prevents race conditions when switching titles quickly
+  let _epSearchQuery   = "";     // TV show episode search filter
+  let _epSortOrder     = "asc";  // TV show episode numeric sort order: "asc" | "desc"
 
   // ── SVGs ──────────────────────────────────────────────────────────────
   const _VOLUME_X_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
@@ -34,6 +36,8 @@ const Player = (() => {
     _episode         = 1;
     _tab             = "stream";
     _currentEpisodes = [];
+    _epSearchQuery   = "";
+    _epSortOrder     = "asc";
 
     const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : "movie";
 
@@ -45,6 +49,7 @@ const Player = (() => {
 
     // Stop any existing detail trailer and background playback immediately
     if (window.HeroTrailerController) {
+      window.HeroTrailerController.setFullPlayerActive(false);
       window.HeroTrailerController.destroy("detail");
       window.HeroTrailerController.pause("general");
       window.HeroTrailerController.pause("anime");
@@ -121,8 +126,11 @@ const Player = (() => {
   // ── Close Detail Page ─────────────────────────────────────────────────
   function close(skipHashPush = false) {
     _loadToken++;
+    _epSearchQuery = "";
+    _epSortOrder = "asc";
 
     if (window.HeroTrailerController) {
+      window.HeroTrailerController.setFullPlayerActive(false);
       window.HeroTrailerController.destroy("detail");
     }
 
@@ -334,7 +342,20 @@ const Player = (() => {
           <!-- Series Sections (1. Season Selector, 2. Episode Cards) -->
           ${d.media === "tv" ? `
             <div class="pm-series-section">
-              <h3 class="pm-section-title">Episodes</h3>
+              <div class="pm-episodes-header-row">
+                <h3 class="pm-section-title" style="margin-bottom:0;">Episodes</h3>
+                <div class="pm-episodes-controls">
+                  <div class="pm-ep-search-box">
+                    <svg class="pm-ep-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <input type="text" id="pm-ep-search-input" class="pm-ep-search-input" placeholder="Search episodes..." value="${_esc(_epSearchQuery)}" oninput="Player.onEpisodeSearch(this.value)" autocomplete="off">
+                    <button id="pm-ep-search-clear" class="pm-ep-search-clear" onclick="Player.clearEpisodeSearch()" style="${_epSearchQuery ? 'display:flex;' : 'display:none;'}" title="Clear search">✕</button>
+                  </div>
+                  <button id="pm-ep-sort-btn" class="pm-ep-sort-btn${_epSortOrder === 'desc' ? ' desc' : ''}" onclick="Player.toggleSortOrder()" title="Toggle sort order" aria-label="Toggle sort order">
+                    <svg class="pm-sort-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+                    <span id="pm-ep-sort-label">${_epSortOrder === 'asc' ? 'Ascending' : 'Descending'}</span>
+                  </button>
+                </div>
+              </div>
               ${_renderSeasonSelector()}
               <div id="pm-episodes-container">
                 ${_renderEpisodesList()}
@@ -361,8 +382,10 @@ const Player = (() => {
     if (typeof seasonNum === "number") _season = seasonNum;
     if (typeof episodeNum === "number") _episode = episodeNum;
 
-    // Pause trailer preview immediately so sound does not clash
+    // Stop and silence background trailer preview immediately so audio never collides
     if (window.HeroTrailerController) {
+      window.HeroTrailerController.setFullPlayerActive(true);
+      window.HeroTrailerController.silenceAll();
       window.HeroTrailerController.pause("detail");
     }
 
@@ -401,7 +424,7 @@ const Player = (() => {
     }
   }
 
-  // ── Series Season Selector & Episode Cards ────────────────────────────
+  // ── Series Season Selector, Episode Search/Sort & Cards ────────────────
   function _renderSeasonSelector() {
     if (!_seasons || _seasons.length <= 1) return "";
     return `
@@ -420,14 +443,45 @@ const Player = (() => {
     `;
   }
 
+  function _getFilteredSortedEpisodes() {
+    let list = [..._currentEpisodes];
+    if (_epSearchQuery && _epSearchQuery.trim()) {
+      const q = _epSearchQuery.trim().toLowerCase();
+      list = list.filter(ep => {
+        const numStr = String(ep.episode_number ?? "");
+        const epName = String(ep.name ?? "").toLowerCase();
+        const epOverview = String(ep.overview ?? "").toLowerCase();
+        return (
+          numStr === q ||
+          numStr.padStart(2, "0") === q ||
+          `ep ${numStr}` === q ||
+          `ep. ${numStr}` === q ||
+          `episode ${numStr}` === q ||
+          epName.includes(q) ||
+          epOverview.includes(q)
+        );
+      });
+    }
+    list.sort((a, b) => {
+      const numA = parseFloat(a.episode_number) || 0;
+      const numB = parseFloat(b.episode_number) || 0;
+      return _epSortOrder === "desc" ? numB - numA : numA - numB;
+    });
+    return list;
+  }
+
   function _renderEpisodesList() {
-    if (!_currentEpisodes || !_currentEpisodes.length) {
-      return `<div style="padding:24px;text-align:center;color:var(--text3);background:rgba(255,255,255,0.03);border-radius:12px;">No episode information available for this season.</div>`;
+    const episodes = _getFilteredSortedEpisodes();
+    if (!episodes || !episodes.length) {
+      if (_epSearchQuery) {
+        return `<div class="pm-episodes-empty">No episodes match "${_esc(_epSearchQuery)}".</div>`;
+      }
+      return `<div class="pm-episodes-empty">No episode information available for this season.</div>`;
     }
 
     return `
       <div class="pm-episodes-grid">
-        ${_currentEpisodes.map(ep => {
+        ${episodes.map(ep => {
           const isCurrent = ep.episode_number === _episode;
           const stillUrl = ep.still || _details.backdrop || _details.poster || "";
           const epTitle = ep.name ? `${ep.episode_number}. ${_esc(ep.name)}` : `Episode ${ep.episode_number}`;
@@ -459,9 +513,43 @@ const Player = (() => {
     `;
   }
 
+  function onEpisodeSearch(val) {
+    _epSearchQuery = val || "";
+    const clearBtn = $("pm-ep-search-clear");
+    if (clearBtn) clearBtn.style.display = _epSearchQuery ? "flex" : "none";
+    const container = $("pm-episodes-container");
+    if (container) container.innerHTML = _renderEpisodesList();
+  }
+
+  function clearEpisodeSearch() {
+    _epSearchQuery = "";
+    const input = $("pm-ep-search-input");
+    if (input) input.value = "";
+    const clearBtn = $("pm-ep-search-clear");
+    if (clearBtn) clearBtn.style.display = "none";
+    const container = $("pm-episodes-container");
+    if (container) container.innerHTML = _renderEpisodesList();
+  }
+
+  function toggleSortOrder() {
+    _epSortOrder = _epSortOrder === "asc" ? "desc" : "asc";
+    const btn = $("pm-ep-sort-btn");
+    const lbl = $("pm-ep-sort-label");
+    if (btn) btn.classList.toggle("desc", _epSortOrder === "desc");
+    if (lbl) lbl.textContent = _epSortOrder === "asc" ? "Ascending" : "Descending";
+    const container = $("pm-episodes-container");
+    if (container) container.innerHTML = _renderEpisodesList();
+  }
+
   async function onSeasonChange(val) {
     _season = parseInt(val);
     _episode = 1;
+    _epSearchQuery = "";
+
+    const searchInput = $("pm-ep-search-input");
+    if (searchInput) searchInput.value = "";
+    const clearBtn = $("pm-ep-search-clear");
+    if (clearBtn) clearBtn.style.display = "none";
 
     // Update pills active state
     document.querySelectorAll(".pm-season-pill").forEach(p => {
@@ -928,6 +1016,9 @@ const Player = (() => {
     openTrailer,
     onSeasonChange,
     onEpisodeChange,
+    onEpisodeSearch,
+    clearEpisodeSearch,
+    toggleSortOrder,
     onProviderChange,
     _onStreamClick,
     loadServer,

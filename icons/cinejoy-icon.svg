@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#141829"/>
+      <stop offset="100%" stop-color="#070a12"/>
+    </linearGradient>
+    <linearGradient id="prismGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff2a6d"/>
+      <stop offset="50%" stop-color="#9333ea"/>
+      <stop offset="100%" stop-color="#00f2fe"/>
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff2a6d" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#00f2fe" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <!-- Background Container -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  <rect width="506" height="506" x="3" y="3" rx="109" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="4"/>
+
+  <!-- Glow effect -->
+  <circle cx="240" cy="256" r="140" fill="url(#glowGrad)" filter="url(#neonGlow)"/>
+
+  <!-- CineJoy Modern Play Prism with Joyful Upward Arc -->
+  <g transform="translate(14, 0)">
+    <!-- Primary Dynamic Play Polygon -->
+    <path d="M 190 148 C 190 134, 206 125, 218 132 L 348 238 C 360 248, 360 264, 348 274 L 218 380 C 206 387, 190 378, 190 364 Z" 
+          fill="url(#prismGrad)"/>
+    
+    <!-- Joy Arc Smile Cut / Cinema Accent -->
+    <path d="M 152 320 C 180 375, 270 410, 345 372" 
+          fill="none" 
+          stroke="#00f2fe" 
+          stroke-width="18" 
+          stroke-linecap="round"/>
+    
+    <!-- Luminous Spark Dot -->
+    <circle cx="372" cy="176" r="14" fill="#ff2a6d"/>
+  </g>
+</svg>

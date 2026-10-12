@@ -433,7 +433,7 @@ const App = (() => {
 
     window.addEventListener("appinstalled", () => {
       _deferredPrompt = null;
-      _showToast("🎉 StreamX installed successfully!");
+      _showToast("🎉 CineJoy installed successfully!");
     });
   }
 
@@ -474,6 +474,7 @@ const App = (() => {
     };
 
     let _ytReadyPromise = null;
+    let _isFullPlayerActive = false;
 
     function ensureYouTubeAPI() {
       if (window.YT && window.YT.Player) {
@@ -518,6 +519,44 @@ const App = (() => {
 
     // Pre-trigger API initialization
     ensureYouTubeAPI();
+
+    function setFullPlayerActive(active) {
+      _isFullPlayerActive = !!active;
+      if (_isFullPlayerActive) {
+        silenceAll();
+      }
+    }
+
+    function isFullPlayerActive() {
+      return _isFullPlayerActive;
+    }
+
+    function silence(instanceKey) {
+      const s = _state[instanceKey];
+      if (!s) return;
+      s.isMuted = true;
+      s.isPlaying = false;
+      if (s.ytPlayer) {
+        try {
+          if (typeof s.ytPlayer.mute === "function") s.ytPlayer.mute();
+          if (typeof s.ytPlayer.pauseVideo === "function") s.ytPlayer.pauseVideo();
+        } catch (e) {}
+      }
+      const iframe = document.getElementById(`${s.videoLayerId}-iframe`);
+      if (iframe && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage('{"event":"command","func":"mute","args":""}', "*");
+          iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', "*");
+        } catch (e) {}
+      }
+      updateSoundButtonUI(instanceKey, true, !!s.currentKey);
+    }
+
+    function silenceAll() {
+      silence("general");
+      silence("anime");
+      silence("detail");
+    }
 
     function destroy(instanceKey) {
       const s = _state[instanceKey];
@@ -607,19 +646,20 @@ const App = (() => {
         if (window.YT && window.YT.Player) {
           s.ytPlayer = new window.YT.Player(`${s.videoLayerId}-player`, {
             videoId: trailer.key,
+            host: "https://www.youtube-nocookie.com",
             playerVars: {
               autoplay: 1,
               mute: 1,
               controls: 0,
               showinfo: 0,
               rel: 0,
-              loop: 1,
-              playlist: trailer.key,
               playsinline: 1,
               modestbranding: 1,
               iv_load_policy: 3,
               disablekb: 1,
               fs: 0,
+              cc_load_policy: 0,
+              autohide: 1,
               origin: window.location.origin,
             },
             events: {
@@ -629,21 +669,50 @@ const App = (() => {
                   return;
                 }
                 try {
+                  // Prefer medium-resolution 720p trailer rendition
+                  if (typeof event.target.setPlaybackQuality === "function") {
+                    event.target.setPlaybackQuality("hd720");
+                  }
                   event.target.mute();
-                  event.target.playVideo();
+                  if (_isFullPlayerActive) {
+                    event.target.pauseVideo();
+                  } else {
+                    event.target.playVideo();
+                  }
                 } catch (e) {}
-                updateSoundButtonUI(instanceKey, true, true);
+                updateSoundButtonUI(instanceKey, true, !_isFullPlayerActive);
               },
               onStateChange: (event) => {
                 if (thisToken !== s.token) return;
+                // Strict audio collision protection: suppress trailer if full player is streaming
+                if (_isFullPlayerActive) {
+                  try {
+                    event.target.mute();
+                    event.target.pauseVideo();
+                  } catch (e) {}
+                  return;
+                }
                 // YT.PlayerState.PLAYING is 1
                 if (event.data === 1) {
+                  try {
+                    if (typeof event.target.setPlaybackQuality === "function") {
+                      event.target.setPlaybackQuality("hd720");
+                    }
+                  } catch (e) {}
                   s.isPlaying = true;
                   const lyr = document.getElementById(s.videoLayerId);
                   if (lyr) lyr.classList.add("is-playing");
                   updateSoundButtonUI(instanceKey, s.isMuted, true);
                 } else if (event.data === 0) {
-                  try { event.target.playVideo(); } catch (e) {}
+                  // Smooth loop without enabling YouTube's playlist controls
+                  try {
+                    event.target.seekTo(0);
+                    event.target.playVideo();
+                  } catch (e) {}
+                } else if (event.data === 2) {
+                  // Paused state: hide layer so paused overlays/buttons never show
+                  const lyr = document.getElementById(s.videoLayerId);
+                  if (lyr) lyr.classList.remove("is-playing");
                 }
               },
               onError: (err) => {
@@ -658,20 +727,21 @@ const App = (() => {
             }
           });
         } else {
-          // Direct fallback iframe embed
+          // Direct fallback iframe embed with full control suppression, no playlist mode, and 720p preference
           targetLayer.innerHTML = `
             <div class="hero-trailer-iframe-wrap">
               <iframe id="${s.videoLayerId}-iframe"
-                src="https://www.youtube-nocookie.com/embed/${trailer.key}?enablejsapi=1&autoplay=1&mute=1&controls=0&showinfo=0&rel=0&loop=1&playlist=${trailer.key}&playsinline=1&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0"
+                src="https://www.youtube-nocookie.com/embed/${trailer.key}?enablejsapi=1&autoplay=1&mute=1&controls=0&showinfo=0&rel=0&playsinline=1&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0&vq=hd720"
                 allow="autoplay; encrypted-media; picture-in-picture"
                 allowfullscreen
                 tabindex="-1"
-                aria-hidden="true">
+                aria-hidden="true"
+                style="pointer-events:none !important; border:0; width:100%; height:100%;">
               </iframe>
             </div>
           `;
           setTimeout(() => {
-            if (thisToken === s.token) {
+            if (thisToken === s.token && !_isFullPlayerActive) {
               targetLayer.classList.add("is-playing");
               updateSoundButtonUI(instanceKey, true, true);
             }
@@ -684,6 +754,7 @@ const App = (() => {
     }
 
     function toggleSound(instanceKey) {
+      if (_isFullPlayerActive) return; // Prevent trailer audio from playing over full content player
       const s = _state[instanceKey];
       if (!s || !s.currentKey) return;
 
@@ -749,12 +820,22 @@ const App = (() => {
       if (s && s.ytPlayer && typeof s.ytPlayer.pauseVideo === "function") {
         try { s.ytPlayer.pauseVideo(); } catch (e) {}
       }
+      const iframe = document.getElementById(`${s.videoLayerId}-iframe`);
+      if (iframe && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', "*");
+        } catch (e) {}
+      }
     }
 
     function resume(instanceKey) {
+      if (_isFullPlayerActive) return; // Never resume trailer while full-content player is streaming!
       const s = _state[instanceKey];
       if (s && s.ytPlayer && typeof s.ytPlayer.playVideo === "function" && s.currentKey) {
-        try { s.ytPlayer.playVideo(); } catch (e) {}
+        try {
+          if (s.isMuted && typeof s.ytPlayer.mute === "function") s.ytPlayer.mute();
+          s.ytPlayer.playVideo();
+        } catch (e) {}
       }
     }
 
@@ -779,6 +860,10 @@ const App = (() => {
       pause,
       resume,
       pauseAll,
+      silence,
+      silenceAll,
+      setFullPlayerActive,
+      isFullPlayerActive,
     };
 
     window.HeroTrailerController = controllerObj;
@@ -1129,20 +1214,38 @@ const App = (() => {
       if (document.hidden) {
         HeroTrailerController.pauseAll();
       } else {
-        if (_currentPage === "home") HeroTrailerController.resume("general");
-        else if (_currentPage === "anime") HeroTrailerController.resume("anime");
+        if (HeroTrailerController.isFullPlayerActive()) return;
+        const modalBg = document.getElementById("player-modal-bg");
+        if (modalBg && modalBg.classList.contains("open")) {
+          HeroTrailerController.resume("detail");
+        } else {
+          if (_currentPage === "home") HeroTrailerController.resume("general");
+          else if (_currentPage === "anime") HeroTrailerController.resume("anime");
+        }
       }
     });
 
     const modalBg = document.getElementById("player-modal-bg");
-    if (modalBg && "MutationObserver" in window) {
-      const modalObserver = new MutationObserver(() => {
-        if (!modalBg.classList.contains("open")) {
-          if (_currentPage === "home") HeroTrailerController.resume("general");
-          else if (_currentPage === "anime") HeroTrailerController.resume("anime");
+    if (modalBg) {
+      modalBg.addEventListener("scroll", () => {
+        if (modalBg.scrollTop > 450) {
+          HeroTrailerController.pause("detail");
+        } else if (modalBg.scrollTop < 250 && !HeroTrailerController.isFullPlayerActive()) {
+          HeroTrailerController.resume("detail");
         }
-      });
-      modalObserver.observe(modalBg, { attributes: true, attributeFilter: ["class"] });
+      }, { passive: true });
+
+      if ("MutationObserver" in window) {
+        const modalObserver = new MutationObserver(() => {
+          if (!modalBg.classList.contains("open")) {
+            HeroTrailerController.destroy("detail");
+            HeroTrailerController.setFullPlayerActive(false);
+            if (_currentPage === "home") HeroTrailerController.resume("general");
+            else if (_currentPage === "anime") HeroTrailerController.resume("anime");
+          }
+        });
+        modalObserver.observe(modalBg, { attributes: true, attributeFilter: ["class"] });
+      }
     }
   }
 
@@ -1784,7 +1887,7 @@ const App = (() => {
     const grid = document.getElementById("search-grid");
     if (!grid) return;
     _renderFilterPanel();
-    document.getElementById("search-label").textContent = "Search StreamX";
+    document.getElementById("search-label").textContent = "Search CineJoy";
     grid.style.display = "block";
     grid.innerHTML = `
       <div class="empty-state" style="padding: 60px 20px; text-align: center; color: var(--text2);">
@@ -2716,13 +2819,26 @@ const App = (() => {
   }
 
   // ── Anime Detail Modal (AniList-powered, reuses player CSS) ───────────
+  let _animeEpSearchQuery = "";
+  let _animeEpSortOrder = "asc";
+
   async function _openAnimeDetail(item, skipHashPush = false) {
     const bg = document.getElementById("player-modal-bg");
     bg.classList.add("open");
+    bg.classList.add("has-cinematic-detail");
     document.body.style.overflow = "hidden";
     _activeEpisodeId = null;
     _activeEpisodeNumber = null;
     _autoPlayEpisodeNumber = null;
+    _animeEpSearchQuery = "";
+    _animeEpSortOrder = "asc";
+
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.setFullPlayerActive(false);
+      window.HeroTrailerController.destroy("detail");
+      window.HeroTrailerController.pause("general");
+      window.HeroTrailerController.pause("anime");
+    }
 
     // Push hash so refresh restores this anime
     if (!skipHashPush) {
@@ -2733,22 +2849,25 @@ const App = (() => {
     // Track recently viewed
     StreamXHistory.recordView(item);
 
-    // Render skeleton while loading
+    // Render cinematic skeleton while loading
     bg.innerHTML = `
-      <div class="player-modal" role="dialog" aria-modal="true">
-        <div class="pm-header">
-          <button class="pm-close" onclick="App._closeAnimeDetail()" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-          <span class="pm-header-title">${_esc(item.title)}</span>
-        </div>
-        <div class="pm-body">
-          <div class="pm-hero skeleton-hero" style="background-image:url('${item.backdrop || ""}')">
-            <div class="pm-hero-overlay"></div>
-            <div class="pm-hero-info">
-              <div class="skeleton-line w60"></div>
-              <div class="skeleton-line w40" style="margin-top:8px"></div>
-            </div>
+      <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true" aria-label="${_esc(item.title || "Loading")}">
+        <div class="pm-cinematic-hero skeleton-hero" style="background-image:url('${item.backdrop || item.poster || ""}')">
+          <div class="pm-hero-vignette"></div>
+          <div class="pm-hero-top-bar">
+            <button class="pm-hero-back-btn" onclick="App._closeAnimeDetail()" aria-label="Go back">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>Back</span>
+            </button>
           </div>
-          <div class="pm-content"><div class="loader-spinner"></div></div>
+          <div class="pm-hero-content">
+            <div class="skeleton-line w40" style="margin-bottom:12px;height:24px;"></div>
+            <div class="skeleton-line w60" style="height:36px;margin-bottom:16px;"></div>
+            <div class="skeleton-line w40" style="height:16px;"></div>
+          </div>
+        </div>
+        <div class="pm-cinematic-body">
+          <div class="loader-spinner" style="margin:40px auto;"></div>
         </div>
       </div>`;
     bg.onclick = _handleAnimeBackdropClick;
@@ -2760,13 +2879,16 @@ const App = (() => {
     } catch (err) {
       console.error("Anime detail error:", err);
       bg.innerHTML = `
-        <div class="player-modal">
-          <div class="pm-header">
-            <button class="pm-close" onclick="App._closeAnimeDetail()" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-            <span class="pm-header-title">Error</span>
+        <div class="player-modal cinematic-detail-modal">
+          <div class="pm-hero-top-bar" style="position:relative;background:none;backdrop-filter:none;padding:20px 24px;">
+            <button class="pm-hero-back-btn" onclick="App._closeAnimeDetail()" aria-label="Go back">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>Back</span>
+            </button>
           </div>
-          <div class="pm-body" style="padding:40px;text-align:center;color:var(--text3)">
-            <p style="font-size:32px;margin-bottom:12px">Error</p>
+          <div class="pm-cinematic-body" style="padding:60px 20px;text-align:center;color:var(--text3)">
+            <p style="font-size:32px;margin-bottom:12px">⚠️</p>
+            <p style="font-size:18px;color:var(--text);margin-bottom:8px">Failed to load content</p>
             <p>${_esc(err.message)}</p>
           </div>
         </div>`;
@@ -3052,151 +3174,177 @@ const App = (() => {
           </div>`).join("")}
       </div>` : "";
 
-    const trailerBtn = d.trailer ? `<button class="pm-tab" onclick="window.open('https://www.youtube.com/watch?v=${d.trailer.key}','_blank')">Trailer</button>` : "";
-
     bg.innerHTML = `
-      <div class="player-modal" role="dialog" aria-modal="true" aria-label="${_esc(d.title)}">
-        <div class="pm-header">
-          <button class="pm-close" onclick="App._closeAnimeDetail()" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-          <span class="pm-header-title">${_esc(d.title)}</span>
-          <div class="pm-header-actions">
-            <button class="pm-wl-btn${wl ? " added" : ""}" onclick="App._toggleAnimeWL()" id="pm-wl-btn">
-              ${wl ? "Saved" : "Watchlist"}
+      <div class="player-modal cinematic-detail-modal anime-detail-modal" role="dialog" aria-modal="true" aria-label="${_esc(d.title)}">
+        <!-- 1. Cinematic Hero Banner (70-85% Viewport Height) -->
+        <div class="pm-cinematic-hero" style="background-image:url('${d.backdrop || d.poster || ""}')">
+          <div class="pm-hero-video-layer" id="pm-hero-video-layer"></div>
+          <div class="pm-hero-vignette"></div>
+
+          <!-- Top Controls Bar -->
+          <div class="pm-hero-top-bar">
+            <button class="pm-hero-back-btn" onclick="App._closeAnimeDetail()" aria-label="Go back">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>Back</span>
+            </button>
+
+            <!-- Working Sound Toggle -->
+            <button class="pm-hero-sound-btn" id="pm-hero-sound-btn" onclick="App.toggleAnimeTrailerSound()" aria-label="Unmute trailer" title="Unmute trailer" style="display:none">
+              <span class="hero-sound-icon">${_VOLUME_X_SVG}</span>
+              <span class="hero-sound-text">Muted</span>
             </button>
           </div>
-        </div>
-        <div class="pm-body">
-          <div class="pm-hero" style="${window.innerWidth <= 768 ? 'display:none!important;' : ''} background-image:url('${d.backdrop || ""}')">
-            <div class="pm-hero-overlay"></div>
-            <div class="pm-hero-info">
-              <h2 class="pm-title">${_esc(d.title)}</h2>
-              <div class="pm-badges">
-                <span class="badge badge-${d.media}">${badgeLabel}</span>
-                ${d.year ? `<span class="badge badge-year">${d.year}</span>` : ""}
-                ${d.episodes ? `<span class="badge badge-meta">${d.episodes} Episodes</span>` : ""}
-                ${d.status ? `<span class="badge badge-meta">${_esc(d.status)}</span>` : ""}
-              </div>
-              <div class="pm-rating-row">
-                ${ratingStars}
-                <span class="pm-rating-num">${(d.rating || 0).toFixed(1)}</span>
-                <span class="pm-votes">(${d.votes?.toLocaleString?.() || d.votes || 0} popularity)</span>
-              </div>
-            </div>
-          </div>
-          <div class="pm-content">
-            <!-- Mobile Info Bar (Visible on mobile when hero banner is hidden) -->
-            <div class="pm-mobile-bar">
+
+          <div class="pm-hero-content">
+            <div class="pm-hero-badges">
               <span class="badge badge-${d.media}">${badgeLabel}</span>
               ${d.year ? `<span class="badge badge-year">${d.year}</span>` : ""}
-              ${d.episodes ? `<span class="badge badge-meta">${d.episodes} EP</span>` : ""}
+              ${d.episodes ? `<span class="badge badge-meta">${d.episodes} Episodes</span>` : ""}
               ${d.status ? `<span class="badge badge-meta">${_esc(d.status)}</span>` : ""}
-              <span class="pm-rating-num" style="margin-left:auto; color:var(--gold); font-weight:700;">★ ${(d.rating || 0).toFixed(1)}</span>
+              <span class="badge badge-hd">HD</span>
+              ${genreNames ? `<span class="hero-genres" style="font-size:12px;color:rgba(255,255,255,0.7);margin-left:4px;">${_esc(genreNames)}</span>` : ""}
             </div>
 
-            <div class="pm-tabs">
-              ${trailerBtn}
-            </div>
-            
-            <div id="anime-player-container" class="player-container-theater">
-              <div id="anime-player-wrap" class="pm-player-wrap" style="display:none; position:relative; overflow:hidden;">
-                <!-- Glowing Buffer Spinner Overlay -->
-                <div id="anime-buffering-overlay" class="player-buffering-overlay" style="display:none;">
-                  <div class="loader-spinner"></div>
-                  <div class="buffering-text">Buffering...</div>
-                </div>
+            <h1 class="pm-hero-title">${_esc(d.title)}</h1>
+            ${d.tagline ? `<p class="pm-hero-tagline">"${_esc(d.tagline)}"</p>` : ""}
+            ${d.overview ? `<p class="pm-hero-overview">${_esc(d.overview.slice(0, 260))}${d.overview.length > 260 ? "…" : ""}</p>` : ""}
 
-                <!-- Episode Title Overlay -->
-                <div id="anime-title-overlay" class="player-title-overlay" style="opacity:0;">
-                  <span id="anime-title-series" class="title-series"></span>
-                  <span class="title-divider">/</span>
-                  <span id="anime-title-episode" class="title-episode"></span>
-                </div>
-
-                <!-- Keyboard Help Dialog Overlay -->
-                <div id="anime-help-overlay" class="player-help-overlay" style="display:none; pointer-events:auto;">
-                  <div class="help-content">
-                    <h4>Player Shortcuts</h4>
-                    <div class="help-grid">
-                      <div><kbd>Space</kbd> <span>Play / Pause</span></div>
-                      <div><kbd>←</kbd> <kbd>→</kbd> <span>Seek 10s back/forward</span></div>
-                      <div><kbd>↑</kbd> <kbd>↓</kbd> <span>Volume +/- 10%</span></div>
-                      <div><kbd>F</kbd> <span>Toggle Fullscreen</span></div>
-                      <div><kbd>M</kbd> <span>Toggle Mute</span></div>
-                      <div><kbd>S</kbd> <span>Take Screenshot</span></div>
-                      <div><kbd>P</kbd> <span>Picture-in-Picture</span></div>
-                      <div><kbd>T</kbd> <span>Toggle Theater Mode</span></div>
-                      <div><kbd>?</kbd> <span>Toggle Help Menu</span></div>
-                    </div>
-                    <button class="btn-primary" onclick="App.toggleShortcutHelp()" style="margin-top:15px; width:100%">Close</button>
-                  </div>
-                </div>
-
-                <!-- Screenshot Flash Overlay -->
-                <div id="anime-flash-overlay" class="player-flash-overlay" style="display:none;"></div>
-
-                <!-- Mini Episode List Drawer -->
-                <div id="anime-mini-episodes-drawer" class="player-mini-drawer" style="display:none; pointer-events:auto; transform: translateX(100%);">
-                  <div class="mini-drawer-header">
-                    <h4>Episodes</h4>
-                    <button onclick="App.toggleMiniEpisodeDrawer()" class="mini-drawer-close" aria-label="Close episodes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                  </div>
-                  <div class="mini-drawer-list" id="anime-mini-eps-list"></div>
-                </div>
-
-                <div id="anime-quality-badge" style="position: absolute; top: 15px; right: 15px; background: rgba(0, 0, 0, 0.75); border: 1px solid rgba(255, 255, 255, 0.15); color: #00ff88; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; z-index: 10; display: none;"></div>
-                <video id="anime-video-player" class="player-hidden" controls playsinline webkit-playsinline crossorigin="anonymous" width="100%" height="100%" style="width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; display:none;"></video>
-                <iframe id="anime-iframe-player" class="player-hidden" width="100%" height="100%" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" style="width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; display:none; border:0;"></iframe>
-                <button id="skip-intro-btn" class="btn-primary" style="position: absolute; bottom: 60px; left: 20px; z-index: 10; display: none; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer;" onclick="App.skipIntro()">Skip Intro</button>
-                <button id="skip-outro-btn" class="btn-primary" style="position: absolute; bottom: 60px; right: 20px; z-index: 10; display: none; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer;" onclick="App.skipOutro()">Skip Outro</button>
-              </div>
-
-              <!-- Dedicated Video Player Bottom Bar with Auto Next Checkbox & Prev / Next Buttons -->
-              <div id="anime-player-bottom-bar" class="anime-player-bottom-bar" style="display:none;">
-                <div class="anime-bottom-bar-left">
-                  <label class="anime-auto-next-label" title="Auto-play next episode when current episode finishes">
-                    <input type="checkbox" id="anime-auto-next-cb" onchange="App.toggleAnimeAutoNext(this.checked)">
-                    <span class="auto-next-slider"></span>
-                    <span class="auto-next-text">Auto Next</span>
-                  </label>
-                </div>
-                <div class="anime-bottom-bar-center">
-                  <span id="anime-current-ep-badge" class="current-ep-badge">Episode 1</span>
-                </div>
-                <div class="anime-bottom-bar-right">
-                  <button id="anime-prev-ep-btn" class="anime-prev-ep-btn" onclick="App.playPrevEpisode()" title="Play Previous Episode">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-                    <span>Prev</span>
-                  </button>
-                  <button id="anime-next-ep-btn" class="anime-next-ep-btn" onclick="App.playNextEpisode()" title="Play Next Episode">
-                    <span>Next</span>
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div id="anime-player-controls" class="anime-player-controls" style="display:none;"></div>
-            
-            ${d.overview ? `<p class="pm-overview">${_esc(d.overview)}</p>` : ""}
-            ${genreNames ? `<p class="pm-genres"><span class="pm-label">Genres:</span> ${_esc(genreNames)}</p>` : ""}
-
-            <div id="anime-episodes-section">
-              <h3 class="pm-section-title">Episodes</h3>
-              <div id="anime-season-selector-container">
-                ${seasonSelectorHTML}
-              </div>
-              <div id="anime-season-tabs" class="anime-season-tabs" style="display:none;"></div>
-              <div class="loader-spinner" id="anime-eps-loader"></div>
-              <div class="anime-ep-grid-rich" id="anime-eps-grid"></div>
+            <div class="pm-hero-rating">
+              ${ratingStars}
+              <span class="pm-rating-num">${(d.rating || 0).toFixed(1)}</span>
+              <span class="pm-votes">(${d.votes?.toLocaleString?.() || d.votes || 0} popularity)</span>
             </div>
 
-            ${relationsHTML}
-            ${castHTML}
-            ${recsHTML}
+            <div class="pm-hero-actions">
+              <button class="pm-play-btn anime-play-btn" onclick="App.watchAnimeNow()">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <span>Watch Anime</span>
+              </button>
+              <button class="pm-wl-action-btn${wl ? " added" : ""}" id="pm-hero-wl-btn" onclick="App._toggleAnimeWL()">
+                ${wl ? _CHECK_SVG : _PLUS_SVG}
+                <span>${wl ? "In Watchlist" : "Add to List"}</span>
+              </button>
+            </div>
           </div>
+        </div>
+
+        <!-- 2. Content Sections Underneath Hero -->
+        <div class="pm-cinematic-body">
+          <div id="anime-player-container" class="player-container-theater" style="margin-bottom:24px;">
+            <div id="anime-player-wrap" class="pm-player-wrap" style="display:none; position:relative; overflow:hidden;">
+              <!-- Glowing Buffer Spinner Overlay -->
+              <div id="anime-buffering-overlay" class="player-buffering-overlay" style="display:none;">
+                <div class="loader-spinner"></div>
+                <div class="buffering-text">Buffering...</div>
+              </div>
+
+              <!-- Episode Title Overlay -->
+              <div id="anime-title-overlay" class="player-title-overlay" style="opacity:0;">
+                <span id="anime-title-series" class="title-series"></span>
+                <span class="title-divider">/</span>
+                <span id="anime-title-episode" class="title-episode"></span>
+              </div>
+
+              <!-- Keyboard Help Dialog Overlay -->
+              <div id="anime-help-overlay" class="player-help-overlay" style="display:none; pointer-events:auto;">
+                <div class="help-content">
+                  <h4>Player Shortcuts</h4>
+                  <div class="help-grid">
+                    <div><kbd>Space</kbd> <span>Play / Pause</span></div>
+                    <div><kbd>←</kbd> <kbd>→</kbd> <span>Seek 10s back/forward</span></div>
+                    <div><kbd>↑</kbd> <kbd>↓</kbd> <span>Volume +/- 10%</span></div>
+                    <div><kbd>F</kbd> <span>Toggle Fullscreen</span></div>
+                    <div><kbd>M</kbd> <span>Toggle Mute</span></div>
+                    <div><kbd>S</kbd> <span>Take Screenshot</span></div>
+                    <div><kbd>P</kbd> <span>Picture-in-Picture</span></div>
+                    <div><kbd>T</kbd> <span>Toggle Theater Mode</span></div>
+                    <div><kbd>?</kbd> <span>Toggle Help Menu</span></div>
+                  </div>
+                  <button class="btn-primary" onclick="App.toggleShortcutHelp()" style="margin-top:15px; width:100%">Close</button>
+                </div>
+              </div>
+
+              <!-- Screenshot Flash Overlay -->
+              <div id="anime-flash-overlay" class="player-flash-overlay" style="display:none;"></div>
+
+              <!-- Mini Episode List Drawer -->
+              <div id="anime-mini-episodes-drawer" class="player-mini-drawer" style="display:none; pointer-events:auto; transform: translateX(100%);">
+                <div class="mini-drawer-header">
+                  <h4>Episodes</h4>
+                  <button onclick="App.toggleMiniEpisodeDrawer()" class="mini-drawer-close" aria-label="Close episodes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                </div>
+                <div class="mini-drawer-list" id="anime-mini-eps-list"></div>
+              </div>
+
+              <div id="anime-quality-badge" style="position: absolute; top: 15px; right: 15px; background: rgba(0, 0, 0, 0.75); border: 1px solid rgba(255, 255, 255, 0.15); color: #00ff88; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; z-index: 10; display: none;"></div>
+              <video id="anime-video-player" class="player-hidden" controls playsinline webkit-playsinline crossorigin="anonymous" width="100%" height="100%" style="width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; display:none;"></video>
+              <iframe id="anime-iframe-player" class="player-hidden" width="100%" height="100%" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" style="width:100%; height:100%; aspect-ratio:16/9; background:#000; border-radius:8px; display:none; border:0;"></iframe>
+              <button id="skip-intro-btn" class="btn-primary" style="position: absolute; bottom: 60px; left: 20px; z-index: 10; display: none; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer;" onclick="App.skipIntro()">Skip Intro</button>
+              <button id="skip-outro-btn" class="btn-primary" style="position: absolute; bottom: 60px; right: 20px; z-index: 10; display: none; padding: 6px 12px; font-size: 12px; border-radius: 4px; cursor: pointer;" onclick="App.skipOutro()">Skip Outro</button>
+            </div>
+
+            <!-- Dedicated Video Player Bottom Bar with Auto Next Checkbox & Prev / Next Buttons -->
+            <div id="anime-player-bottom-bar" class="anime-player-bottom-bar" style="display:none;">
+              <div class="anime-bottom-bar-left">
+                <label class="anime-auto-next-label" title="Auto-play next episode when current episode finishes">
+                  <input type="checkbox" id="anime-auto-next-cb" onchange="App.toggleAnimeAutoNext(this.checked)">
+                  <span class="auto-next-slider"></span>
+                  <span class="auto-next-text">Auto Next</span>
+                </label>
+              </div>
+              <div class="anime-bottom-bar-center">
+                <span id="anime-current-ep-badge" class="current-ep-badge">Episode 1</span>
+              </div>
+              <div class="anime-bottom-bar-right">
+                <button id="anime-prev-ep-btn" class="anime-prev-ep-btn" onclick="App.playPrevEpisode()" title="Play Previous Episode">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                  <span>Prev</span>
+                </button>
+                <button id="anime-next-ep-btn" class="anime-next-ep-btn" onclick="App.playNextEpisode()" title="Play Next Episode">
+                  <span>Next</span>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="anime-player-controls" class="anime-player-controls" style="display:none;"></div>
+
+          <!-- Series Sections (Season Selector, Episode Search & Numeric Sorting) -->
+          <div id="anime-episodes-section" class="pm-series-section">
+            <div class="pm-episodes-header-row">
+              <h3 class="pm-section-title" style="margin-bottom:0;">Episodes</h3>
+              <div class="pm-episodes-controls">
+                <div class="pm-ep-search-box">
+                  <svg class="pm-ep-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                  <input type="text" id="anime-ep-search-input" class="pm-ep-search-input" placeholder="Search episodes..." value="${_esc(_animeEpSearchQuery)}" oninput="App.onAnimeEpisodeSearch(this.value)" autocomplete="off">
+                  <button id="anime-ep-search-clear" class="pm-ep-search-clear" onclick="App.clearAnimeEpisodeSearch()" style="${_animeEpSearchQuery ? 'display:flex;' : 'display:none;'}" title="Clear search">✕</button>
+                </div>
+                <button id="anime-ep-sort-btn" class="pm-ep-sort-btn${_animeEpSortOrder === 'desc' ? ' desc' : ''}" onclick="App.toggleAnimeSortOrder()" title="Toggle sort order" aria-label="Toggle sort order">
+                  <svg class="pm-sort-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+                  <span id="anime-ep-sort-label">${_animeEpSortOrder === 'asc' ? 'Ascending' : 'Descending'}</span>
+                </button>
+              </div>
+            </div>
+            <div id="anime-season-selector-container">
+              ${seasonSelectorHTML}
+            </div>
+            <div id="anime-season-tabs" class="anime-season-tabs" style="display:none;"></div>
+            <div class="loader-spinner" id="anime-eps-loader"></div>
+            <div class="anime-ep-grid-rich" id="anime-eps-grid"></div>
+          </div>
+
+          ${relationsHTML}
+          ${castHTML}
+          ${recsHTML}
         </div>
       </div>`;
 
     bg.onclick = _handleAnimeBackdropClick;
+
+    // Load trailer for this anime title
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.loadTrailerForItem("detail", d);
+    }
 
     // Register double-click for fullscreen
     const videoEl = document.getElementById("anime-video-player");
@@ -3238,7 +3386,45 @@ const App = (() => {
     window.addEventListener("keydown", handlePlayerShortcuts);
   }
 
+  function toggleAnimeTrailerSound() {
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.toggleSound("detail");
+    }
+  }
+
+  function watchAnimeNow() {
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.setFullPlayerActive(true);
+      window.HeroTrailerController.silenceAll();
+      window.HeroTrailerController.pause("detail");
+    }
+
+    const playerWrap = document.getElementById("anime-player-wrap");
+    if (_currentEpisodesList && _currentEpisodesList.length > 0) {
+      if (!_activeEpisodeId) {
+        const bg = document.getElementById("player-modal-bg");
+        const animeId = bg?._currentAnimeItem?.id;
+        const last = animeId ? StreamXHistory.getLastEpisode(animeId) : null;
+        let targetEp = null;
+        if (last && last.episode) {
+          targetEp = _currentEpisodesList.find(e => e.episode_number === last.episode);
+        }
+        if (!targetEp) targetEp = _currentEpisodesList[0];
+        playAnimeEpisode(targetEp.id, targetEp.episode_number);
+      } else if (playerWrap) {
+        playerWrap.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else {
+      const sec = document.getElementById("anime-episodes-section");
+      if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
   function _closeAnimeDetail(skipHashPush = false) {
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.setFullPlayerActive(false);
+      window.HeroTrailerController.destroy("detail");
+    }
     const video = document.getElementById("anime-video-player");
     if (video) {
       video.pause();
@@ -3263,14 +3449,23 @@ const App = (() => {
     const bg = document.getElementById("player-modal-bg");
     if (bg) {
       bg.classList.remove("open");
+      bg.classList.remove("has-cinematic-detail");
       bg.innerHTML = "";
       bg._currentAnimeItem = null;
     }
     _activeEpisodeId = null;
     _activeEpisodeNumber = null;
     _autoPlayEpisodeNumber = null;
+    _animeEpSearchQuery = "";
+    _animeEpSortOrder = "asc";
     document.body.style.overflow = "";
-    // Cleanly pop history back to origin if pushed by StreamX, else fallback to home
+
+    if (window.HeroTrailerController) {
+      if (_currentPage === "home") window.HeroTrailerController.resume("general");
+      else if (_currentPage === "anime") window.HeroTrailerController.resume("anime");
+    }
+
+    // Cleanly pop history back to origin if pushed by CineJoy, else fallback to home
     if (!skipHashPush) {
       if (window.history.length > 1 && window.history.state && window.history.state.streamx) {
         window.history.back();
@@ -3432,7 +3627,7 @@ const App = (() => {
     const drawerLinksContainer = document.getElementById("drawer-links");
     if (drawerLinksContainer) {
       let drawerHTML = `
-        <button class="drawer-link drawer-search-shortcut" onclick="App.toggleMobileDrawer(); App.toggleMobileSearch(true);" style="background: rgba(229, 9, 20, 0.12); border: 1px solid rgba(229, 9, 20, 0.28); color: #fff; margin-bottom: 12px; font-weight: 600;">
+        <button class="drawer-link drawer-search-shortcut" onclick="App.toggleMobileDrawer(); App.toggleMobileSearch(true);" style="background: rgba(255, 42, 109, 0.12); border: 1px solid rgba(255, 42, 109, 0.28); color: #fff; margin-bottom: 12px; font-weight: 600;">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <span>Search Everything</span>
         </button>
@@ -3602,13 +3797,18 @@ const App = (() => {
 
   function _toggleAnimeWL() {
     const bg = document.getElementById("player-modal-bg");
-    const item = bg._currentAnimeItem;
+    const item = bg?._currentAnimeItem;
     if (!item) return;
     const added = Watchlist.toggle(item);
     const btn = document.getElementById("pm-wl-btn");
     if (btn) {
       btn.className = `pm-wl-btn${added ? " added" : ""}`;
       btn.textContent = added ? "Saved" : "Watchlist";
+    }
+    const heroBtn = document.getElementById("pm-hero-wl-btn");
+    if (heroBtn) {
+      heroBtn.className = `pm-wl-action-btn${added ? " added" : ""}`;
+      heroBtn.innerHTML = `${added ? _CHECK_SVG : _PLUS_SVG}<span>${added ? "In Watchlist" : "Add to List"}</span>`;
     }
     window.dispatchEvent(new CustomEvent("watchlist:change"));
   }
@@ -3667,7 +3867,38 @@ const App = (() => {
     }
   }
 
-  function _renderEpisodesGrid(episodes, startIndex, endIndex, backdropFallback) {
+  function _getFilteredSortedAnimeEpisodes() {
+    if (!_currentEpisodesList || !_currentEpisodesList.length) return [];
+    let eps = [..._currentEpisodesList];
+
+    // 1. Search Filter: episode number, title, or keywords
+    const q = (_animeEpSearchQuery || "").trim().toLowerCase();
+    if (q) {
+      eps = eps.filter(ep => {
+        const numStr = String(ep.episode_number ?? "");
+        const titleStr = String(ep.title || "").toLowerCase();
+        return numStr === q ||
+               numStr.includes(q) ||
+               titleStr.includes(q) ||
+               `episode ${numStr}`.includes(q) ||
+               `ep ${numStr}`.includes(q);
+      });
+    }
+
+    // 2. Pure Numeric Sort (asc / desc)
+    eps.sort((a, b) => {
+      const numA = parseFloat(a.episode_number) || 0;
+      const numB = parseFloat(b.episode_number) || 0;
+      if (numA !== numB) {
+        return _animeEpSortOrder === "desc" ? numB - numA : numA - numB;
+      }
+      return 0;
+    });
+
+    return eps;
+  }
+
+  function _renderEpisodesGrid(episodes, startIndex, endIndex) {
     const grid = document.getElementById("anime-eps-grid");
     if (!grid) return;
 
@@ -3682,7 +3913,7 @@ const App = (() => {
       return `
         <button class="anime-ep-btn${isCurrentlyPlaying ? ' active' : ''}${isWatched ? ' watched' : ''}" 
                 data-ep-id="${_esc(ep.id)}"
-                title="${_esc(ep.title)}"
+                title="${_esc(ep.title || ('Episode ' + ep.episode_number))}"
                 onclick="App.playAnimeEpisode('${_esc(ep.id)}', '${ep.episode_number}')">
           ${ep.episode_number}
         </button>
@@ -3690,7 +3921,7 @@ const App = (() => {
     }).join("");
   }
 
-  function _setupSeasonTabs(episodes, backdropFallback) {
+  function _setupSeasonTabs(episodes) {
     const tabsContainer = document.getElementById("anime-season-tabs");
     if (!tabsContainer) return;
 
@@ -3701,11 +3932,12 @@ const App = (() => {
 
     let tabsHTML = '<div style="display:flex; gap:8px; overflow-x:auto;">';
     for (let i = 0; i < numChunks; i++) {
-      const start = i * chunkSize + 1;
-      const end = Math.min((i + 1) * chunkSize, episodes.length);
+      const slice = episodes.slice(i * chunkSize, Math.min((i + 1) * chunkSize, episodes.length));
+      const firstEpNum = slice[0]?.episode_number ?? (i * chunkSize + 1);
+      const lastEpNum = slice[slice.length - 1]?.episode_number ?? Math.min((i + 1) * chunkSize, episodes.length);
       tabsHTML += `
         <button class="anime-season-tab ${i === 0 ? 'active' : ''}" data-index="${i}">
-          EP ${start} - ${end}
+          EP ${firstEpNum} - ${lastEpNum}
         </button>
       `;
     }
@@ -3725,7 +3957,7 @@ const App = (() => {
         e.currentTarget.classList.add("active");
 
         const idx = parseInt(e.currentTarget.getAttribute("data-index"));
-        _renderEpisodesGrid(episodes, idx * chunkSize, Math.min((idx + 1) * chunkSize, episodes.length), backdropFallback);
+        _renderEpisodesGrid(episodes, idx * chunkSize, Math.min((idx + 1) * chunkSize, episodes.length));
       };
     });
 
@@ -3733,12 +3965,13 @@ const App = (() => {
     const jumpInput = document.getElementById("anime-jump-input");
     if (jumpInput) {
       jumpInput.oninput = (e) => {
-        const val = parseInt(e.target.value);
-        if (!val || val < 1 || val > episodes.length) return;
+        const val = parseFloat(e.target.value);
+        if (!val || val < 1) return;
 
-        const targetEp = episodes.find(ep => ep.episode_number === val);
+        const targetEp = episodes.find(ep => parseFloat(ep.episode_number) === val);
         if (targetEp) {
-          const idx = Math.floor((val - 1) / chunkSize);
+          const epIndex = episodes.indexOf(targetEp);
+          const idx = Math.floor(epIndex / chunkSize);
 
           // Switch to corresponding tab
           tabsContainer.querySelectorAll(".anime-season-tab").forEach((t, i) => {
@@ -3746,7 +3979,7 @@ const App = (() => {
           });
 
           // Render corresponding grid
-          _renderEpisodesGrid(episodes, idx * chunkSize, Math.min((idx + 1) * chunkSize, episodes.length), backdropFallback);
+          _renderEpisodesGrid(episodes, idx * chunkSize, Math.min((idx + 1) * chunkSize, episodes.length));
 
           // Find the button and scroll to it
           setTimeout(() => {
@@ -3762,7 +3995,84 @@ const App = (() => {
       };
     }
 
-    _renderEpisodesGrid(episodes, 0, Math.min(chunkSize, episodes.length), backdropFallback);
+    _renderEpisodesGrid(episodes, 0, Math.min(chunkSize, episodes.length));
+  }
+
+  function _renderAnimeEpisodesList() {
+    const grid = document.getElementById("anime-eps-grid");
+    const tabsContainer = document.getElementById("anime-season-tabs");
+    if (!grid) return;
+
+    const filtered = _getFilteredSortedAnimeEpisodes();
+    const bg = document.getElementById("player-modal-bg");
+    const animeId = bg?._currentAnimeItem?.id || "";
+
+    if (filtered.length === 0) {
+      if (tabsContainer) tabsContainer.style.display = "none";
+      grid.innerHTML = `
+        <div class="pm-episodes-empty" style="grid-column: 1 / -1; width: 100%; text-align: center; padding: 36px 16px; color: var(--text3);">
+          <p style="margin:0; font-size: 15px;">No episodes found matching "<span style="color:var(--text); font-weight:600;">${_esc(_animeEpSearchQuery)}</span>"</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (_animeEpSearchQuery.trim()) {
+      if (tabsContainer) tabsContainer.style.display = "none";
+      grid.innerHTML = filtered.map(ep => {
+        const isCurrentlyPlaying = ep.id === _activeEpisodeId;
+        const isWatched = _isEpisodeWatched(animeId, ep.id);
+        return `
+          <button class="anime-ep-btn${isCurrentlyPlaying ? ' active' : ''}${isWatched ? ' watched' : ''}" 
+                  data-ep-id="${_esc(ep.id)}"
+                  title="${_esc(ep.title || ('Episode ' + ep.episode_number))}"
+                  onclick="App.playAnimeEpisode('${_esc(ep.id)}', '${ep.episode_number}')">
+            ${ep.episode_number}
+          </button>
+        `;
+      }).join("");
+      return;
+    }
+
+    if (filtered.length > 50) {
+      if (tabsContainer) {
+        tabsContainer.style.display = "flex";
+        _setupSeasonTabs(filtered);
+      }
+    } else {
+      if (tabsContainer) tabsContainer.style.display = "none";
+      _renderEpisodesGrid(filtered, 0, filtered.length);
+    }
+  }
+
+  function onAnimeEpisodeSearch(query) {
+    _animeEpSearchQuery = query || "";
+    const clearBtn = document.getElementById("anime-ep-search-clear");
+    if (clearBtn) {
+      clearBtn.style.display = _animeEpSearchQuery.trim() ? "flex" : "none";
+    }
+    _renderAnimeEpisodesList();
+  }
+
+  function clearAnimeEpisodeSearch() {
+    _animeEpSearchQuery = "";
+    const input = document.getElementById("anime-ep-search-input");
+    if (input) {
+      input.value = "";
+      input.focus();
+    }
+    const clearBtn = document.getElementById("anime-ep-search-clear");
+    if (clearBtn) clearBtn.style.display = "none";
+    _renderAnimeEpisodesList();
+  }
+
+  function toggleAnimeSortOrder() {
+    _animeEpSortOrder = _animeEpSortOrder === "asc" ? "desc" : "asc";
+    const btn = document.getElementById("anime-ep-sort-btn");
+    const label = document.getElementById("anime-ep-sort-label");
+    if (btn) btn.classList.toggle("desc", _animeEpSortOrder === "desc");
+    if (label) label.textContent = _animeEpSortOrder === "asc" ? "Ascending" : "Descending";
+    _renderAnimeEpisodesList();
   }
 
   function _updateCurrentlyPlayingUI() {
@@ -3832,7 +4142,7 @@ const App = (() => {
       _availableServers = cached.availableServers || ["server1", "server2", "server3", "server4", "server5", "server6", "server7", "server8", "server9"];
 
       if (loader) loader.style.display = "none";
-      _setupSeasonTabs(_currentEpisodesList, backdropFallback);
+      _renderAnimeEpisodesList();
       _updateCurrentlyPlayingUI();
       _scrollToLastWatched(animeId, backdropFallback);
 
@@ -3922,7 +4232,7 @@ const App = (() => {
         return;
       }
 
-      _setupSeasonTabs(_currentEpisodesList, backdropFallback);
+      _renderAnimeEpisodesList();
       _updateCurrentlyPlayingUI();
       _scrollToLastWatched(animeId, backdropFallback);
 
@@ -4228,6 +4538,12 @@ const App = (() => {
   async function playAnimeEpisode(episodeId, episodeNumber, audioOverride = null) {
     console.log(">>> Playing anime episode:", episodeId, "Episode Number:", episodeNumber, "Active Provider in memory:", _activeProvider);
 
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.setFullPlayerActive(true);
+      window.HeroTrailerController.silenceAll();
+      window.HeroTrailerController.pause("detail");
+    }
+
     _activeEpisodeId = episodeId;
     _activeEpisodeNumber = parseInt(episodeNumber);
     _updateCurrentlyPlayingUI();
@@ -4410,8 +4726,8 @@ const App = (() => {
     }).join("");
 
     const activeAudioLabel = (_currentActiveAudioMode === "hsub" ? "H-SUB" : (_currentActiveAudioMode || "SUB")).toUpperCase();
-    const audioBadge = `<span class="badge" style="background:#0071eb; color:#fff; font-size:11px; margin-left:8px; font-weight:700;">AUDIO: ${activeAudioLabel}</span>`;
-    const serverBadge = `<span class="badge" style="background:#7c3aed; color:#fff; font-size:11px; margin-left:8px; font-weight:700;">SERVER: ${_serverLabel(_activeProvider)}</span>`;
+    const audioBadge = `<span class="badge" style="background:linear-gradient(135deg, #00f2fe 0%, #0284c7 100%); color:#04121a; font-size:11px; margin-left:8px; font-weight:700; border:1px solid rgba(255,255,255,0.25);">AUDIO: ${activeAudioLabel}</span>`;
+    const serverBadge = `<span class="badge" style="background:linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color:#fff; font-size:11px; margin-left:8px; font-weight:700; border:1px solid rgba(255,255,255,0.25);">SERVER: ${_serverLabel(_activeProvider)}</span>`;
 
     // 3. Direct Source Quality Buttons (if non-embed and multiple qualities exist)
     let qualityButtons = "";
@@ -5492,14 +5808,14 @@ const App = (() => {
       _deferredPrompt.prompt();
       const choiceResult = await _deferredPrompt.userChoice;
       if (choiceResult && choiceResult.outcome === "accepted") {
-        _showToast("🎉 StreamX is being installed!");
+        _showToast("🎉 CineJoy is being installed!");
       }
       _deferredPrompt = null;
     } else {
       const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
       const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
       if (isStandalone) {
-        _showToast("✅ StreamX is already running as an installed standalone app!");
+        _showToast("✅ CineJoy is already running as an installed standalone app!");
       } else if (isIos) {
         _showToast("📱 On iOS: Tap Share (⎋) in Safari and select 'Add to Home Screen' (➕)");
       } else {
@@ -5529,12 +5845,12 @@ const App = (() => {
       const res = await fetch(`${getStreamXBackendUrl()}/`, { method: "GET", cache: "no-store", signal: ctrl.signal });
       clearTimeout(t);
       if (res.ok) {
-        statusEl.innerHTML = `<span style="color:#10b981; font-weight:600;">🟢 Online &amp; Operational (${getStreamXBackendUrl()})</span>`;
+        statusEl.innerHTML = `<span style="color:#10b981; font-weight:600;">🟢 Online &amp; Operational</span>`;
       } else {
         statusEl.innerHTML = `<span style="color:#f59e0b; font-weight:600;">🟡 Server responded with HTTP ${res.status}</span>`;
       }
     } catch (e) {
-      statusEl.innerHTML = `<span style="color:#ef4444; font-weight:600;">🔴 Offline / Unreachable (${getStreamXBackendUrl()})</span>`;
+      statusEl.innerHTML = `<span style="color:#ef4444; font-weight:600;">🔴 Offline / Unreachable</span>`;
     }
   }
 
@@ -5706,6 +6022,11 @@ const App = (() => {
     nextAnimeHero,
     switchHomeSection,
     scrollToAnimeRow,
+    toggleAnimeTrailerSound,
+    watchAnimeNow,
+    onAnimeEpisodeSearch,
+    clearAnimeEpisodeSearch,
+    toggleAnimeSortOrder,
 
     // Phase 3 Player UX Actions
     setVolumeBoost,

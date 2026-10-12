@@ -3,24 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="StreamX — Stream movies, series, dramas and anime with a polished cinema-style interface.">
+  <meta name="description" content="CineJoy — Stream movies, series, dramas and anime with a polished cinema-style interface.">
   <meta name="theme-color" content="#0a0a0f">
 
   <!-- PWA & Mobile Web App Meta Tags -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="StreamX">
+  <meta name="apple-mobile-web-app-title" content="CineJoy">
+  <link rel="icon" type="image/svg+xml" href="icons/cinejoy-icon.svg">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
 
   <!-- Open Graph -->
-  <meta property="og:title"       content="StreamX — Movies, Series, Dramas &amp; Anime">
+  <meta property="og:title"       content="CineJoy — Movies, Series, Dramas &amp; Anime">
   <meta property="og:description" content="Movies, series, dramas and anime with multiple servers and a polished browsing experience.">
   <meta property="og:type"        content="website">
 
-  <title>StreamX — Movies, Series, Dramas &amp; Anime</title>
+  <title>CineJoy — Movies, Series, Dramas &amp; Anime</title>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(regs) {
@@ -33,7 +34,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="css/style.css?v=9.8">
+  <link rel="stylesheet" href="css/style.css?v=10.0">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
@@ -44,8 +45,20 @@
 <aside id="desktop-sidebar" class="desktop-sidebar" aria-label="Desktop navigation">
   <div class="sidebar-header">
     <div class="sidebar-logo" onclick="App.showPage('home')" role="link" tabindex="0">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-      <span class="logo-text">StreamX</span>
+      <svg class="brand-logo-svg" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">
+        <defs>
+          <linearGradient id="cjPrismSide" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ff2a6d"/>
+            <stop offset="50%" stop-color="#9333ea"/>
+            <stop offset="100%" stop-color="#00f2fe"/>
+          </linearGradient>
+        </defs>
+        <rect width="32" height="32" rx="8" fill="#141829"/>
+        <path d="M12 9 C12 7.8, 13.2 7, 14.2 7.6 L24 14.6 C25 15.3, 25 16.7, 24 17.4 L14.2 24.4 C13.2 25, 12 24.2, 12 23 Z" fill="url(#cjPrismSide)"/>
+        <path d="M9 22 C11.5 25.5, 17.5 27.5, 23 25" fill="none" stroke="#00f2fe" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="24" cy="10" r="1.5" fill="#ff2a6d"/>
+      </svg>
+      <span class="logo-text">Cine<span class="brand-accent">Joy</span></span>
     </div>
     <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" onclick="App.toggleSidebar()" aria-label="Collapse navigation menu">
       <svg class="toggle-icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
@@ -61,9 +74,21 @@
   </button>
   
   <div class="nav-logo header-logo" onclick="App.showPage('home')" role="link" tabindex="0"
-       onkeydown="if(event.key==='Enter')App.showPage('home')" aria-label="StreamX Home">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-    StreamX
+       onkeydown="if(event.key==='Enter')App.showPage('home')" aria-label="CineJoy Home">
+    <svg class="brand-logo-svg" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
+      <defs>
+        <linearGradient id="cjPrismHead" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ff2a6d"/>
+          <stop offset="50%" stop-color="#9333ea"/>
+          <stop offset="100%" stop-color="#00f2fe"/>
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="8" fill="#141829"/>
+      <path d="M12 9 C12 7.8, 13.2 7, 14.2 7.6 L24 14.6 C25 15.3, 25 16.7, 24 17.4 L14.2 24.4 C13.2 25, 12 24.2, 12 23 Z" fill="url(#cjPrismHead)"/>
+      <path d="M9 22 C11.5 25.5, 17.5 27.5, 23 25" fill="none" stroke="#00f2fe" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="24" cy="10" r="1.5" fill="#ff2a6d"/>
+    </svg>
+    <span>Cine<span class="brand-accent">Joy</span></span>
   </div>
 
   <div class="nav-links" id="nav-links" style="display:none"></div>
@@ -292,14 +317,14 @@
   <div class="settings-content-wrapper" style="padding:20px; max-width:600px; margin:0 auto;">
     <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); padding:24px; border-radius:12px; margin-bottom:20px;">
       <h3 style="margin-bottom:8px">Visual Preferences</h3>
-      <p style="color:var(--text2); font-size:13px; margin-bottom:16px">Adjust the core color palette of StreamX.</p>
+      <p style="color:var(--text2); font-size:13px; margin-bottom:16px">Adjust the core color palette of CineJoy.</p>
       <div style="display:flex; flex-direction:column; gap:8px">
         <label style="font-size:12px; color:var(--text2)">Theme Preset</label>
         <select id="theme-selector" class="nav-link active" style="width:100%; height:38px; text-align:left; border:1px solid var(--border)" onchange="App.changeTheme(this.value)">
-          <option value="default">Default Dark Obsidian</option>
-          <option value="crimson">Crimson Night (Red Accent)</option>
+          <option value="default">CineJoy Prism (Signature Neon Rose &amp; Indigo)</option>
           <option value="sapphire">Nordic Sapphire (Blue Accent)</option>
           <option value="emerald">Emerald Forest (Green Accent)</option>
+          <option value="crimson">Crimson Night (Red Accent)</option>
         </select>
       </div>
     </div>
@@ -350,28 +375,15 @@
     </div>
     <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); padding:24px; border-radius:12px; margin-bottom:20px;">
       <h3 style="margin-bottom:8px">PWA Mobile App &amp; Offline</h3>
-      <p style="color:var(--text2); font-size:13px; margin-bottom:16px">Install StreamX as a standalone application on iOS, Android, macOS, or Windows for instant cinema access without browser bars.</p>
+      <p style="color:var(--text2); font-size:13px; margin-bottom:16px">Install CineJoy as a standalone application on iOS, Android, macOS, or Windows for instant cinema access without browser bars.</p>
       <div style="display:flex; flex-direction:column; gap:12px;">
         <button id="settings-install-pwa-btn" class="btn-primary" onclick="App.installPWA()" style="display:inline-flex; align-items:center; gap:8px;">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
-          <span>Install StreamX App</span>
+          <span>Install CineJoy App</span>
         </button>
         <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px; font-size:12px; color:var(--text2); line-height:1.5;">
           <strong>📱 iOS / iPhone users:</strong> Tap the Safari Share button <span style="color:#00d2ff">⎋</span> and select <span style="color:#fff">"Add to Home Screen ➕"</span>.
         </div>
-      </div>
-    </div>
-    <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); padding:24px; border-radius:12px; margin-bottom:20px;">
-      <h3 style="margin-bottom:8px">Cloud Backend API URL</h3>
-      <p style="color:var(--text2); font-size:13px; margin-bottom:16px">Configure your online backend endpoint (e.g. Render, Railway, or VPS). Default automatically detects localhost or public server.</p>
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        <input type="text" id="settings-backend-url-input" placeholder="https://your-backend.onrender.com" class="nav-link active" style="width:100%; height:40px; padding:0 12px; text-align:left; border:1px solid var(--border); background:rgba(0,0,0,0.3); font-size:13px;" />
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn-primary" onclick="App.saveBackendUrl(document.getElementById('settings-backend-url-input').value)">Save URL</button>
-          <button class="btn-secondary" onclick="document.getElementById('settings-backend-url-input').value = ''; App.saveBackendUrl('');">Reset to Auto</button>
-          <button class="btn-secondary" onclick="App.checkBackendStatus()">Test Connection</button>
-        </div>
-        <div id="backend-status-indicator" style="font-size:12px; margin-top:4px;"></div>
       </div>
     </div>
     <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); padding:24px; border-radius:12px; margin-bottom:20px;">
@@ -493,8 +505,20 @@
     <div class="footer-top">
       <div class="footer-brand">
         <div class="footer-logo" onclick="App.showPage('home')" role="link" tabindex="0">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          <span>StreamX</span>
+          <svg class="brand-logo-svg" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
+            <defs>
+              <linearGradient id="cjPrismFoot" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff2a6d"/>
+                <stop offset="50%" stop-color="#9333ea"/>
+                <stop offset="100%" stop-color="#00f2fe"/>
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="8" fill="#141829"/>
+            <path d="M12 9 C12 7.8, 13.2 7, 14.2 7.6 L24 14.6 C25 15.3, 25 16.7, 24 17.4 L14.2 24.4 C13.2 25, 12 24.2, 12 23 Z" fill="url(#cjPrismFoot)"/>
+            <path d="M9 22 C11.5 25.5, 17.5 27.5, 23 25" fill="none" stroke="#00f2fe" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="24" cy="10" r="1.5" fill="#ff2a6d"/>
+          </svg>
+          <span>Cine<span class="brand-accent">Joy</span></span>
         </div>
         <p class="footer-tagline">Next-Generation Cinema &amp; Anime Interface. Streaming with multi-server resilience, zero tracking, and refined visual aesthetics.</p>
         <div class="footer-status-pill">
@@ -510,8 +534,8 @@
           <h4>Legal Disclaimer &amp; Non-Hosting Notice</h4>
         </div>
         <p class="disclaimer-box-text">
-          <strong>StreamX does not host, upload, archive, or transmit any video, audio, or media files on its servers.</strong>
-          StreamX provides an interface for discovering and accessing media content and may rely on external sources and services. StreamX exercises no control over third-party content and does not guarantee the availability, accuracy, or integrity of externally supplied media. All trademarks, service marks, and copyrighted materials belong to their respective owners. Users are responsible for complying with all applicable local copyright laws and regulations.
+          <strong>CineJoy does not host, upload, archive, or transmit any video, audio, or media files on its servers.</strong>
+          CineJoy provides an interface for discovering and accessing media content and may rely on external sources and services. CineJoy exercises no control over third-party content and does not guarantee the availability, accuracy, or integrity of externally supplied media. All trademarks, service marks, and copyrighted materials belong to their respective owners. Users are responsible for complying with all applicable local copyright laws and regulations.
         </p>
         <div class="disclaimer-box-actions">
           <button class="footer-action-btn" onclick="App.openDisclaimerModal('non-hosting')">
@@ -588,7 +612,7 @@
     <!-- Bottom Copyright Bar -->
     <div class="footer-bottom">
       <div class="footer-copy">
-        &copy; 2026 StreamX Cinema. All streams &amp; downloads originate from independent third-party hosts. Personal, non-commercial use only.
+        &copy; 2026 CineJoy Cinema. All streams &amp; downloads originate from independent third-party hosts. Personal, non-commercial use only.
       </div>
       <div class="footer-bottom-links">
         <a href="javascript:void(0)" onclick="App.openDisclaimerModal('non-hosting')">Non-Hosting Notice</a>
@@ -643,24 +667,24 @@
         <div class="disclaimer-callout-warning">
           <div class="callout-icon">🛡️</div>
           <div>
-            <strong>Essential Notice: StreamX does NOT host or store any media.</strong>
-            <p>Every video stream, iframe embed, audio file, subtitle, and download link accessible through StreamX is hosted on third-party servers not owned, maintained, or controlled by StreamX.</p>
+            <strong>Essential Notice: CineJoy does NOT host or store any media.</strong>
+            <p>Every video stream, iframe embed, audio file, subtitle, and download link accessible through CineJoy is hosted on third-party servers not owned, maintained, or controlled by CineJoy.</p>
           </div>
         </div>
 
         <h4 class="disclaimer-section-title">1. Automated Content Indexing</h4>
-        <p class="disclaimer-p">StreamX is an automated client-side web application designed to organize and index publicly accessible metadata from public databases. When media playback is initiated, the application connects to external third-party services and content delivery networks to present streams. StreamX does not host, manage, or control these external services.</p>
+        <p class="disclaimer-p">CineJoy is an automated client-side web application designed to organize and index publicly accessible metadata from public databases. When media playback is initiated, the application connects to external third-party services and content delivery networks to present streams. CineJoy does not host, manage, or control these external services.</p>
 
         <h4 class="disclaimer-section-title">2. Zero Server-Side Media Storage</h4>
-        <p class="disclaimer-p">StreamX operates <strong>without any local or remote file storage, video transcoding servers, or media upload pipelines</strong>. StreamX servers do not hold, upload, copy, or distribute copyrighted video files. No proprietary video files exist on any server operated by StreamX.</p>
+        <p class="disclaimer-p">CineJoy operates <strong>without any local or remote file storage, video transcoding servers, or media upload pipelines</strong>. CineJoy servers do not hold, upload, copy, or distribute copyrighted video files. No proprietary video files exist on any server operated by CineJoy.</p>
 
         <h4 class="disclaimer-section-title">3. Third-Party Content &amp; Links</h4>
-        <p class="disclaimer-p">Any stream playback, advertisements displayed within external player frames, or external download mirrors are strictly the responsibility of the respective third-party providers. StreamX disclaims all liability regarding the availability, legality, performance, or content provided by external sources.</p>
+        <p class="disclaimer-p">Any stream playback, advertisements displayed within external player frames, or external download mirrors are strictly the responsibility of the respective third-party providers. CineJoy disclaims all liability regarding the availability, legality, performance, or content provided by external sources.</p>
       </div>
 
       <!-- 2. Important User Guidelines -->
       <div id="disclaimer-tab-guidelines" class="disclaimer-tab-content" style="display:none;">
-        <h4 class="disclaimer-section-title">StreamX User Guidelines &amp; Recommendations</h4>
+        <h4 class="disclaimer-section-title">CineJoy User Guidelines &amp; Recommendations</h4>
         
         <div class="guideline-card-grid">
           <div class="guideline-card">
@@ -684,7 +708,7 @@
           <div class="guideline-card">
             <div class="guideline-icon">📺</div>
             <div class="guideline-title">Personal Non-Commercial Use</div>
-            <p class="guideline-text">StreamX is developed exclusively for personal, private, and educational media exploration. Redistribution, commercial exploitation, or re-broadcasting is strictly prohibited.</p>
+            <p class="guideline-text">CineJoy is developed exclusively for personal, private, and educational media exploration. Redistribution, commercial exploitation, or re-broadcasting is strictly prohibited.</p>
           </div>
         </div>
 
@@ -695,14 +719,14 @@
       <!-- 3. DMCA & Copyright Policy -->
       <div id="disclaimer-tab-dmca" class="disclaimer-tab-content" style="display:none;">
         <h4 class="disclaimer-section-title">DMCA Notice &amp; Copyright Compliance</h4>
-        <p class="disclaimer-p">StreamX respects the intellectual property rights of others and adheres to the Digital Millennium Copyright Act (DMCA) and international copyright legislation. Because StreamX does not host or upload any video files, we cannot delete content from the web.</p>
+        <p class="disclaimer-p">CineJoy respects the intellectual property rights of others and adheres to the Digital Millennium Copyright Act (DMCA) and international copyright legislation. Because CineJoy does not host or upload any video files, we cannot delete content from the web.</p>
         
         <div class="dmca-steps-box">
           <h5>How to Takedown Content at the Source:</h5>
           <ol>
             <li>Identify the specific external host or service delivering the content.</li>
-            <li>Submit a formal DMCA takedown request directly to the responsible host provider. Once removed by the file host, the media will immediately become unplayable across the entire internet, including on StreamX.</li>
-            <li>If you wish to request the removal of specific search metadata or indexing links on StreamX, please send a detailed notice including the exact TMDB / AniList ID and title to our compliance team.</li>
+            <li>Submit a formal DMCA takedown request directly to the responsible host provider. Once removed by the file host, the media will immediately become unplayable across the entire internet, including on CineJoy.</li>
+            <li>If you wish to request the removal of specific search metadata or indexing links on CineJoy, please send a detailed notice including the exact TMDB / AniList ID and title to our compliance team.</li>
           </ol>
         </div>
 
@@ -712,10 +736,10 @@
       <!-- 4. Privacy & Local Storage -->
       <div id="disclaimer-tab-privacy" class="disclaimer-tab-content" style="display:none;">
         <h4 class="disclaimer-section-title">Zero-Tracking &amp; Complete Privacy</h4>
-        <p class="disclaimer-p">StreamX is built on a privacy-first, zero-knowledge architecture:</p>
+        <p class="disclaimer-p">CineJoy is built on a privacy-first, zero-knowledge architecture:</p>
         
         <ul class="privacy-checklist">
-          <li><strong>No User Accounts Required:</strong> StreamX never asks for your email address, phone number, passwords, or personal credentials.</li>
+          <li><strong>No User Accounts Required:</strong> CineJoy never asks for your email address, phone number, passwords, or personal credentials.</li>
           <li><strong>100% Client-Side Storage:</strong> Your Watchlist, Continue Watching queue, watch history, and volume/playback preferences are stored exclusively on your own device using browser <code>localStorage</code>.</li>
           <li><strong>Zero Tracking or Selling:</strong> We do not log IP addresses, sell analytics to third-party ad brokers, or track individual user behavior across the web.</li>
           <li><strong>Complete Data Control:</strong> You can purge all your stored data, watch history, and bookmarks at any moment by clicking "Clear All Storage" in Settings.</li>
@@ -725,8 +749,8 @@
       <!-- 5. Terms of Service -->
       <div id="disclaimer-tab-terms" class="disclaimer-tab-content" style="display:none;">
         <h4 class="disclaimer-section-title">Terms of Service &amp; Conditions</h4>
-        <p class="disclaimer-p">By accessing or using StreamX, you acknowledge and agree that StreamX is provided strictly on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind.</p>
-        <p class="disclaimer-p">Users agree not to utilize automated scraping tools against StreamX, and agree that any interaction with third-party embedded players occurs under the terms and conditions established by those respective third parties.</p>
+        <p class="disclaimer-p">By accessing or using CineJoy, you acknowledge and agree that CineJoy is provided strictly on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind.</p>
+        <p class="disclaimer-p">Users agree not to utilize automated scraping tools against CineJoy, and agree that any interaction with third-party embedded players occurs under the terms and conditions established by those respective third parties.</p>
       </div>
     </div>
 
@@ -741,8 +765,20 @@
 <div id="mobile-nav-drawer" class="mobile-nav-drawer">
   <div class="drawer-header">
     <div class="drawer-logo" onclick="App.handleNavItemClick('home', 'page', 'home')">
-      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      StreamX
+      <svg class="brand-logo-svg" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
+        <defs>
+          <linearGradient id="cjPrismDraw" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ff2a6d"/>
+            <stop offset="50%" stop-color="#9333ea"/>
+            <stop offset="100%" stop-color="#00f2fe"/>
+          </linearGradient>
+        </defs>
+        <rect width="32" height="32" rx="8" fill="#141829"/>
+        <path d="M12 9 C12 7.8, 13.2 7, 14.2 7.6 L24 14.6 C25 15.3, 25 16.7, 24 17.4 L14.2 24.4 C13.2 25, 12 24.2, 12 23 Z" fill="url(#cjPrismDraw)"/>
+        <path d="M9 22 C11.5 25.5, 17.5 27.5, 23 25" fill="none" stroke="#00f2fe" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="24" cy="10" r="1.5" fill="#ff2a6d"/>
+      </svg>
+      <span>Cine<span class="brand-accent">Joy</span></span>
     </div>
     <button class="drawer-close" onclick="App.toggleMobileDrawer()" aria-label="Close navigation drawer">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
@@ -752,13 +788,13 @@
 </div>
 
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=9.8"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->
-<script src="js/tmdb.js?v=9.8"></script>      <!-- TMDB API layer -->
-<script src="js/anilist.js?v=9.8"></script>   <!-- AniList API layer -->
-<script src="js/watchlist.js?v=9.8"></script> <!-- localStorage watchlist -->
-<script src="js/history.js?v=9.8"></script>   <!-- continue watching / recently viewed -->
-<script src="js/player.js?v=9.8"></script>    <!-- detail modal + server picker -->
-<script src="js/app.js?v=9.8"></script>       <!-- main app controller, boots on DOMContentLoaded -->
+<script src="js/config.js?v=10.0"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->
+<script src="js/tmdb.js?v=10.0"></script>      <!-- TMDB API layer -->
+<script src="js/anilist.js?v=10.0"></script>   <!-- AniList API layer -->
+<script src="js/watchlist.js?v=10.0"></script> <!-- localStorage watchlist -->
+<script src="js/history.js?v=10.0"></script>   <!-- continue watching / recently viewed -->
+<script src="js/player.js?v=10.0"></script>    <!-- detail modal + server picker -->
+<script src="js/app.js?v=10.0"></script>       <!-- main app controller, boots on DOMContentLoaded -->
 
 </body>
 </html>
