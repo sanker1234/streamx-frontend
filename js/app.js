@@ -458,6 +458,7 @@ const App = (() => {
         token: 0,
         isMuted: true,
         isPlaying: false,
+        revealTimer: null,
         currentKey: null,
         currentItemId: null,
         videoLayerId: "hero-video-layer",
@@ -468,6 +469,7 @@ const App = (() => {
         token: 0,
         isMuted: true,
         isPlaying: false,
+        revealTimer: null,
         currentKey: null,
         currentItemId: null,
         videoLayerId: "anime-hero-video-layer",
@@ -478,6 +480,7 @@ const App = (() => {
         token: 0,
         isMuted: true,
         isPlaying: false,
+        revealTimer: null,
         currentKey: null,
         currentItemId: null,
         videoLayerId: "pm-hero-video-layer",
@@ -546,6 +549,10 @@ const App = (() => {
     function silence(instanceKey) {
       const s = _state[instanceKey];
       if (!s) return;
+      if (s.revealTimer) {
+        clearTimeout(s.revealTimer);
+        s.revealTimer = null;
+      }
       s.isMuted = true;
       s.isPlaying = false;
       const lyr = document.getElementById(s.videoLayerId);
@@ -575,6 +582,10 @@ const App = (() => {
     function destroy(instanceKey) {
       const s = _state[instanceKey];
       if (!s) return;
+      if (s.revealTimer) {
+        clearTimeout(s.revealTimer);
+        s.revealTimer = null;
+      }
       s.token++;
       s.currentKey = null;
       s.currentItemId = null;
@@ -716,11 +727,48 @@ const App = (() => {
                     }
                   } catch (e) {}
                   s.isPlaying = true;
-                  const lyr = document.getElementById(s.videoLayerId);
-                  if (lyr) lyr.classList.add("is-playing");
                   updateSoundButtonUI(instanceKey, s.isMuted, true);
+
+                  // Cancel any pending reveal timer
+                  if (s.revealTimer) {
+                    clearTimeout(s.revealTimer);
+                    s.revealTimer = null;
+                  }
+
+                  // ── FIRST-STATE HIDE GUARD ──────────────────────────────
+                  // When YouTube begins playing, its internal player displays
+                  // an initial large play/pause animation & splash for ~1.0-1.4s.
+                  // We hold the video layer completely hidden (opacity: 0) behind
+                  // the high-res movie poster backdrop during this first state.
+                  // We verify playback has advanced past 1.25s before revealing.
+                  const startTime = Date.now();
+                  const checkAndReveal = () => {
+                    if (thisToken !== s.token || !s.isPlaying || _isFullPlayerActive) return;
+                    let currTime = 0;
+                    try {
+                      currTime = typeof event.target.getCurrentTime === "function" ? event.target.getCurrentTime() : 0;
+                    } catch (e) {}
+
+                    const elapsed = Date.now() - startTime;
+                    if (currTime >= 1.25 || elapsed >= 1600) {
+                      const lyr = document.getElementById(s.videoLayerId);
+                      if (lyr && s.isPlaying && !_isFullPlayerActive) {
+                        lyr.classList.add("is-playing");
+                      }
+                    } else {
+                      s.revealTimer = setTimeout(checkAndReveal, 150);
+                    }
+                  };
+                  s.revealTimer = setTimeout(checkAndReveal, 700);
                 } else if (event.data === 0) {
                   // Smooth loop without enabling YouTube's playlist controls
+                  if (s.revealTimer) {
+                    clearTimeout(s.revealTimer);
+                    s.revealTimer = null;
+                  }
+                  s.isPlaying = false;
+                  const lyr = document.getElementById(s.videoLayerId);
+                  if (lyr) lyr.classList.remove("is-playing");
                   try {
                     event.target.seekTo(0);
                     event.target.playVideo();
@@ -728,6 +776,10 @@ const App = (() => {
                 } else {
                   // State 2 (PAUSED), State 3 (BUFFERING), State -1 (UNSTARTED), State 5 (CUED)
                   // Immediately hide layer so YouTube pause icon || or play button is NEVER visible!
+                  if (s.revealTimer) {
+                    clearTimeout(s.revealTimer);
+                    s.revealTimer = null;
+                  }
                   s.isPlaying = false;
                   const lyr = document.getElementById(s.videoLayerId);
                   if (lyr) lyr.classList.remove("is-playing");
@@ -843,6 +895,10 @@ const App = (() => {
     function pause(instanceKey) {
       const s = _state[instanceKey];
       if (!s) return;
+      if (s.revealTimer) {
+        clearTimeout(s.revealTimer);
+        s.revealTimer = null;
+      }
       s.isPlaying = false;
       const lyr = document.getElementById(s.videoLayerId);
       if (lyr) lyr.classList.remove("is-playing");
