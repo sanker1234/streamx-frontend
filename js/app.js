@@ -1022,7 +1022,7 @@ const App = (() => {
   }
 
   function toggleMobileSearch(forceState) {
-    const header = document.getElementById("top-header");
+    const header = document.getElementById("top-header") || document.querySelector(".top-header");
     const wrap = document.getElementById("header-search-wrap");
     const inp = document.getElementById("search-input");
     if (!header) return;
@@ -4127,9 +4127,13 @@ const App = (() => {
     const drawerLinksContainer = document.getElementById("drawer-links");
     if (drawerLinksContainer) {
       let drawerHTML = `
-        <button class="drawer-link drawer-search-shortcut" onclick="App.toggleMobileDrawer(); App.toggleMobileSearch(true);" style="background: rgba(255, 42, 109, 0.12); border: 1px solid rgba(255, 42, 109, 0.28); color: #fff; margin-bottom: 12px; font-weight: 600;">
+        <button class="drawer-link drawer-search-shortcut" onclick="App.toggleMobileDrawer(); App.toggleMobileSearch(true);" style="background: rgba(255, 42, 109, 0.12); border: 1px solid rgba(255, 42, 109, 0.28); color: #fff; margin-bottom: 8px; font-weight: 600;">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <span>Search Everything</span>
+        </button>
+        <button class="drawer-link drawer-profile-shortcut" onclick="App.toggleMobileDrawer(); App.showPage('profile');" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); color: #fff; margin-bottom: 12px; font-weight: 600;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="color: #ff3b65;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>My Profile &amp; Preferences</span>
         </button>
       `;
       STREAMX_NAV_SECTIONS.forEach((sect, index) => {
