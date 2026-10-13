@@ -1121,7 +1121,45 @@ const LiveTV = (() => {
     if (ch) playChannel(ch);
   }
 
-  function playChannel(ch) {
+  // Fallback stream URLs for popular channels with dead upstream feeds
+  const CHANNEL_FALLBACK_URLS = {
+    "ZeeTelugu.in@HD": "https://d116gfrn8orazi.cloudfront.net/index.m3u8?akes=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjcxOTc5NzJ9.O4qmdMPbHwKrCg6hFXvD70vjSPWKQd0a7NrjmFdeMB8",
+    "ZeeCinemalu.in@HD": "https://d116gfrn8orazi.cloudfront.net/index.m3u8?akes=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjcxOTc5NzJ9.O4qmdMPbHwKrCg6hFXvD70vjSPWKQd0a7NrjmFdeMB8",
+    "TV9Telugu.in@SD": "https://dyjmyiv3bp2ez.cloudfront.net/pub-iotv9telcmjhcs/liveabr/playlist.m3u8",
+    "TV9Telugu.in@HD": "https://dyjmyiv3bp2ez.cloudfront.net/pub-iotv9telcmjhcs/liveabr/playlist.m3u8",
+    "NTVTelugu.in@SD": "https://cdn.pishow.tv/ott/live/385/master.m3u8",
+    "10TV.in@SD": "https://cdn.pishow.tv/ott/live/385/master.m3u8",
+    "ABNAJ.in@SD": "https://dyjmyiv3bp2ez.cloudfront.net/pub-iotv9telcmjhcs/liveabr/playlist.m3u8"
+  };
+
+  let _bufferingWatchdogTimer = null;
+  let _currentNetworkRetries = 0;
+  let _hasAttemptedFallback = false;
+
+  function _startBufferingWatchdog(timeoutMs = 8000) {
+    _clearBufferingWatchdog();
+    _bufferingWatchdogTimer = setTimeout(() => {
+      if (_videoEl && (_videoEl.paused || _videoEl.readyState < 3)) {
+        console.warn("[LiveTV] Buffering watchdog triggered after " + timeoutMs + "ms for:", _currentChannel?.name);
+        _showLoading(false);
+        const errMsg = "Broadcast stream timed out. The upstream server is unreachable or offline.";
+        _showError(true, errMsg);
+        if (_hls) {
+          _hls.destroy();
+          _hls = null;
+        }
+      }
+    }, timeoutMs);
+  }
+
+  function _clearBufferingWatchdog() {
+    if (_bufferingWatchdogTimer) {
+      clearTimeout(_bufferingWatchdogTimer);
+      _bufferingWatchdogTimer = null;
+    }
+  }
+
+  function playChannel(ch, isRetry = false) {
     if (!ch) return;
     _currentChannel = ch;
 
@@ -1130,6 +1168,12 @@ const LiveTV = (() => {
 
     if (!_videoEl) _videoEl = document.getElementById("livetv-video");
     if (!_videoEl) return;
+
+    _clearBufferingWatchdog();
+    if (!isRetry) {
+      _currentNetworkRetries = 0;
+      _hasAttemptedFallback = false;
+    }
 
     if (_hls) {
       _hls.destroy();
@@ -1140,79 +1184,151 @@ const LiveTV = (() => {
     _videoEl.removeAttribute("src");
     _videoEl.load();
 
-    _showLoading(true);
+    _showLoading(true, isRetry ? "Attempting backup stream..." : "Buffering live broadcast...");
     _showError(false);
     _showPlayPrompt(false);
 
-    const streamUrl = ch.url;
+    // Determine target URL (fallback map or ch.url)
+    let streamUrl = ch.url;
+    if (_hasAttemptedFallback && (ch.altUrl || CHANNEL_FALLBACK_URLS[ch.id])) {
+      streamUrl = ch.altUrl || CHANNEL_FALLBACK_URLS[ch.id];
+    } else if (CHANNEL_FALLBACK_URLS[ch.id] && streamUrl.includes("smartplaytv.in")) {
+      // smartplaytv.in endpoints are decommissioned upstream; use verified mirror
+      streamUrl = CHANNEL_FALLBACK_URLS[ch.id];
+    }
 
     // Check mixed content warnings (HTTP on HTTPS origin)
     if (window.location.protocol === "https:" && streamUrl.startsWith("http://")) {
       console.warn("[LiveTV] Warning: HTTP stream on HTTPS page might be blocked by browser mixed-content restrictions:", streamUrl);
     }
 
+    // Attach native HTML5 video event handlers
+    _videoEl.onplaying = () => {
+      _clearBufferingWatchdog();
+      _showLoading(false);
+      _showError(false);
+      _showPlayPrompt(false);
+    };
+
+    _videoEl.oncanplay = () => {
+      _clearBufferingWatchdog();
+      _showLoading(false);
+    };
+
+    _videoEl.onwaiting = () => {
+      _showLoading(true, "Buffering stream...");
+      _startBufferingWatchdog(7000);
+    };
+
+    _videoEl.onerror = () => {
+      _clearBufferingWatchdog();
+      _showLoading(false);
+      _showError(true, "Video playback error. The stream cannot be decoded.");
+    };
+
+    // Start 8.5-second watchdog timer
+    _startBufferingWatchdog(8500);
+
     const HlsLib = window.Hls;
     if (HlsLib && typeof HlsLib.isSupported === "function" && HlsLib.isSupported()) {
       _hls = new HlsLib({
         enableWorker: true,
         lowLatencyMode: true,
-        backBufferLength: 90,
-        manifestLoadingTimeOut: 14000,
-        levelLoadingTimeOut: 14000
+        backBufferLength: 60,
+        manifestLoadingTimeOut: 8000,
+        manifestLoadingMaxRetry: 1,
+        levelLoadingTimeOut: 8000,
+        levelLoadingMaxRetry: 2,
+        fragLoadingTimeOut: 10000,
+        fragLoadingMaxRetry: 2
       });
 
       _hls.loadSource(streamUrl);
       _hls.attachMedia(_videoEl);
 
       _hls.on(HlsLib.Events.MANIFEST_PARSED, () => {
-        _showLoading(false);
         const playPromise = _videoEl.play();
         if (playPromise !== undefined) {
           playPromise.catch(err => {
             console.warn("Autoplay was prevented by browser policy:", err);
+            _clearBufferingWatchdog();
+            _showLoading(false);
             _showPlayPrompt(true);
           });
         }
       });
 
       _hls.on(HlsLib.Events.ERROR, (event, data) => {
-        if (data.fatal) {
-          console.warn("HLS fatal error encountered:", data.type, data.details);
-          switch (data.type) {
-            case HlsLib.ErrorTypes?.NETWORK_ERROR || "networkError":
-              _hls.startLoad();
-              break;
-            case HlsLib.ErrorTypes?.MEDIA_ERROR || "mediaError":
-              _hls.recoverMediaError();
-              break;
-            default:
-              _showLoading(false);
-              const isHttpOnHttps = window.location.protocol === "https:" && streamUrl.startsWith("http://");
-              const errMsg = isHttpOnHttps
-                ? "This stream is HTTP and was blocked by browser Mixed Content policy. Open with external player or try an HTTPS channel."
-                : "The selected broadcast stream is temporarily offline or unreachable.";
-              _showError(true, errMsg);
-              if (_hls) {
-                _hls.destroy();
-                _hls = null;
-              }
-              break;
+        if (!data.fatal) return;
+
+        console.warn("[LiveTV] Fatal HLS error encountered:", data.type, data.details, data.response?.code);
+
+        // Check if an alternate stream exists
+        const fallbackUrl = ch.altUrl || CHANNEL_FALLBACK_URLS[ch.id];
+        if (fallbackUrl && !_hasAttemptedFallback && fallbackUrl !== streamUrl) {
+          _hasAttemptedFallback = true;
+          console.log("[LiveTV] Primary stream failed, trying backup stream for", ch.name, ":", fallbackUrl);
+          _showLoading(true, "Switching to backup stream...");
+          if (_hls) {
+            _hls.destroy();
+            _hls = null;
           }
+          playChannel(ch, true);
+          return;
+        }
+
+        if (data.type === HlsLib.ErrorTypes?.NETWORK_ERROR || data.type === "networkError") {
+          const status = data.response?.code;
+          // If status is 404, 403, 410 or already retried once -> FAIL FAST!
+          if (status === 404 || status === 403 || status === 410 || _currentNetworkRetries >= 1) {
+            _clearBufferingWatchdog();
+            _showLoading(false);
+            let errMsg = "Broadcast stream is currently offline (HTTP " + (status || "404") + " Not Found).";
+            if (status === 403) errMsg = "Stream access restricted (HTTP 403 Forbidden).";
+            _showError(true, errMsg);
+            if (_hls) {
+              _hls.destroy();
+              _hls = null;
+            }
+            return;
+          }
+
+          // Transient network hiccup: allow 1 retry
+          _currentNetworkRetries++;
+          _hls.startLoad();
+          return;
+        }
+
+        if (data.type === HlsLib.ErrorTypes?.MEDIA_ERROR || data.type === "mediaError") {
+          _hls.recoverMediaError();
+          return;
+        }
+
+        // Other fatal errors
+        _clearBufferingWatchdog();
+        _showLoading(false);
+        _showError(true, "Stream offline or unreachable. Please try another channel.");
+        if (_hls) {
+          _hls.destroy();
+          _hls = null;
         }
       });
     } else if (_videoEl.canPlayType("application/vnd.apple.mpegurl")) {
       // Native Apple Safari HLS engine
       _videoEl.src = streamUrl;
       _videoEl.addEventListener("loadedmetadata", () => {
+        _clearBufferingWatchdog();
         _showLoading(false);
         _videoEl.play().catch(() => _showPlayPrompt(true));
       }, { once: true });
 
       _videoEl.addEventListener("error", () => {
+        _clearBufferingWatchdog();
         _showLoading(false);
         _showError(true, "Stream playback error on native player engine.");
       }, { once: true });
     } else {
+      _clearBufferingWatchdog();
       _showLoading(false);
       _showError(true, "HLS live video streaming is not supported on this browser.");
     }
@@ -1263,9 +1379,13 @@ const LiveTV = (() => {
     });
   }
 
-  function _showLoading(show) {
+  function _showLoading(show, msg = "Buffering live broadcast...") {
     const spinner = document.getElementById("livetv-player-loading");
-    if (spinner) spinner.style.display = show ? "flex" : "none";
+    if (spinner) {
+      spinner.style.display = show ? "flex" : "none";
+      const span = spinner.querySelector("span");
+      if (span && msg) span.textContent = msg;
+    }
   }
 
   function _showError(show, msg = "") {
@@ -1319,6 +1439,7 @@ const LiveTV = (() => {
   }
 
   function cleanup() {
+    _clearBufferingWatchdog();
     if (_hls) {
       _hls.destroy();
       _hls = null;
