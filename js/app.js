@@ -961,7 +961,7 @@ const App = (() => {
           <span class="hero-meta-item hero-meta-type">${item.media === "movie" ? "Movie" : "TV Show"}</span>
           ${genreNames ? `<span class="hero-meta-sep"></span><span class="hero-meta-item hero-meta-genre">${_esc(genreNames)}</span>` : ""}
         </div>
-        <p class="hero-overview">${_esc(item.overview.slice(0, 240))}${item.overview.length > 240 ? "…" : ""}</p>
+        <p class="hero-overview">${_esc(item.overview.slice(0, 300))}${item.overview.length > 300 ? "…" : ""}</p>
         <div class="hero-btns">
           <button class="btn-primary hero-btn-watch" onclick="App.openItem(${_jsonAttr(item)})">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
@@ -1142,7 +1142,7 @@ const App = (() => {
           ${item.episodes ? `<span class="hero-meta-sep"></span><span class="hero-meta-item hero-meta-ep">${item.episodes} EPS</span>` : ""}
           ${genreNames ? `<span class="hero-meta-sep"></span><span class="hero-meta-item hero-meta-genre">${_esc(genreNames)}</span>` : ""}
         </div>
-        <p class="hero-overview">${_esc(item.overview.slice(0, 240))}${item.overview.length > 240 ? "…" : ""}</p>
+        <p class="hero-overview">${_esc(item.overview.slice(0, 300))}${item.overview.length > 300 ? "…" : ""}</p>
         <div class="hero-btns">
           <button class="btn-primary hero-btn-watch anime-btn-primary" onclick="App.openItem(${_jsonAttr(item)})">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
