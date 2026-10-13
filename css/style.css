@@ -9797,10 +9797,66 @@ img.loaded {
   line-height: 1.55;
   color: rgba(255, 255, 255, 0.68);
   margin: 0;
-  max-width: 620px;
+  max-width: 720px;
 }
 
-/* ── Toolbar: Search & Country Select ──────────────────────── */
+.livetv-subtitle strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.livetv-stats-divider {
+  margin: 0 6px;
+  opacity: 0.4;
+}
+
+/* ── View Switcher Tabs matching Reference Project ─────────── */
+.livetv-view-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(14, 18, 30, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 5px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.livetv-view-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.livetv-view-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.livetv-view-tab.active {
+  background: #e50914;
+  color: #ffffff;
+  border-color: #e50914;
+  box-shadow: 0 4px 16px rgba(229, 9, 20, 0.4);
+}
+
+.livetv-view-tab svg {
+  flex-shrink: 0;
+}
+
+/* ── Toolbar: Search & Filter Selects ──────────────────────── */
 .livetv-toolbar {
   display: flex;
   align-items: center;
@@ -9818,7 +9874,7 @@ img.loaded {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 9999px;
-  width: 250px;
+  width: 260px;
   transition: all 0.22s ease;
   color: #ffffff;
 }
@@ -9826,7 +9882,7 @@ img.loaded {
 .livetv-search-box:focus-within {
   border-color: #e50914;
   box-shadow: 0 0 18px rgba(229, 9, 20, 0.35);
-  width: 290px;
+  width: 300px;
 }
 
 .livetv-search-box svg {
@@ -9847,7 +9903,8 @@ img.loaded {
   color: rgba(255, 255, 255, 0.45);
 }
 
-.livetv-country-select-wrap {
+.livetv-country-select-wrap,
+.livetv-lang-select-wrap {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -9862,11 +9919,13 @@ img.loaded {
   transition: all 0.22s ease;
 }
 
-.livetv-country-select-wrap:hover {
+.livetv-country-select-wrap:hover,
+.livetv-lang-select-wrap:hover {
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-.livetv-country-select-wrap select {
+.livetv-country-select-wrap select,
+.livetv-lang-select-wrap select {
   background: transparent;
   border: none;
   outline: none;
@@ -9874,11 +9933,75 @@ img.loaded {
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
+  max-width: 200px;
 }
 
-.livetv-country-select-wrap select option {
+.livetv-country-select-wrap select option,
+.livetv-lang-select-wrap select option {
   background: #0f1322;
   color: #ffffff;
+}
+
+/* ── Active Filters Chips Bar ──────────────────────────────── */
+.livetv-active-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: rgba(229, 9, 20, 0.08);
+  border: 1px solid rgba(229, 9, 20, 0.22);
+  border-radius: 12px;
+}
+
+.livetv-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.livetv-filter-chip button {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.livetv-filter-chip button:hover {
+  color: #ff4d4f;
+}
+
+.livetv-filter-clear-all {
+  background: transparent;
+  border: none;
+  color: #ff4d4f;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.livetv-filter-clear-all:hover {
+  background: rgba(255, 77, 79, 0.15);
+  text-decoration: underline;
 }
 
 /* ── Category Pills Filter Bar ─────────────────────────────── */
@@ -10452,6 +10575,172 @@ img.loaded {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.livetv-empty-state .btn-primary:hover {
+  background: #b80710;
+  transform: scale(1.03);
+}
+
+.livetv-card-flag {
+  font-size: 13px;
+  margin-right: 2px;
+}
+
+.livetv-scroll-sentinel {
+  height: 24px;
+  width: 100%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* ── Subviews Container (Countries, Languages, Categories) ──── */
+.livetv-subview-header {
+  margin-bottom: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.livetv-subview-header h3 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.01em;
+}
+
+.livetv-subview-header p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* ── Country Cards Grid (Reference Project Parity) ─────────── */
+.livetv-countries-grid,
+.livetv-languages-grid,
+.livetv-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  padding-bottom: 40px;
+}
+
+.livetv-country-card,
+.livetv-lang-card,
+.livetv-cat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(14, 18, 30, 0.75);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.livetv-country-card::before,
+.livetv-lang-card::before,
+.livetv-cat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top left, rgba(229, 9, 20, 0.12), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+
+.livetv-country-card:hover,
+.livetv-lang-card:hover,
+.livetv-cat-card:hover {
+  background: rgba(24, 30, 48, 0.9);
+  border-color: #e50914;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 16px rgba(229, 9, 20, 0.2);
+}
+
+.livetv-country-card:hover::before,
+.livetv-lang-card:hover::before,
+.livetv-cat-card:hover::before {
+  opacity: 1;
+}
+
+.livetv-country-card.selected,
+.livetv-lang-card.selected,
+.livetv-cat-card.selected {
+  border-color: #e50914;
+  background: rgba(229, 9, 20, 0.16);
+  box-shadow: 0 0 20px rgba(229, 9, 20, 0.35);
+}
+
+.livetv-country-flag {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.livetv-country-text,
+.livetv-lang-text,
+.livetv-cat-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.livetv-country-name,
+.livetv-lang-name,
+.livetv-cat-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.livetv-country-count,
+.livetv-lang-count,
+.livetv-cat-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+}
+
+.livetv-country-card:hover .livetv-country-name,
+.livetv-lang-card:hover .livetv-lang-name,
+.livetv-cat-card:hover .livetv-cat-name {
+  color: #ffffff;
+}
+
+.livetv-lang-icon,
+.livetv-cat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff4d4f;
+  flex-shrink: 0;
+}
+
+.livetv-empty-grid {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 15px;
 }
 
 /* ── Live TV Mobile & Tablet Responsiveness ────────────────── */
