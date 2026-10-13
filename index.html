@@ -141,6 +141,10 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.1-4.5h7.6z"/></svg>
         <span>Anime</span>
       </a>
+      <a href="#/livetv" class="glass-nav-item" id="nav-link-livetv" onclick="App.showPage('livetv'); return false;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M21 6h-7.59l3.29-3.3a1 1 0 10-1.41-1.41L12 4.59 8.71 1.29A1 1 0 007.29 2.7L10.59 6H3a2 2 0 00-2 2v12a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2zm0 14H3V8h18v12zM9 10v8l7-4-7-4z"/></svg>
+        <span>Live TV</span>
+      </a>
     </div>
   </div>
 
@@ -336,6 +340,147 @@
   <!-- Dedicated anime and donghua content browsing rows -->
   <div id="anime-home-rows" aria-label="Anime and donghua browsing rows"></div>
 
+</div>
+
+<!-- ── DEDICATED LIVE TV WEBPAGE ─────────────────────── -->
+<div id="page-livetv" class="page livetv-page" style="display:none" role="main" aria-label="Live TV and Global Broadcasts">
+  <div class="livetv-container">
+
+    <!-- Live TV Header Bar -->
+    <div class="livetv-header">
+      <div class="livetv-header-info">
+        <div class="livetv-header-badge">
+          <span class="live-dot-pulse"></span>
+          <span>LIVE BROADCASTS</span>
+        </div>
+        <h1 class="livetv-title">Live Television</h1>
+        <p class="livetv-subtitle">Stream global free-to-air news, sports, movies, documentaries &amp; entertainment channels with low-latency playback.</p>
+      </div>
+
+      <!-- Search & Country Toolbar -->
+      <div class="livetv-toolbar">
+        <div class="livetv-search-box">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="livetv-search" placeholder="Search channels..." oninput="LiveTV.onSearchInput(this.value)" autocomplete="off" />
+        </div>
+        <div class="livetv-country-select-wrap">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          <select id="livetv-country-select" onchange="LiveTV.setCountry(this.value)" aria-label="Filter channels by country">
+            <option value="all">All Countries</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Pills Rail -->
+    <div class="livetv-cat-bar" role="navigation" aria-label="Channel categories">
+      <button class="livetv-cat-pill active" data-cat="all" onclick="LiveTV.setCategory('all')">All Channels</button>
+      <button class="livetv-cat-pill" data-cat="news" onclick="LiveTV.setCategory('news')">News</button>
+      <button class="livetv-cat-pill" data-cat="sports" onclick="LiveTV.setCategory('sports')">Sports</button>
+      <button class="livetv-cat-pill" data-cat="movies" onclick="LiveTV.setCategory('movies')">Movies</button>
+      <button class="livetv-cat-pill" data-cat="animation" onclick="LiveTV.setCategory('animation')">Animation</button>
+      <button class="livetv-cat-pill" data-cat="music" onclick="LiveTV.setCategory('music')">Music</button>
+      <button class="livetv-cat-pill" data-cat="documentary" onclick="LiveTV.setCategory('documentary')">Documentary</button>
+      <button class="livetv-cat-pill" data-cat="entertainment" onclick="LiveTV.setCategory('entertainment')">Entertainment</button>
+      <button class="livetv-cat-pill livetv-cat-fav" data-cat="favorites" onclick="LiveTV.setCategory('favorites')">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="#e50914"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <span>Favorites</span>
+      </button>
+    </div>
+
+    <!-- Main Theater & Browser Grid -->
+    <div class="livetv-main-layout">
+
+      <!-- Left / Top: Cinema Theater Player -->
+      <div class="livetv-theater-col">
+        <div class="livetv-theater-card">
+          <div class="livetv-theater-frame" id="livetv-theater-frame">
+            <video id="livetv-video" class="livetv-video-player" playsinline controls preload="auto"></video>
+
+            <!-- Buffering Loading Spinner -->
+            <div id="livetv-player-loading" class="livetv-player-overlay livetv-loading-overlay" style="display:none">
+              <div class="livetv-spinner"></div>
+              <span>Buffering live broadcast...</span>
+            </div>
+
+            <!-- Autoplay Click Prompt -->
+            <div id="livetv-player-prompt" class="livetv-player-overlay livetv-prompt-overlay" style="display:none" onclick="LiveTV.handleUserPlayClick()">
+              <button class="livetv-big-play-btn" aria-label="Play broadcast">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              </button>
+              <span>Click to Unmute / Play</span>
+            </div>
+
+            <!-- Error Overlay -->
+            <div id="livetv-player-error" class="livetv-player-overlay livetv-error-overlay" style="display:none">
+              <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ff4d4f" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+              </svg>
+              <span id="livetv-player-error-text">Stream offline or temporarily unreachable.</span>
+              <div class="livetv-error-actions">
+                <button class="btn-primary" onclick="LiveTV.retryCurrentChannel()">Retry Stream</button>
+                <button class="btn-secondary" onclick="LiveTV.playNextChannel()">Next Channel</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Channel Metadata Bar Below Player -->
+          <div class="livetv-player-info-bar">
+            <div class="livetv-player-info-left">
+              <div class="livetv-player-logo-wrap" id="livetv-player-logo-wrap">
+                <div class="livetv-player-logo-fallback">TV</div>
+              </div>
+              <div class="livetv-player-titles">
+                <div class="livetv-player-title-row">
+                  <h2 id="livetv-player-title" class="livetv-player-channel-name">NASA TV HD</h2>
+                  <span class="livetv-badge-pill livetv-badge-live">
+                    <span class="live-dot"></span> LIVE
+                  </span>
+                  <span id="livetv-player-country" class="livetv-badge-pill livetv-badge-country">US</span>
+                </div>
+                <p id="livetv-player-cat" class="livetv-player-channel-cat">Documentary &amp; Space Science</p>
+              </div>
+            </div>
+
+            <div class="livetv-player-actions">
+              <button id="livetv-player-fav-btn" class="livetv-action-btn livetv-fav-btn" onclick="LiveTV.toggleFavorite(LiveTV._currentChannel?.id)">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <span>Favorite</span>
+              </button>
+              <button class="livetv-action-btn" title="Reload live stream" onclick="LiveTV.retryCurrentChannel()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 4v6h-6M1 20v-6h6"/>
+                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                </svg>
+                <span>Reload</span>
+              </button>
+              <button class="livetv-action-btn" title="Fullscreen" onclick="LiveTV.toggleFullscreen()">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+                </svg>
+                <span>Fullscreen</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right / Below: Channel Browser Grid & List -->
+      <div class="livetv-browser-col">
+        <div class="livetv-browser-header">
+          <div class="livetv-browser-title-wrap">
+            <h3>Channel Guide</h3>
+            <span id="livetv-results-count" class="livetv-count-badge">Loading...</span>
+          </div>
+        </div>
+        <div id="livetv-channels-grid" class="livetv-channels-grid"></div>
+      </div>
+
+    </div>
+
+  </div>
 </div>
 
 <!-- ── SEARCH PAGE ────────────────────────────────── -->
@@ -872,6 +1017,7 @@
 <script src="js/watchlist.js?v=11.0"></script> <!-- localStorage watchlist -->
 <script src="js/history.js?v=11.0"></script>   <!-- continue watching / recently viewed -->
 <script src="js/player.js?v=11.0"></script>    <!-- detail modal + server picker -->
+<script src="js/livetv.js?v=11.0"></script>    <!-- Live TV & broadcast streaming engine -->
 <script src="js/app.js?v=11.0"></script>       <!-- main app controller, boots on DOMContentLoaded -->
 
 </body>

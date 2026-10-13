@@ -595,6 +595,12 @@ const STREAMX_NAV_SECTIONS = [
     ]
   },
   {
+    section: "Live Television",
+    items: [
+      { id: "livetv", label: "Live TV", action: "page", target: "livetv", icon: "livetv" }
+    ]
+  },
+  {
     section: "Library",
     items: [
       { id: "watchlist", label: "Watchlist", action: "page", target: "watchlist", icon: "watchlist" },

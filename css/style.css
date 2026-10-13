@@ -9711,3 +9711,802 @@ img.loaded {
     display: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LIVE TELEVISION MODULE — CINEMATIC BROADCAST SUITE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.livetv-page {
+  min-height: 100vh;
+  padding: 94px 32px 64px;
+  background: radial-gradient(circle at 18% 10%, rgba(229, 9, 20, 0.07) 0%, transparent 45%),
+              radial-gradient(circle at 85% 15%, rgba(35, 75, 150, 0.08) 0%, transparent 40%),
+              #07080d;
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+.livetv-container {
+  max-width: 1520px;
+  margin: 0 auto;
+}
+
+/* ── Live TV Header ────────────────────────────────────────── */
+.livetv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.livetv-header-info {
+  flex: 1 1 420px;
+}
+
+.livetv-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  background: rgba(229, 9, 20, 0.14);
+  border: 1px solid rgba(229, 9, 20, 0.35);
+  color: #ff3b65;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.live-dot-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e50914;
+  box-shadow: 0 0 10px #e50914;
+  animation: liveDotPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes liveDotPulse {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.85;
+    box-shadow: 0 0 6px #e50914;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 1;
+    box-shadow: 0 0 14px #ff2a4b;
+  }
+}
+
+.livetv-title {
+  font-size: clamp(28px, 3.4vw, 44px);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.livetv-subtitle {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.68);
+  margin: 0;
+  max-width: 620px;
+}
+
+/* ── Toolbar: Search & Country Select ──────────────────────── */
+.livetv-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.livetv-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(14, 18, 30, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  width: 250px;
+  transition: all 0.22s ease;
+  color: #ffffff;
+}
+
+.livetv-search-box:focus-within {
+  border-color: #e50914;
+  box-shadow: 0 0 18px rgba(229, 9, 20, 0.35);
+  width: 290px;
+}
+
+.livetv-search-box svg {
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.livetv-search-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 13.5px;
+  width: 100%;
+}
+
+.livetv-search-box input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.livetv-country-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(14, 18, 30, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+.livetv-country-select-wrap:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.livetv-country-select-wrap select {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.livetv-country-select-wrap select option {
+  background: #0f1322;
+  color: #ffffff;
+}
+
+/* ── Category Pills Filter Bar ─────────────────────────────── */
+.livetv-cat-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 24px;
+  scrollbar-width: none;
+}
+
+.livetv-cat-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.livetv-cat-pill {
+  padding: 8px 18px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.livetv-cat-pill:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.livetv-cat-pill.active {
+  background: linear-gradient(135deg, #ff2a4b 0%, #e50914 100%);
+  border-color: #ff3b65;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(229, 9, 20, 0.45), 0 0 10px rgba(255, 42, 75, 0.25);
+}
+
+.livetv-cat-fav.active {
+  background: rgba(229, 9, 20, 0.22);
+  border-color: #e50914;
+  color: #ff4d4f;
+}
+
+/* ── Main Layout: Theater Player + Channel Guide ──────────── */
+.livetv-main-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(360px, 1.2fr);
+  gap: 28px;
+  align-items: start;
+}
+
+/* ── Left / Top: Cinema Theater Player Card ────────────────── */
+.livetv-theater-col {
+  position: sticky;
+  top: 96px;
+}
+
+.livetv-theater-card {
+  background: rgba(12, 16, 28, 0.75);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: border-color 0.3s ease;
+}
+
+.livetv-theater-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000000;
+  overflow: hidden;
+}
+
+.livetv-video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000000;
+  display: block;
+}
+
+/* Player Overlays */
+.livetv-player-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(6, 9, 16, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  padding: 24px;
+  text-align: center;
+}
+
+.livetv-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3.5px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #e50914;
+  border-right-color: #ff3b65;
+  border-radius: 50%;
+  animation: liveSpinner 0.8s linear infinite;
+}
+
+@keyframes liveSpinner {
+  to { transform: rotate(360deg); }
+}
+
+.livetv-prompt-overlay {
+  cursor: pointer;
+  background: rgba(6, 9, 16, 0.72);
+}
+
+.livetv-big-play-btn {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff2a4b, #e50914);
+  border: none;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 30px rgba(229, 9, 20, 0.65);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.livetv-big-play-btn:hover {
+  transform: scale(1.1);
+}
+
+.livetv-error-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.livetv-error-actions .btn-primary {
+  background: #e50914;
+  color: #ffffff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.livetv-error-actions .btn-secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 9px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Live Channel Info Bar (Below Player) ──────────────────── */
+.livetv-player-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(8, 11, 20, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.livetv-player-info-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.livetv-player-logo-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.livetv-player-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+}
+
+.livetv-player-logo-fallback {
+  font-size: 18px;
+  font-weight: 800;
+  color: #e50914;
+}
+
+.livetv-player-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.livetv-player-channel-name {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.livetv-badge-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+.livetv-badge-live {
+  background: rgba(229, 9, 20, 0.2);
+  color: #ff3b65;
+  border: 1px solid rgba(229, 9, 20, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.livetv-badge-country {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.livetv-player-channel-cat {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 3px 0 0 0;
+}
+
+.livetv-player-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.livetv-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.livetv-action-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+
+.livetv-fav-btn.active {
+  background: rgba(229, 9, 20, 0.22);
+  border-color: #e50914;
+  color: #ff3b65;
+}
+
+/* ── Right / Channel Guide Browser Column ─────────────────── */
+.livetv-browser-col {
+  background: rgba(12, 16, 28, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  max-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+}
+
+.livetv-browser-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.livetv-browser-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.livetv-browser-title-wrap h3 {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.livetv-count-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.livetv-channels-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  overflow-y: auto;
+  padding-right: 6px;
+  flex: 1;
+}
+
+.livetv-channels-grid::-webkit-scrollbar {
+  width: 5px;
+}
+
+.livetv-channels-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+
+.livetv-channels-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.livetv-channels-grid::-webkit-scrollbar-thumb:hover {
+  background: #e50914;
+}
+
+/* ── Channel Card Item ─────────────────────────────────────── */
+.livetv-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  user-select: none;
+}
+
+.livetv-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateX(3px);
+}
+
+.livetv-card.active-playing {
+  background: rgba(229, 9, 20, 0.14) !important;
+  border-color: #e50914 !important;
+  box-shadow: 0 4px 20px rgba(229, 9, 20, 0.25), inset 0 0 14px rgba(229, 9, 20, 0.12);
+}
+
+.livetv-card-logo-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(10, 14, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.livetv-card-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
+
+.livetv-card-logo-fallback {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ff3b65;
+}
+
+.livetv-card-badge-live {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ff3b65;
+  display: none;
+}
+
+.livetv-card.active-playing .livetv-card-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.livetv-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.livetv-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 3px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.livetv-card.active-playing .livetv-card-title {
+  color: #ff4d4f;
+}
+
+.livetv-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.livetv-card-dot {
+  opacity: 0.5;
+}
+
+.livetv-card-country {
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+}
+
+/* Card Favorite Button */
+.livetv-card-fav {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.livetv-card-fav:hover {
+  color: #ff3b65;
+  transform: scale(1.15);
+}
+
+.livetv-card-fav.active {
+  color: #e50914 !important;
+}
+
+/* Equalizer Animation for Active Channel */
+.livetv-card-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.eq-bar {
+  width: 3px;
+  background: #e50914;
+  border-radius: 2px;
+  animation: liveEqBounce 0.8s ease-in-out infinite alternate;
+}
+
+.eq-bar:nth-child(1) { height: 8px; animation-delay: 0.1s; }
+.eq-bar:nth-child(2) { height: 16px; animation-delay: 0.3s; }
+.eq-bar:nth-child(3) { height: 10px; animation-delay: 0.2s; }
+
+@keyframes liveEqBounce {
+  0% { height: 4px; }
+  100% { height: 16px; }
+}
+
+/* Empty State */
+.livetv-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.livetv-empty-state svg {
+  margin-bottom: 12px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.livetv-empty-state h4 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.livetv-empty-state p {
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+  max-width: 320px;
+}
+
+.livetv-empty-state .btn-primary {
+  background: #e50914;
+  color: #ffffff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── Live TV Mobile & Tablet Responsiveness ────────────────── */
+@media (max-width: 1080px) {
+  .livetv-main-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .livetv-theater-col {
+    position: static;
+  }
+
+  .livetv-browser-col {
+    max-height: 600px;
+  }
+}
+
+@media (max-width: 768px) {
+  .livetv-page {
+    padding: 80px 16px 48px;
+  }
+
+  .livetv-header {
+    margin-bottom: 18px;
+  }
+
+  .livetv-toolbar {
+    width: 100%;
+  }
+
+  .livetv-search-box {
+    flex: 1;
+    width: auto !important;
+  }
+
+  .livetv-player-info-bar {
+    padding: 14px 16px;
+  }
+
+  .livetv-player-channel-name {
+    font-size: 15px;
+  }
+
+  .livetv-action-btn span {
+    display: none;
+  }
+
+  .livetv-action-btn {
+    padding: 8px;
+    border-radius: 50%;
+  }
+
+  .livetv-browser-col {
+    padding: 14px;
+    max-height: 520px;
+  }
+}

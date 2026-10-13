@@ -2971,6 +2971,10 @@ const App = (() => {
     }
 
     // Direct section routes
+    if (path === "/livetv" || path === "/live" || path === "/tv-live") {
+      _showPage("livetv", true);
+      return true;
+    }
     if (path === "/anime" || path === "/animation") {
       await _loadAnimePageContent();
       _showPage("anime", true);
@@ -3115,8 +3119,13 @@ const App = (() => {
     sidebar?.classList.remove("hidden");
     document.body.style.paddingLeft = "";
 
+    // Clean up Live TV playback when navigating to any other page
+    if (page !== "livetv" && window.LiveTV && typeof LiveTV.cleanup === "function") {
+      LiveTV.cleanup();
+    }
+
     const pages = [
-      "home", "anime", "search", "browse", "watchlist",
+      "home", "anime", "livetv", "search", "browse", "watchlist",
       "history-page", "continue-page", "settings-page", "profile"
     ];
 
@@ -3149,6 +3158,12 @@ const App = (() => {
       _resumeAllRowAutoScroll();
       document.getElementById("anime-dest-btn-general")?.classList.remove("active");
       document.getElementById("anime-dest-btn-anime")?.classList.add("active");
+    } else if (page === "livetv") {
+      HeroTrailerController.pauseAll();
+      _pauseAllRowAutoScroll();
+      if (window.LiveTV && typeof LiveTV.init === "function") {
+        LiveTV.init();
+      }
     } else {
       HeroTrailerController.pauseAll();
       _pauseAllRowAutoScroll();
@@ -3170,6 +3185,7 @@ const App = (() => {
       const hashMap = {
         home: "#/",
         anime: "#/anime",
+        livetv: "#/livetv",
         profile: "#/profile",
         search: _searchQuery ? `#/search?q=${encodeURIComponent(_searchQuery)}` : "#/search",
         browse: _activeRowId ? `#/browse/${_activeRowId}` : "#/browse",
@@ -3196,6 +3212,8 @@ const App = (() => {
       document.getElementById("nav-link-home")?.classList.add("active");
     } else if (page === "anime") {
       document.getElementById("nav-link-anime")?.classList.add("active");
+    } else if (page === "livetv") {
+      document.getElementById("nav-link-livetv")?.classList.add("active");
     } else if (page === "browse" && rowId) {
       if (rowId.includes("movie")) {
         document.getElementById("nav-link-movies")?.classList.add("active");
@@ -4176,12 +4194,32 @@ const App = (() => {
   }
 
   function _updateActiveNavLinks(page, rowId = null) {
+    // 0. Floating Glass Navbar items (Reference Design)
+    document.querySelectorAll(".glass-nav-item").forEach(item => {
+      item.classList.remove("active");
+    });
+    if (page === "home") {
+      document.getElementById("nav-link-home")?.classList.add("active");
+    } else if (page === "anime") {
+      document.getElementById("nav-link-anime")?.classList.add("active");
+    } else if (page === "livetv") {
+      document.getElementById("nav-link-livetv")?.classList.add("active");
+    } else if (page === "browse" && rowId) {
+      if (rowId.includes("movie")) {
+        document.getElementById("nav-link-movies")?.classList.add("active");
+      } else if (rowId.includes("tv") || rowId.includes("series")) {
+        document.getElementById("nav-link-tv")?.classList.add("active");
+      }
+    }
+
     // 1. Sidebar Links Highlight
     const sidebarLinks = document.querySelectorAll(".sidebar-link, .sidebar-sublink");
     sidebarLinks.forEach(link => {
       link.classList.remove("active");
       const navId = link.getAttribute("data-nav-id") || "";
       if (page === "home" && navId === "home") {
+        link.classList.add("active");
+      } else if (page === "livetv" && navId === "livetv") {
         link.classList.add("active");
       } else if (page === "anime") {
         if (rowId === "donghua" && navId === "donghua") {
@@ -4219,6 +4257,8 @@ const App = (() => {
       const navId = link.getAttribute("data-nav-id") || "";
       if (page === "home" && navId === "home") {
         link.classList.add("active");
+      } else if (page === "livetv" && navId === "livetv") {
+        link.classList.add("active");
       } else if (page === "anime") {
         if (rowId === "donghua" && navId === "donghua") {
           link.classList.add("active");
@@ -4254,6 +4294,7 @@ const App = (() => {
       home: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",
       movies: "M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z",
       tv: "M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .07-2 1.18V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V7.18c0-1.11-.9-1.18-2-1.18zm0 13H3V8h18v11z",
+      livetv: "M21 6h-7.59l3.29-3.3a1 1 0 10-1.41-1.41L12 4.59 8.71 1.29A1 1 0 007.29 2.7L10.59 6H3a2 2 0 00-2 2v12a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2zm0 14H3V8h18v12zM9 10v8l7-4-7-4z",
       animation: "M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z",
       anime: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z",
       donghua: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c3.95-.49 7-3.85 7-7.93 0-.62-.08-1.21-.21-1.79L15 15v1c0 1.1-.9 2-2 2v1.93zm-6.9-2.54c.26-.81 1-1.39 1.9-1.39h1v-3c0-.55.45-1 1-1h2v-2h-2c-.55 0-1-.45-1-1V7h-2c-1.1 0-2-.9-2-2v-.41C3.87 5.78 2 8.68 2 12c0 2.08.8 3.97 2.1 5.39z",
@@ -6550,7 +6591,10 @@ const App = (() => {
     selectPlatform,
     setPlatformMediaType,
     scrollPlatformRail,
-    renderStreamingPlatformSection: _renderStreamingPlatformSection
+    renderStreamingPlatformSection: _renderStreamingPlatformSection,
+
+    // Live TV Module Reference
+    LiveTV: window.LiveTV
   };
 })();
 
