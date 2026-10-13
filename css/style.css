@@ -518,7 +518,7 @@ nav {
   overflow: hidden;
   opacity: 0 !important;
   visibility: hidden !important;
-  transition: opacity 0.5s ease, visibility 0.5s ease;
+  transition: opacity 0s linear, visibility 0s linear !important;
   pointer-events: none !important;
   background-color: transparent;
 }
@@ -526,6 +526,7 @@ nav {
 .hero-video-layer.is-playing {
   opacity: 1 !important;
   visibility: visible !important;
+  transition: opacity 0.65s ease-out, visibility 0.65s ease-out !important;
 }
 
 .hero-trailer-iframe-wrap {
@@ -8072,7 +8073,7 @@ img.loaded {
 .pm-hero-video-layer {
   opacity: 0 !important;
   visibility: hidden !important;
-  transition: opacity 0.5s ease, visibility 0.5s ease !important;
+  transition: opacity 0s linear, visibility 0s linear !important;
   pointer-events: none !important;
 }
 
@@ -8081,6 +8082,7 @@ img.loaded {
 .pm-hero-video-layer.is-playing {
   opacity: 1 !important;
   visibility: visible !important;
+  transition: opacity 0.65s ease-out, visibility 0.65s ease-out !important;
 }
 
 .hero-trailer-iframe-wrap,
@@ -8091,6 +8093,15 @@ img.loaded {
   user-select: none !important;
   -webkit-user-select: none !important;
   touch-action: none !important;
+}
+
+.hero-trailer-touch-shield {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 10 !important;
+  pointer-events: auto !important;
+  background: transparent !important;
+  cursor: default !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════

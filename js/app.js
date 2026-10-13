@@ -655,6 +655,7 @@ const App = (() => {
         targetLayer.innerHTML = `
           <div class="hero-trailer-iframe-wrap">
             <div id="${s.videoLayerId}-player"></div>
+            <div class="hero-trailer-touch-shield" aria-hidden="true"></div>
           </div>
         `;
 
@@ -755,6 +756,7 @@ const App = (() => {
                 aria-hidden="true"
                 style="pointer-events:none !important; border:0; width:100%; height:100%;">
               </iframe>
+              <div class="hero-trailer-touch-shield" aria-hidden="true"></div>
             </div>
           `;
           setTimeout(() => {
