@@ -4194,21 +4194,26 @@ const App = (() => {
   }
 
   function _updateActiveNavLinks(page, rowId = null) {
-    // 0. Floating Glass Navbar items (Reference Design)
-    document.querySelectorAll(".glass-nav-item").forEach(item => {
+    // 0. Floating Glass Navbar & Mobile Bottom Nav items (Reference Design)
+    document.querySelectorAll(".glass-nav-item, .mobile-bottom-nav-item").forEach(item => {
       item.classList.remove("active");
     });
     if (page === "home") {
       document.getElementById("nav-link-home")?.classList.add("active");
+      document.getElementById("mob-nav-home")?.classList.add("active");
     } else if (page === "anime") {
       document.getElementById("nav-link-anime")?.classList.add("active");
+      document.getElementById("mob-nav-anime")?.classList.add("active");
     } else if (page === "livetv") {
       document.getElementById("nav-link-livetv")?.classList.add("active");
+      document.getElementById("mob-nav-livetv")?.classList.add("active");
     } else if (page === "browse" && rowId) {
       if (rowId.includes("movie")) {
         document.getElementById("nav-link-movies")?.classList.add("active");
+        document.getElementById("mob-nav-movies")?.classList.add("active");
       } else if (rowId.includes("tv") || rowId.includes("series")) {
         document.getElementById("nav-link-tv")?.classList.add("active");
+        document.getElementById("mob-nav-tv")?.classList.add("active");
       }
     }
 

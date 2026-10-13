@@ -100,6 +100,15 @@
 <!-- ── Minimal Top Header Navigation (Floating Glass Pill) ─────── -->
 <nav role="navigation" aria-label="Main navigation" id="top-header" class="top-header floating-glass-nav">
   <div class="glass-nav-left">
+    <!-- Mobile Hamburger Menu Button -->
+    <button class="nav-icon-btn mobile-hamburger-btn" id="mobile-hamburger-btn" aria-label="Open Navigation Menu" onclick="App.toggleMobileDrawer()">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+
     <div class="nav-logo header-logo" onclick="App.showPage('home')" role="link" tabindex="0"
          onkeydown="if(event.key==='Enter')App.showPage('home')" aria-label="9CineJoy Home">
       <svg class="brand-logo-svg" viewBox="0 0 64 64" width="28" height="28" aria-hidden="true">
@@ -1077,6 +1086,30 @@
   </div>
   <div class="drawer-links" id="drawer-links"></div>
 </div>
+
+<!-- ── Floating Mobile Bottom Navigation Bar (Mobile Controls) ── -->
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile Navigation Controls">
+  <button class="mobile-bottom-nav-item active" id="mob-nav-home" onclick="App.showPage('home')" aria-label="Home">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="mobile-bottom-nav-item" id="mob-nav-movies" onclick="App.handleNavItemClick('movies', 'browse', 'trending_movies')" aria-label="Movies">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+    <span>Movies</span>
+  </button>
+  <button class="mobile-bottom-nav-item" id="mob-nav-tv" onclick="App.handleNavItemClick('series', 'browse', 'trending_tv')" aria-label="TV Shows">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+    <span>TV Shows</span>
+  </button>
+  <button class="mobile-bottom-nav-item" id="mob-nav-anime" onclick="App.showPage('anime')" aria-label="Anime">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.1-4.5h7.6z"/></svg>
+    <span>Anime</span>
+  </button>
+  <button class="mobile-bottom-nav-item" id="mob-nav-livetv" onclick="App.showPage('livetv')" aria-label="Live TV">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M21 6h-7.59l3.29-3.3a1 1 0 10-1.41-1.41L12 4.59 8.71 1.29A1 1 0 007.29 2.7L10.59 6H3a2 2 0 00-2 2v12a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2zm0 14H3V8h18v12zM9 10v8l7-4-7-4z"/></svg>
+    <span>Live TV</span>
+  </button>
+</nav>
 
 <!-- ── Scripts — loaded in dependency order ───────── -->
 <script src="js/config.js?v=11.0"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->

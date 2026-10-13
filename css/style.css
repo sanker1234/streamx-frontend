@@ -8338,6 +8338,14 @@ img.loaded {
   filter: drop-shadow(0 4px 16px rgba(229, 9, 20, 0.6));
 }
 
+.mobile-hamburger-btn {
+  display: none;
+}
+
+.mobile-bottom-nav {
+  display: none;
+}
+
 .glass-nav-links {
   display: flex !important;
   align-items: center;
@@ -8988,7 +8996,102 @@ img.loaded {
     border-radius: 16px !important;
   }
 
+  .mobile-hamburger-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    cursor: pointer;
+    margin-right: 8px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-hamburger-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(229, 9, 20, 0.5);
+  }
+
   .glass-nav-links {
+    display: none !important;
+  }
+
+  /* Floating Mobile Bottom Navigation Bar (Mobile Controls) */
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    background: rgba(10, 14, 26, 0.94);
+    backdrop-filter: blur(28px) saturate(210%);
+    -webkit-backdrop-filter: blur(28px) saturate(210%);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.65);
+    z-index: 995;
+    justify-content: space-around;
+    align-items: center;
+    user-select: none;
+  }
+
+  .mobile-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex: 1;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    padding: 6px 0;
+  }
+
+  .mobile-bottom-nav-item svg {
+    color: rgba(255, 255, 255, 0.55);
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  .mobile-bottom-nav-item:hover {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .mobile-bottom-nav-item.active {
+    color: #ffffff;
+  }
+
+  .mobile-bottom-nav-item.active svg {
+    color: #e50914;
+    transform: translateY(-1px);
+    filter: drop-shadow(0 0 10px rgba(229, 9, 20, 0.6));
+  }
+
+  .mobile-bottom-nav-item.active span {
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  /* Ensure pages have breathing room above bottom nav */
+  body, .page, .livetv-page {
+    padding-bottom: 76px !important;
+  }
+
+  /* Hide bottom nav during fullscreen video playback */
+  body.fullscreen-active .mobile-bottom-nav,
+  body.player-open .mobile-bottom-nav {
     display: none !important;
   }
 
