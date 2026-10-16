@@ -39,16 +39,17 @@
     if ('caches' in window) {
       caches.keys().then(function(keys) {
         keys.forEach(function(k) {
-          if (k !== 'nine-cinejoy-v13') {
+          if (k !== 'nine-cinejoy-v15') {
             caches.delete(k);
           }
         });
       });
     }
   </script>
-  <link rel="stylesheet" href="css/style.css?v=13.0">
+  <link rel="canonical" href="https://9cinejoy.pages.dev/">
+  <link rel="stylesheet" href="css/style.css?v=15.0">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <link rel="manifest" href="manifest.json?v=13.0">
+  <link rel="manifest" href="manifest.json?v=15.0">
 </head>
 <!-- ── Premium 9CineJoy Initial Branded Loading Screen ──────── -->
 <div id="cinejoy-loader" class="cinejoy-loader-screen" aria-label="Loading 9CineJoy" role="status">
@@ -460,6 +461,7 @@
                 <span id="livetv-player-error-text">Stream offline or temporarily unreachable.</span>
                 <div class="livetv-error-actions">
                   <button class="btn-primary" onclick="LiveTV.retryCurrentChannel()">Retry Stream</button>
+                  <a id="livetv-error-ext-link" class="btn-secondary" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Direct Stream Link ↗</a>
                   <button class="btn-secondary" onclick="LiveTV.playNextChannel()">Next Channel</button>
                 </div>
               </div>
@@ -484,6 +486,12 @@
               </div>
 
               <div class="livetv-player-actions">
+                <a id="livetv-player-ext-btn" class="livetv-action-btn" title="Open Stream Link Directly (VLC / Player)" href="#" target="_blank" rel="noopener noreferrer">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+                  </svg>
+                  <span>Direct Stream</span>
+                </a>
                 <button id="livetv-player-fav-btn" class="livetv-action-btn livetv-fav-btn" onclick="LiveTV.toggleFavorite(LiveTV._currentChannel?.id)">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -790,6 +798,38 @@
     <button class="row-see-all" onclick="App.showPage('watchlist')">View All →</button>
   </div>
   <div id="profile-watchlist-row" class="row-scroll profile-items-scroll"></div>
+</div>
+
+<!-- ── DEDICATED 404 NOT FOUND PAGE ──────────────────────── -->
+<div id="page-404" class="page page-404-wrap" style="display:none" role="main" aria-label="Scene Not Found">
+  <div class="not-found-card">
+    <div class="clapperboard-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.2 6 3 11l-.9-2.4 17.2-5z"/>
+        <path d="m6.2 5.3 3.1 4.4"/>
+        <path d="m11.6 3.7 3.1 4.4"/>
+        <path d="m17 2.1 3.1 4.4"/>
+        <path d="M4 11v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9Z"/>
+      </svg>
+    </div>
+    <div class="hero-404" aria-label="404">404</div>
+    <h1>This scene doesn't exist.</h1>
+    <p>The page you're looking for may have moved or the link may be incorrect.</p>
+    <form class="search-box not-found-search" role="search" onsubmit="event.preventDefault(); const q = document.getElementById('spa-404-search-input').value.trim(); if(q) { App.showPage('search'); App.doSearch(q); }">
+      <input type="text" id="spa-404-search-input" class="search-input" placeholder="Search movies, series or anime..." aria-label="Search titles">
+      <button type="submit" class="search-btn">Search</button>
+    </form>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" onclick="App.showPage('home')">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        Back to Home
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="if(history.length > 1) { history.back(); } else { App.showPage('home'); }">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Go Back
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ── PLAYER MODAL ───────────────────────────────── -->
@@ -1112,14 +1152,14 @@
 </nav>
 
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=11.0"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->
-<script src="js/tmdb.js?v=11.0"></script>      <!-- TMDB API layer -->
-<script src="js/anilist.js?v=11.0"></script>   <!-- AniList API layer -->
-<script src="js/watchlist.js?v=11.0"></script> <!-- localStorage watchlist -->
-<script src="js/history.js?v=11.0"></script>   <!-- continue watching / recently viewed -->
-<script src="js/player.js?v=11.0"></script>    <!-- detail modal + server picker -->
-<script src="js/livetv.js?v=11.0"></script>    <!-- Live TV & broadcast streaming engine -->
-<script src="js/app.js?v=11.0"></script>       <!-- main app controller, boots on DOMContentLoaded -->
+<script src="js/config.js?v=15.0"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->
+<script src="js/tmdb.js?v=15.0"></script>      <!-- TMDB API layer -->
+<script src="js/anilist.js?v=15.0"></script>   <!-- AniList API layer -->
+<script src="js/watchlist.js?v=15.0"></script> <!-- localStorage watchlist -->
+<script src="js/history.js?v=15.0"></script>   <!-- continue watching / recently viewed -->
+<script src="js/player.js?v=15.0"></script>    <!-- detail modal + server picker -->
+<script src="js/livetv.js?v=15.0"></script>    <!-- Live TV & broadcast streaming engine -->
+<script src="js/app.js?v=16.0"></script>       <!-- main app controller, boots on DOMContentLoaded -->
 
 </body>
 </html>

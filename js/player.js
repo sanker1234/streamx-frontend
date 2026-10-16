@@ -203,14 +203,26 @@ const Player = (() => {
 
   function _renderError(msg) {
     $("player-modal-bg").innerHTML = `
-      <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true">
-        <div class="pm-cinematic-body" style="padding:60px 20px;text-align:center;color:var(--text3)">
-          <p style="font-size:36px;margin-bottom:12px">⚠️</p>
-          <h2 style="font-size:22px;color:#fff;margin-bottom:8px">Unable to Load Title</h2>
-          <p style="margin-bottom:20px">${_esc(msg)}</p>
-          <button class="btn-primary" onclick="Player.close()">Return to Browse</button>
+      <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true" aria-label="Error loading title">
+        <div class="pm-hero-top-bar" style="position:relative;background:none;backdrop-filter:none;padding:16px 20px;">
+          <button class="pm-hero-back-btn" onclick="Player.close()" aria-label="Close modal">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <span>Close</span>
+          </button>
+        </div>
+        <div class="empty-state" role="alert" style="padding:48px 24px 64px;">
+          <div class="empty-state-icon error" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          </div>
+          <h3 class="empty-state-title">Unable to Load Title Details</h3>
+          <p class="empty-state-desc">${_esc(msg || "The content details could not be retrieved from the server or may no longer be available.")}</p>
+          <div class="empty-state-actions">
+            <button type="button" class="empty-state-btn primary" onclick="Player.close(); if (window.App) App.showPage('home');">Back to Home</button>
+            <button type="button" class="empty-state-btn secondary" onclick="Player.close()">Return to Browse</button>
+          </div>
         </div>
       </div>`;
+    $("player-modal-bg").onclick = _handleBackdropClick;
   }
 
   // ── Full Cinematic Detail Render ──────────────────────────────────────
@@ -330,6 +342,7 @@ const Player = (() => {
                   height="100%"
                   style="width:100%; height:100%; aspect-ratio:16/9; border:0; display:block;"
                   frameborder="0"
+                  ${_getSandboxAttr(_selectedServer)}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                   allowfullscreen>
                 </iframe>
@@ -693,7 +706,9 @@ const Player = (() => {
           <select id="pm-provider-select" class="pm-provider-select" onchange="Player.onProviderChange(this.value)">
             ${activeServers.map(srv => {
               const isSelected = srv.key === _selectedServer;
-              const label = `${srv.label}${srv.recommended ? " (Recommended)" : ""}`;
+              let label = srv.label;
+              if (srv.recommended) label += " (Recommended)";
+              else if (srv.incompatible) label += " [Popups Required]";
               return `<option value="${srv.key}" ${isSelected ? "selected" : ""}>
                 ${isSelected ? "✓ " : "• "}${_esc(label)}
               </option>`;
@@ -738,12 +753,13 @@ const Player = (() => {
       <div class="pm-dl-grid">
         ${DOWNLOAD_SERVERS.map(dl => {
           const url = typeof dl.url === "function" ? dl.url(item, _season || 1, _episode || 1) : "#";
+          const descText = isTv ? `Direct Episode Download (S${_season || 1} E${_episode || 1}) · ${_esc(dl.label)}` : _esc(dl.desc);
           if (isMobile) {
             return `<a class="dl-btn" href="${url}" onclick="event.preventDefault(); var w = window.open('${url}', '_blank'); if (!w || w.closed) { window.location.href = '${url}'; }" rel="noopener noreferrer">
               <div class="dl-icon">${dl.icon}</div>
               <div class="srv-info">
                 <div class="dl-name">${_esc(dl.label)}</div>
-                <div class="srv-desc">${_esc(isTv ? `Direct Download (Season ${_season || 1}, Episode ${_episode || 1}) · VidVault` : dl.desc)}</div>
+                <div class="srv-desc">${descText}</div>
               </div>
               <span class="dl-arrow">↗</span>
             </a>`;
@@ -752,13 +768,13 @@ const Player = (() => {
             <div class="dl-icon">${dl.icon}</div>
             <div class="srv-info">
               <div class="dl-name">${_esc(dl.label)}</div>
-              <div class="srv-desc">${_esc(isTv ? `Direct Download (Season ${_season || 1}, Episode ${_episode || 1}) · VidVault` : dl.desc)}</div>
+              <div class="srv-desc">${descText}</div>
             </div>
             <span class="dl-arrow">↗</span>
           </a>`;
         }).join("")}
       </div>
-      <p class="pm-note">${isTv ? `Direct episode download powered by VidVault (S${_season || 1} E${_episode || 1}).` : "Fast downloads powered by VidVault with direct TMDB ID support for movies and series."}</p>`;
+      <p class="pm-note">${isTv ? `Select any download mirror above to download Season ${_season || 1}, Episode ${_episode || 1}.` : "Select a direct download mirror above with high-speed TMDB stream link generation."}</p>`;
   }
 
   function _updateDownloadTab() {
@@ -855,9 +871,12 @@ const Player = (() => {
     );
   }
 
-  let _selectedServer = localStorage.getItem("streamx_provider") || localStorage.getItem("streamx_server") || "vidlink";
-  if (_selectedServer === "videm" || !STREAM_SERVERS.some(s => s.key === _selectedServer)) {
-    _selectedServer = STREAM_SERVERS[0]?.key || "vidlink";
+  let _selectedServer = localStorage.getItem("streamx_provider") || localStorage.getItem("streamx_server") || "cinesrc";
+  if (
+    !STREAM_SERVERS.some(s => s.key === _selectedServer) ||
+    (typeof PROVIDER_SECURITY_CONFIG !== "undefined" && PROVIDER_SECURITY_CONFIG[_selectedServer]?.status === "incompatible")
+  ) {
+    _selectedServer = STREAM_SERVERS[0]?.key || "cinesrc";
   }
 
   function _getApiBase() {
@@ -868,6 +887,14 @@ const Player = (() => {
   function _getProviderLabel(key) {
     const srv = STREAM_SERVERS.find(s => s.key === key);
     return srv ? srv.label : key;
+  }
+
+  function _getSandboxAttr(key) {
+    const cfg = (typeof PROVIDER_SECURITY_CONFIG !== "undefined" && PROVIDER_SECURITY_CONFIG[key]) || null;
+    if (cfg && cfg.sandbox) {
+      return `sandbox="${cfg.sandbox}"`;
+    }
+    return "";
   }
 
   function _showFallbackToast(msg) {
@@ -882,6 +909,21 @@ const Player = (() => {
 
   async function _resolveServerUrl(serverKey) {
     if (!_details) return { embedUrl: "", provider: serverKey, capabilities: {} };
+
+    const directServer = STREAM_SERVERS.find(srv => srv.key === serverKey);
+    const directUrl = _getSelectedServerUrl(serverKey);
+
+    // If this server is a direct client-side embed provider (like nxsha),
+    // resolve it directly to prevent remote backends from hijacking the user's choice to another server
+    if (serverKey === "nxsha" && directUrl) {
+      return {
+        embedUrl: directUrl,
+        provider: "nxsha",
+        capabilities: {},
+        isFallback: false
+      };
+    }
+
     const isTV = _details.media === "tv";
     const mediaType = isTV ? "tv" : "movie";
     const seasonStr = isTV ? `&season=${_season}` : "";
@@ -894,6 +936,18 @@ const Player = (() => {
       clearTimeout(t);
       const data = await response.json();
       if (data.success && (data.embedUrl || (data.sources && data.sources.length > 0))) {
+        // If backend returned a different server because it doesn't recognize the requested provider,
+        // but we have a valid client embed generator, honor the user's requested provider!
+        if (data.provider && data.provider !== serverKey) {
+          if (directServer && directUrl) {
+            return {
+              embedUrl: directUrl,
+              provider: serverKey,
+              capabilities: {},
+              isFallback: false
+            };
+          }
+        }
         return {
           embedUrl: data.embedUrl,
           provider: data.provider || serverKey,
@@ -905,7 +959,7 @@ const Player = (() => {
       console.warn("Failed to fetch resolved URL from backend, using client-side fallback:", e);
     }
 
-    const fallbackUrl = _getSelectedServerUrl(serverKey);
+    const fallbackUrl = directUrl || _getSelectedServerUrl(serverKey);
     return {
       embedUrl: fallbackUrl,
       provider: serverKey,
@@ -930,7 +984,7 @@ const Player = (() => {
     const targetProviderKey = res.provider || providerKey;
     const finalEmbedUrl = res.embedUrl || _getSelectedServerUrl(providerKey);
 
-    if (res.isFallback || targetProviderKey !== providerKey) {
+    if (res.isFallback && targetProviderKey !== providerKey) {
       const origLabel = _getProviderLabel(providerKey);
       const newLabel = _getProviderLabel(targetProviderKey);
       _showFallbackToast(`${_esc(origLabel)} unavailable.<br>Switched to ${_esc(newLabel)}.`);
@@ -940,15 +994,34 @@ const Player = (() => {
     localStorage.setItem("streamx_provider", targetProviderKey);
     localStorage.setItem("streamx_server", targetProviderKey);
 
+    const secConfig = (typeof PROVIDER_SECURITY_CONFIG !== "undefined" && PROVIDER_SECURITY_CONFIG[targetProviderKey]) || null;
+    const sandboxPolicy = secConfig ? secConfig.sandbox : null;
+
+    if (secConfig && secConfig.status === "incompatible") {
+      const repKey = secConfig.replacement || "vidlink";
+      const repLabel = _getProviderLabel(repKey);
+      _showFallbackToast(`⚠️ <strong>${_esc(_getProviderLabel(targetProviderKey))}</strong> requires intrusive ad tabs.<br>Recommended alternative: <strong>${_esc(repLabel)}</strong>.`);
+    }
+
     const selectEl = document.getElementById("pm-provider-select");
     if (selectEl && selectEl.options) {
       selectEl.value = targetProviderKey;
       Array.from(selectEl.options).forEach(opt => {
         const srv = STREAM_SERVERS.find(s => s.key === opt.value);
-        const label = srv ? `${srv.label}${srv.recommended ? " (Recommended)" : ""}` : opt.value;
+        let label = srv ? srv.label : opt.value;
+        if (srv?.recommended) label += " (Recommended)";
+        else if (srv?.incompatible) label += " [Popups Required]";
         const isSel = opt.value === targetProviderKey;
         opt.textContent = `${isSel ? "✓ " : "• "}${label}`;
       });
+    }
+
+    const descEl = document.querySelector(".pm-provider-desc");
+    if (descEl) {
+      const currentSrv = STREAM_SERVERS.find(s => s.key === targetProviderKey);
+      if (currentSrv) {
+        descEl.innerHTML = `${currentSrv.icon} ${_esc(currentSrv.desc)}`;
+      }
     }
 
     const frame = document.getElementById("stream-frame");
@@ -960,7 +1033,12 @@ const Player = (() => {
           newFrame.setAttribute(attr.name, attr.value);
         }
       }
-      newFrame.removeAttribute("sandbox");
+      newFrame.id = "stream-frame";
+      if (sandboxPolicy) {
+        newFrame.setAttribute("sandbox", sandboxPolicy);
+      } else {
+        newFrame.removeAttribute("sandbox");
+      }
       newFrame.setAttribute("allowfullscreen", "true");
       newFrame.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
       newFrame.src = finalEmbedUrl || "";

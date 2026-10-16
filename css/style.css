@@ -98,6 +98,22 @@
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.75);
 }
 
+/* ── WCAG 2.2 AA Accessible Focus Indicators ────────────── */
+:focus-visible {
+  outline: 2px solid var(--primary, #ff2a6d) !important;
+  outline-offset: 2px !important;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary, #ff2a6d);
+  outline-offset: 2px;
+}
+
 html {
   scroll-behavior: smooth;
   color-scheme: dark;
@@ -107,11 +123,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: #070913;
   background-image: 
-    radial-gradient(1000px 650px at 8% 6%, rgba(59, 130, 246, 0.18), transparent 60%),
-    radial-gradient(1200px 750px at 92% 14%, rgba(139, 92, 246, 0.16), transparent 60%),
-    radial-gradient(1100px 700px at 50% 48%, rgba(255, 42, 109, 0.08), transparent 65%),
-    radial-gradient(900px 600px at 85% 82%, rgba(0, 242, 254, 0.12), transparent 60%),
-    radial-gradient(1000px 700px at 12% 88%, rgba(99, 102, 241, 0.14), transparent 60%);
+    radial-gradient(1000px 600px at 10% 8%, rgba(59, 130, 246, 0.1), transparent 60%),
+    radial-gradient(1100px 650px at 90% 12%, rgba(139, 92, 246, 0.08), transparent 60%),
+    radial-gradient(900px 550px at 50% 50%, rgba(255, 42, 109, 0.05), transparent 65%);
   background-attachment: fixed;
   color: var(--text);
   min-height: 100vh;
@@ -119,22 +133,6 @@ body {
   position: relative;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Ambient living aura behind all frosted glass */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background: 
-    radial-gradient(circle 800px at 18% 18%, rgba(59, 130, 246, 0.12), transparent 65%),
-    radial-gradient(circle 750px at 82% 28%, rgba(168, 85, 247, 0.12), transparent 65%),
-    radial-gradient(circle 700px at 48% 68%, rgba(255, 42, 109, 0.06), transparent 65%),
-    radial-gradient(circle 850px at 78% 88%, rgba(0, 242, 254, 0.08), transparent 65%);
-  filter: blur(50px);
-  opacity: 0.9;
 }
 
 /* Sleek Glass Scrollbars (macOS / Apple TV style) */
@@ -474,7 +472,7 @@ nav {
 }
 
 #page-home {
-  padding-top: 0;
+  padding-top: calc(var(--nav-h) + 14px);
 }
 
 /* ── Cinematic Hero Core & Video Background ────────── */
@@ -1807,11 +1805,308 @@ nav {
   width: 100%;
 }
 
+/* ── Unified Cinematic Empty & Error States ──────────── */
 .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 60px 20px;
-  color: var(--text3);
+  padding: 56px 24px;
+  color: var(--text);
+  max-width: 520px;
+  width: 100%;
+  margin: 32px auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 18px);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 }
+
+.empty-state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: rgba(255, 42, 109, 0.12);
+  border: 1px solid rgba(255, 42, 109, 0.28);
+  color: var(--primary);
+  margin-bottom: 20px;
+}
+
+.empty-state-icon.error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: #ef4444;
+}
+
+.empty-state-icon.info {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.28);
+  color: #3b82f6;
+}
+
+.empty-state h3,
+.empty-state .empty-state-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.empty-state p,
+.empty-state .empty-state-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text2);
+  margin-bottom: 24px;
+  max-width: 420px;
+}
+
+.empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.empty-state-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s, background 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+}
+
+.empty-state-btn:active {
+  transform: scale(0.98);
+}
+
+.empty-state-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.empty-state-btn.primary {
+  background: var(--cinejoy-grad-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 14px var(--primary-glow);
+}
+
+.empty-state-btn.primary:hover {
+  background: var(--cinejoy-grad-hover);
+}
+
+.empty-state-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.empty-state-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── 404 In-App Page Container & Card ─────────────────── */
+.page-404-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 180px);
+  padding: 40px 20px;
+}
+
+.not-found-card {
+  width: 100%;
+  max-width: 580px;
+  background: var(--surface);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 48px 36px;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 24px rgba(255, 42, 109, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.not-found-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), #8b5cf6, transparent);
+}
+
+.not-found-card .clapperboard-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(255, 42, 109, 0.12);
+  border: 1px solid rgba(255, 42, 109, 0.28);
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+
+.not-found-card .hero-404 {
+  font-size: clamp(72px, 16vw, 110px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 45%, rgba(255, 42, 109, 0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 14px;
+  user-select: none;
+}
+
+.not-found-card h1 {
+  font-size: clamp(22px, 4vw, 28px);
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.not-found-card p {
+  color: var(--text2);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 28px;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.not-found-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+  width: 100%;
+}
+
+.not-found-search .search-input {
+  flex: 1;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0 16px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.not-found-search .search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 42, 109, 0.2);
+}
+
+.not-found-search .search-btn {
+  height: 44px;
+  padding: 0 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.not-found-search .search-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.not-found-card .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.not-found-card .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.not-found-card .btn:active {
+  transform: scale(0.98);
+}
+
+.not-found-card .btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.not-found-card .btn-primary {
+  background: var(--cinejoy-grad-primary);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 16px rgba(255, 42, 109, 0.35);
+}
+
+.not-found-card .btn-primary:hover {
+  background: var(--cinejoy-grad-hover);
+  box-shadow: 0 6px 20px rgba(255, 42, 109, 0.45);
+}
+
+.not-found-card .btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.not-found-card .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+@media (max-width: 480px) {
+  .not-found-card {
+    padding: 36px 20px;
+  }
+  .not-found-card .actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .not-found-card .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 
 /* ── Scroll sentinel ────────────────────────────────── */
 .scroll-sentinel {
@@ -2689,6 +2984,11 @@ footer a:hover {
 }
 
 @media (max-width: 400px) {
+  .hero-title {
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+  }
+
   .card {
     width: 120px;
   }
@@ -2699,12 +2999,37 @@ footer a:hover {
 
   .hero-btns {
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   .btn-primary,
   .btn-secondary {
-    padding: 9px 16px;
+    padding: 8px 14px;
     font-size: 13px;
+  }
+
+  .not-found-card {
+    padding: 28px 16px !important;
+    max-width: 95% !important;
+  }
+
+  .not-found-card .hero-404 {
+    font-size: 64px !important;
+    letter-spacing: -2px !important;
+  }
+
+  .not-found-card h1 {
+    font-size: 20px !important;
+  }
+
+  .not-found-card .actions {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .not-found-card .btn {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 
@@ -8569,15 +8894,15 @@ img.loaded {
 #anime-hero {
   position: relative;
   width: 100%;
-  height: 94vh;
-  min-height: 740px;
-  max-height: 1100px;
+  height: 88vh;
+  min-height: 660px;
+  max-height: 980px;
   background-color: #07080d;
   display: flex;
   align-items: flex-end;
   overflow: hidden;
-  margin-top: -74px;
-  padding-top: 74px;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 .hero-cinematic-vignette {

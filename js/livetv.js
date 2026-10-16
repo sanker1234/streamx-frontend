@@ -11,6 +11,7 @@ const LiveTV = (() => {
   let _currentChannel = null;
   let _hls = null;
   let _videoEl = null;
+  let _currentStreamUrl = "";
 
   let _activeCategory = "all";
   let _activeCountry = "all";
@@ -33,45 +34,94 @@ const LiveTV = (() => {
   let _distinctCountriesCount = 0;
   let _distinctLanguagesCount = 0;
   let _httpsStreamCount = 0;
+  let _activeCatalogueSource = "";
+  let _epgUrl = "";
 
   const FAV_STORAGE_KEY = "CineJoy_LiveTV_Favorites";
-  const CACHE_DB_NAME = "CineJoy_IPTV_Cache";
+  const CACHE_DB_NAME = "CineJoy_IPTV_Cache_v5";
   const CACHE_STORE_NAME = "catalogue";
+
+  // Official IPTV-Org playlist catalogue sources with verified fallbacks
+  const CATALOGUE_SOURCES = [
+    {
+      id: "official_master",
+      name: "IPTV-Org Master (Official)",
+      type: "m3u",
+      url: "https://iptv-org.github.io/iptv/index.m3u",
+      minChannels: 1000
+    },
+    {
+      id: "jsdelivr_mirror",
+      name: "IPTV-Org jsDelivr Mirror (Verified)",
+      type: "m3u",
+      url: "https://cdn.jsdelivr.net/gh/iptv-org/iptv@gh-pages/index.m3u",
+      minChannels: 1000
+    },
+    {
+      id: "github_raw",
+      name: "IPTV-Org GitHub Raw (Verified)",
+      type: "m3u",
+      url: "https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/index.m3u",
+      minChannels: 500
+    },
+    {
+      id: "bundled_fallback",
+      name: "Bundled Local Snapshot (Offline)",
+      type: "json",
+      url: "data/livetv_channels.json",
+      minChannels: 100
+    }
+  ];
 
   // Guaranteed verified flagship channels with high availability HTTPS
   const VERIFIED_FLAGSHIP_CHANNELS = [
     {
-      id: "nasa_tv_hd",
-      name: "NASA TV HD",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/300px-NASA_logo.svg.png",
-      country: "US",
-      countryName: "United States",
-      flag: "🇺🇸",
-      category: "Documentary",
-      language: "eng",
-      url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8"
-    },
-    {
-      id: "redbull_tv",
-      name: "Red Bull TV",
-      logo: "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Red_Bull_TV_logo.svg/320px-Red_Bull_TV_logo.svg.png",
-      country: "US",
-      countryName: "United States",
-      flag: "🇺🇸",
-      category: "Sports",
-      language: "eng",
-      url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8"
-    },
-    {
-      id: "bloomberg_tv",
-      name: "Bloomberg Television",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Bloomberg_Television_logo_2015.svg/320px-Bloomberg_Television_logo_2015.svg.png",
-      country: "US",
-      countryName: "United States",
-      flag: "🇺🇸",
+      id: "dw_english",
+      name: "DW English HD",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Deutsche_Welle_symbol_2012.svg/320px-Deutsche_Welle_symbol_2012.svg.png",
+      country: "DE",
+      countryName: "Germany",
+      flag: "🇩🇪",
       category: "News",
       language: "eng",
-      url: "https://bloomberg.com/media-manifest/streams/us.m3u8"
+      url: "https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8",
+      isHttps: true
+    },
+    {
+      id: "france24_eng",
+      name: "France 24 English HD",
+      logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_FRANCE_24/images/LOGO_HD/image.png",
+      country: "FR",
+      countryName: "France",
+      flag: "🇫🇷",
+      category: "News",
+      language: "eng",
+      url: "https://live.france24.com/hls/live/2037218-b/F24_EN_HI_HLS/master_5000.m3u8",
+      isHttps: true
+    },
+    {
+      id: "aljazeera_eng",
+      name: "Al Jazeera English HD",
+      logo: "https://i.imgur.com/7bRVpnu.png",
+      country: "QA",
+      countryName: "Qatar",
+      flag: "🇶🇦",
+      category: "News",
+      language: "eng",
+      url: "https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8",
+      isHttps: true
+    },
+    {
+      id: "euronews_eng",
+      name: "Euronews English HD",
+      logo: "https://jiotvimages.cdn.jio.com/dare_images/images/Euro_News.png",
+      country: "FR",
+      countryName: "France",
+      flag: "🇫🇷",
+      category: "News",
+      language: "eng",
+      url: "https://dash4.antik.sk/live/test_euronews/playlist.m3u8",
+      isHttps: true
     },
     {
       id: "cgtn_news_hd",
@@ -82,95 +132,215 @@ const LiveTV = (() => {
       flag: "🌐",
       category: "News",
       language: "eng",
-      url: "https://news.cgtn.com/resource/live/english/cgtn-news.m3u8"
+      url: "https://news.cgtn.com/resource/live/english/cgtn-news.m3u8",
+      isHttps: true
     },
     {
-      id: "arirang_tv_world",
-      name: "Arirang TV World",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Arirang_TV_logo.svg/320px-Arirang_TV_logo.svg.png",
-      country: "KR",
-      countryName: "South Korea",
-      flag: "🇰🇷",
-      category: "Entertainment",
+      id: "redbull_tv",
+      name: "Red Bull TV",
+      logo: "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Red_Bull_TV_logo.svg/320px-Red_Bull_TV_logo.svg.png",
+      country: "US",
+      countryName: "United States",
+      flag: "🇺🇸",
+      category: "Sports",
       language: "eng",
-      url: "https://amdlive.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8"
+      url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
+      isHttps: true
     },
     {
-      id: "euronews_eng",
-      name: "Euronews English",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Euronews_2016_logo.svg/320px-Euronews_2016_logo.svg.png",
-      country: "FR",
-      countryName: "France",
-      flag: "🇫🇷",
+      id: "nasa_tv_hd",
+      name: "NASA TV HD",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/300px-NASA_logo.svg.png",
+      country: "US",
+      countryName: "United States",
+      flag: "🇺🇸",
+      category: "Documentary",
+      language: "eng",
+      url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8",
+      isHttps: true
+    },
+    {
+      id: "bloomberg_tv",
+      name: "Bloomberg Television",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Bloomberg_Television_logo_2015.svg/320px-Bloomberg_Television_logo_2015.svg.png",
+      country: "US",
+      countryName: "United States",
+      flag: "🇺🇸",
       category: "News",
       language: "eng",
-      url: "https://euronews-euronews-world-1-eu.rakuten.wurl.tv/playlist.m3u8"
+      url: "https://bloomberg.com/media-manifest/streams/us.m3u8",
+      isHttps: true
     },
     {
-      id: "aljazeera_eng",
-      name: "Al Jazeera English HD",
-      logo: "https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Al_Jazeera_English_logo.svg/320px-Al_Jazeera_English_logo.svg.png",
-      country: "QA",
-      countryName: "Qatar",
-      flag: "🇶🇦",
-      category: "News",
+      id: "kids_3abn",
+      name: "3ABN Kids",
+      logo: "https://i.imgur.com/z3npqO1.png",
+      country: "US",
+      countryName: "United States",
+      flag: "🇺🇸",
+      category: "Animation",
       language: "eng",
-      url: "https://live-hls-web-aje.getaj.net/AJE/01.m3u8"
+      url: "https://3abn.bozztv.com/3abn2/Kids_live/smil:Kids_live.smil/playlist.m3u8",
+      isHttps: true
     },
     {
-      id: "france24_eng",
-      name: "France 24 English HD",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/France_24_logo.svg/320px-France_24_logo.svg.png",
-      country: "FR",
-      countryName: "France",
-      flag: "🇫🇷",
-      category: "News",
+      id: "replay_00s",
+      name: "00s Replay",
+      logo: "https://images.pluto.tv/channels/62ba60f059624e000781c436/colorLogoPNG.png",
+      country: "US",
+      countryName: "United States",
+      flag: "🇺🇸",
+      category: "Movies",
       language: "eng",
-      url: "https://static.france24.com/live/F24_EN_LO_HLS/live_tv.m3u8"
+      url: "https://jmp2.uk/plu-62ba60f059624e000781c436.m3u8",
+      isHttps: true
     },
     {
-      id: "dw_english",
-      name: "DW English HD",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Deutsche_Welle_symbol_2012.svg/320px-Deutsche_Welle_symbol_2012.svg.png",
-      country: "DE",
-      countryName: "Germany",
-      flag: "🇩🇪",
-      category: "News",
-      language: "eng",
-      url: "https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8"
+      id: "one_plus_one_int",
+      name: "1+1 International HD",
+      logo: "https://i.imgur.com/LOY0rtp.png",
+      country: "UA",
+      countryName: "Ukraine",
+      flag: "🇺🇦",
+      category: "General",
+      language: "ukr",
+      url: "https://dash2.antik.sk/live/test_one_plus_one_int_tizen/playlist.m3u8",
+      isHttps: true
     },
     {
-      id: "tv9_telugu",
-      name: "TV9 Telugu Live",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/TV9_Telugu_Logo.png/320px-TV9_Telugu_Logo.png",
+      id: "SunGeminiComedy.in",
+      name: "Sun Gemini Comedy",
+      altNames: ["Gemini Comedy", "Sun జెమినీ Comedy"],
+      network: "Sun Gemini",
+      logo: "https://jiotvimages.cdn.jio.com/dare_images/images/Gemini_Comedy.png",
       country: "IN",
       countryName: "India",
       flag: "🇮🇳",
-      category: "News",
+      category: "Comedy",
       language: "tel",
-      url: "https://d224t9n65mcrha.cloudfront.net/out/v1/9cff98b164924c58a8a25a4d65ee1c76/index.m3u8"
+      url: "http://iptvcasomsapi.jprdigital.in/x-media/C0573/master.m3u8",
+      altUrl: "http://ptuf.ridsys.in/riptv/live/GEMINI_TV/index.m3u8",
+      isHttps: false
     },
     {
-      id: "abp_news_in",
-      name: "ABP News India",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/ABP_News_Logo.png/320px-ABP_News_Logo.png",
+      id: "SunGeminiMovies.in",
+      name: "Sun Gemini Movies",
+      altNames: ["Gemini Movies", "Sun జెమినీ Movies", "Teja TV"],
+      network: "Sun Gemini",
+      logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_GEMINI_MOVIES/images/LOGO_HD/image.png",
       country: "IN",
       countryName: "India",
       flag: "🇮🇳",
-      category: "News",
-      language: "hin",
-      url: "https://abp-i.akamaized.net/hls/live/765529/abpnews/master.m3u8"
+      category: "Movies",
+      language: "tel",
+      url: "http://iptvcasomsapi.jprdigital.in/x-media/C0586/master.m3u8",
+      altUrl: "http://ptuf.ridsys.in/riptv/live/GEMINI_TV/index.m3u8",
+      isHttps: false
     },
     {
-      id: "ndtv_india",
-      name: "NDTV India",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/NDTV_India_logo.png/320px-NDTV_India_logo.png",
+      id: "SunGeminiMusic.in",
+      name: "Sun Gemini Music",
+      altNames: ["Gemini Music", "Sun జెమినీ Music"],
+      network: "Sun Gemini",
+      logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_GEMINI_MUSIC/images/LOGO_HD/image.png",
       country: "IN",
       countryName: "India",
       flag: "🇮🇳",
-      category: "News",
-      language: "hin",
-      url: "https://ndtvindiaelemarchana.akamaized.net/hls/live/2003679-b/ndtvindia/livefeed/master.m3u8"
+      category: "Music",
+      language: "tel",
+      url: "http://iptvcasomsapi.jprdigital.in/x-media/C0589/master.m3u8",
+      altUrl: "http://ptuf.ridsys.in/riptv/live/GEMINI_TV/index.m3u8",
+      isHttps: false
+    },
+    {
+      id: "SunGeminiLife.in",
+      name: "Sun Gemini Life",
+      altNames: ["Gemini Life", "Sun జెమినీ Life"],
+      network: "Sun Gemini",
+      logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_GEMINI_LIFE/images/LOGO_HD/image.png",
+      country: "IN",
+      countryName: "India",
+      flag: "🇮🇳",
+      category: "General",
+      language: "tel",
+      url: "http://iptvcasomsapi.jprdigital.in/x-media/C0584/master.m3u8",
+      altUrl: "http://stream.mcquack.net/451/index.m3u8",
+      isHttps: false
+    },
+    {
+      id: "SunGemini.in",
+      name: "Sun Gemini",
+      altNames: ["Gemini TV", "Gemini", "Sun జెమినీ"],
+      network: "Sun Gemini",
+      logo: "https://sund-images.sunnxt.com/194396/300x300_SunGemini_194396_22c18c1e-7eb9-4855-9c4e-12e109911559.png",
+      country: "IN",
+      countryName: "India",
+      flag: "🇮🇳",
+      category: "Entertainment",
+      language: "tel",
+      url: "http://iptvcasomsapi.jprdigital.in/x-media/C0568/master.m3u8",
+      altUrl: "http://stream.mcquack.net/451/index.m3u8",
+      isHttps: false
+    },
+    {
+      id: "StarMaa.in",
+      name: "Star Maa",
+      altNames: ["Star Maa HD", "Maa TV", "స్టార్ మా", "JioStar"],
+      network: "Disney Star",
+      logo: "https://i.imgur.com/5c9PVS0.png",
+      country: "IN",
+      countryName: "India",
+      flag: "🇮🇳",
+      category: "Entertainment",
+      language: "tel",
+      url: "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/chunklist_b2628000.m3u8",
+      altUrl: "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/playlist.m3u8",
+      isHttps: true
+    },
+    {
+      id: "StarMaaMovies.in",
+      name: "Star Maa Movies",
+      altNames: ["Maa Movies", "స్టార్ మా మూవీస్", "JioStar"],
+      network: "Disney Star",
+      logo: "https://dtil.tmsimg.com/assets/s143826_ld_h15_aa.png?lock=720x540",
+      country: "IN",
+      countryName: "India",
+      flag: "🇮🇳",
+      category: "Movies",
+      language: "tel",
+      url: "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:maamovies.smil/chunklist_b2628000.m3u8",
+      altUrl: "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:maamovies.smil/playlist.m3u8",
+      isHttps: true
+    },
+    {
+      id: "SunTV.in",
+      name: "Sun TV HD",
+      altNames: ["Sun TV", "சன் டிவி"],
+      network: "Sun TV Network",
+      logo: "https://dtil.tmsimg.com/assets/GNLZZGG002Z0M0Y.png?lock=720x540",
+      country: "IN",
+      countryName: "India",
+      flag: "🇮🇳",
+      category: "Entertainment",
+      language: "tam",
+      url: "http://ptuf.ridsys.in/riptv/live/SUN_TV/index.m3u8",
+      altUrl: "http://103.151.60.162:2122/play/a02a/index.m3u8?hls",
+      isHttps: false
+    },
+    {
+      id: "ZeeTelugu.in",
+      name: "Zee Telugu",
+      altNames: ["జీ తెలుగు"],
+      network: "Zee",
+      logo: "https://dtil.tmsimg.com/assets/s52528_ld_h15_aa.png?lock=720x540",
+      country: "IN",
+      countryName: "India",
+      flag: "🇮🇳",
+      category: "Entertainment",
+      language: "tel",
+      url: "http://iptvcasomsapi.jprdigital.in/x-media/C0537/master.m3u8",
+      altUrl: "https://raw.githubusercontent.com/amazeyourself/adaptive-streams/refs/heads/main/streams/in/YuppTV/ZeeTeluguHD.m3u8",
+      isHttps: false
     }
   ];
 
@@ -303,7 +473,7 @@ const LiveTV = (() => {
         const req = store.get("full_catalogue");
         req.onsuccess = () => {
           const res = req.result;
-          if (res && res.timestamp && Date.now() - res.timestamp < 24 * 3600 * 1000 && res.channels?.length) {
+          if (res && res.timestamp && (Date.now() - res.timestamp < 24 * 3600 * 1000) && Array.isArray(res.channels) && res.channels.length > 500) {
             resolve(res);
           } else {
             resolve(null);
@@ -316,7 +486,7 @@ const LiveTV = (() => {
     }
   }
 
-  async function _setCachedCatalogue(channels, countryMeta) {
+  async function _setCachedCatalogue(channels, countryMeta, source = "") {
     try {
       const db = await _openIndexedDB();
       if (!db) return;
@@ -324,6 +494,7 @@ const LiveTV = (() => {
       const store = tx.objectStore(CACHE_STORE_NAME);
       store.put({
         timestamp: Date.now(),
+        source: source || _activeCatalogueSource || "IPTV-Org Master (Official)",
         channels,
         countryMeta
       }, "full_catalogue");
@@ -333,7 +504,7 @@ const LiveTV = (() => {
   }
 
   /* ─────────────────────────────────────────────────────────────
-     3. CATALOGUE LOADING & FAST M3U STREAM PARSING
+     3. CATALOGUE LOADING & DEFENSIVE M3U STREAM PARSING
   ───────────────────────────────────────────────────────────── */
   async function _loadCountryMetadata() {
     try {
@@ -348,12 +519,14 @@ const LiveTV = (() => {
       }
       if (Array.isArray(data)) {
         data.forEach(c => {
-          _countryMetaMap.set(c.code.toUpperCase(), {
-            name: c.name,
-            code: c.code.toUpperCase(),
-            flag: c.flag || "🌐",
-            languages: c.languages || []
-          });
+          if (c && c.code) {
+            _countryMetaMap.set(c.code.toUpperCase(), {
+              name: c.name || c.code,
+              code: c.code.toUpperCase(),
+              flag: c.flag || "🌐",
+              languages: Array.isArray(c.languages) ? c.languages : []
+            });
+          }
         });
       }
     } catch (e) {
@@ -362,9 +535,16 @@ const LiveTV = (() => {
   }
 
   function _parseM3UContent(m3uText) {
+    if (!m3uText || typeof m3uText !== "string") return [];
     const lines = m3uText.split(/\r?\n/);
     const parsedChannels = [];
     let cur = null;
+
+    // Check for independent EPG URL on header line (decoupled from channel parsing)
+    if (lines.length > 0 && lines[0].startsWith("#EXTM3U")) {
+      const epgMatch = lines[0].match(/x-tvg-url="([^"]*)"/i) || lines[0].match(/x-tvg-url=([^\s]+)/i);
+      if (epgMatch) _epgUrl = epgMatch[1];
+    }
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -373,121 +553,196 @@ const LiveTV = (() => {
       if (line.startsWith("#EXTINF:")) {
         cur = {};
         const commaIdx = line.lastIndexOf(",");
-        cur.name = commaIdx !== -1 ? line.substring(commaIdx + 1).trim() : "Untitled";
+        const rawName = commaIdx !== -1 ? line.substring(commaIdx + 1).trim() : "";
+        const attrStr = commaIdx !== -1 ? line.substring(8, commaIdx) : line.substring(8);
 
-        const attrStr = line.substring(8, commaIdx);
-        const idM = attrStr.match(/tvg-id="([^"]*)"/);
-        const logoM = attrStr.match(/tvg-logo="([^"]*)"/);
-        const countryM = attrStr.match(/tvg-country="([^"]*)"/);
-        const langM = attrStr.match(/tvg-language="([^"]*)"/);
-        const groupM = attrStr.match(/group-title="([^"]*)"/);
+        // Defensive attribute parsing supporting quoted or unquoted attributes
+        const idM = attrStr.match(/tvg-id="([^"]*)"/i) || attrStr.match(/tvg-id=([^\s,]+)/i);
+        const nameM = attrStr.match(/tvg-name="([^"]*)"/i) || attrStr.match(/tvg-name=([^\s,]+)/i);
+        const logoM = attrStr.match(/tvg-logo="([^"]*)"/i) || attrStr.match(/tvg-logo=([^\s,]+)/i);
+        const countryM = attrStr.match(/tvg-country="([^"]*)"/i) || attrStr.match(/tvg-country=([^\s,]+)/i);
+        const langM = attrStr.match(/tvg-language="([^"]*)"/i) || attrStr.match(/tvg-language=([^\s,]+)/i);
+        const groupM = attrStr.match(/group-title="([^"]*)"/i) || attrStr.match(/group-title=([^\s,]+)/i);
 
-        cur.id = idM ? idM[1] : ("ch_" + parsedChannels.length);
-        cur.logo = logoM ? logoM[1] : "";
-        cur.category = groupM ? groupM[1].split(";")[0].trim() : "General";
-        cur.language = langM ? langM[1] : "";
+        cur.name = rawName || (nameM ? nameM[1].trim() : (idM ? idM[1].trim() : "Channel"));
+        cur.id = idM ? idM[1].trim() : ("ch_" + parsedChannels.length);
+        cur.logo = logoM ? logoM[1].trim() : "";
 
-        let c = countryM ? countryM[1] : "";
-        if (!c && cur.id) {
-          const m = cur.id.match(/\.([a-z]{2})@/i);
-          if (m) c = m[1].toUpperCase();
+        // Category / Genre extraction
+        if (groupM && groupM[1].trim()) {
+          cur.category = groupM[1].split(";")[0].trim();
+        } else {
+          cur.category = "General";
         }
-        cur.country = (c || "INT").toUpperCase();
 
+        cur.language = langM ? langM[1].trim().toLowerCase() : "";
+
+        // Country code extraction
+        let countryCode = countryM ? countryM[1].trim().toUpperCase() : "";
+        if (!countryCode && cur.id) {
+          // iptv-org convention: ChannelName.countryCode@variant (e.g. 00sReplay.us@SD, SunGemini.in)
+          const m = cur.id.match(/\.([a-z]{2})(?:@[^\s"]*|$)/i);
+          if (m) countryCode = m[1].toUpperCase();
+        }
+        cur.country = countryCode || "INT";
+
+        // Country metadata enrichment (independent of EPG)
         const meta = _countryMetaMap.get(cur.country);
         cur.countryName = meta ? meta.name : (cur.country === "INT" ? "International" : cur.country);
         cur.flag = meta ? meta.flag : "🌐";
 
-        if (!cur.language && meta && meta.languages && meta.languages.length) {
-          cur.language = meta.languages[0];
+        // Intelligent Regional Language Inference for Indian Channels
+        const checkStr = (cur.id + " " + cur.name).toLowerCase();
+        if (/\b(telugu|maa|gemini|etv|sakshi|tv9telugu|v6|tnews|ntv|10tv|tollywood|bhakti)\b/i.test(checkStr) || /star\s*maa/i.test(checkStr) || checkStr.includes("starmaa") || checkStr.includes("geminitv")) {
+          cur.language = "tel";
+        } else if (/\b(tamil|sun\s*tv|ktv|vijay|kalaignar|jaya|polimer)\b/i.test(checkStr) || checkStr.includes("suntv")) {
+          cur.language = "tam";
+        } else if (/\b(kannada|udaya|suvarna)\b/i.test(checkStr)) {
+          cur.language = "kan";
+        } else if (/\b(malayalam|asianet|surya|mazhavil)\b/i.test(checkStr)) {
+          cur.language = "mal";
+        } else if (!cur.language && meta && Array.isArray(meta.languages) && meta.languages.length > 0) {
+          cur.language = meta.languages[0].toLowerCase();
         }
       } else if (!line.startsWith("#") && cur) {
-        cur.url = line;
-        cur.isHttps = line.startsWith("https://");
-        parsedChannels.push(cur);
+        // Stream URL (first non-comment line following #EXTINF)
+        if (line.startsWith("http://") || line.startsWith("https://")) {
+          let streamUrl = line;
+          // Normalization: ptuf.ridsys.in lacks CORS headers and gets blocked by browsers.
+          // Point Sun Gemini directly to verified CORS-enabled JPR Digital master endpoint:
+          if (streamUrl.includes("ptuf.ridsys.in/riptv/live/GEMINI_TV") || (cur.id && cur.id.startsWith("SunGemini"))) {
+            streamUrl = "http://iptvcasomsapi.jprdigital.in/x-media/C0568/master.m3u8";
+            cur.altUrl = "http://stream.mcquack.net/451/index.m3u8";
+          } else if (cur.id && cur.id.startsWith("StarMaa")) {
+            cur.altUrl = "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/playlist.m3u8";
+          }
+          cur.url = streamUrl;
+          cur.isHttps = streamUrl.startsWith("https://");
+          parsedChannels.push(cur);
+        }
         cur = null;
       }
     }
     return parsedChannels;
   }
 
-  async function loadFullCatalogue() {
+  async function loadFullCatalogue(forceRefresh = false) {
+    if (_isLoadingCatalogue && !forceRefresh) return;
     _isLoadingCatalogue = true;
-    _updateStatsLine("Loading catalogue from iptv-org master repository...");
+    _updateStatsLine("Connecting to official IPTV-Org directory...");
 
-    // Step A: Load country metadata
+    // Step A: Load country metadata independently (decoupled)
     if (_countryMetaMap.size === 0) {
       await _loadCountryMetadata();
     }
 
     // Step B: Check IndexedDB cache for instant display
-    const cached = await _getCachedCatalogue();
-    if (cached && cached.channels && cached.channels.length > 1000) {
-      console.log(`[LiveTV] Loaded ${cached.channels.length} channels from IndexedDB cache.`);
-      _channels = cached.channels;
+    if (!forceRefresh) {
+      const cached = await _getCachedCatalogue();
+      if (cached && Array.isArray(cached.channels) && cached.channels.length > 500) {
+        console.log(`[LiveTV] Loaded ${cached.channels.length} channels from IndexedDB cache (${cached.source || "Cache"}).`);
+        _channels = cached.channels;
+        _activeCatalogueSource = cached.source || "Cached Catalogue";
+        _computeStats();
+        _onCatalogueLoaded();
+        _isLoadingCatalogue = false;
+
+        // Background revalidation if cache is older than 6 hours
+        if (cached.timestamp && (Date.now() - cached.timestamp > 6 * 3600 * 1000)) {
+          _revalidateCatalogueInBackground();
+        }
+        return;
+      }
+    }
+
+    // Step C: Try official primary source and verified fallback sources sequentially
+    let loadedSuccessfully = false;
+
+    for (let i = 0; i < CATALOGUE_SOURCES.length; i++) {
+      const src = CATALOGUE_SOURCES[i];
+      try {
+        console.log(`[LiveTV] Fetching catalogue from [${src.name}]: ${src.url}`);
+        _updateStatsLine(`Fetching catalogue from ${src.name}...`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 14000);
+
+        const resp = await fetch(src.url, {
+          signal: controller.signal,
+          cache: forceRefresh ? "reload" : "default"
+        });
+        clearTimeout(timeoutId);
+
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+        }
+
+        let parsedChannels = [];
+        if (src.type === "m3u") {
+          const text = await resp.text();
+          parsedChannels = _parseM3UContent(text);
+        } else if (src.type === "json") {
+          const json = await resp.json();
+          if (Array.isArray(json)) {
+            parsedChannels = json.map(c => ({
+              ...c,
+              isHttps: (c.url || "").startsWith("https://")
+            }));
+          }
+        }
+
+        if (parsedChannels.length >= src.minChannels) {
+          console.log(`[LiveTV] Successfully parsed ${parsedChannels.length} channels from ${src.name}.`);
+          _channels = parsedChannels;
+          _activeCatalogueSource = src.name;
+          _computeStats();
+          _setCachedCatalogue(_channels, Array.from(_countryMetaMap.entries()), src.name);
+          _onCatalogueLoaded();
+          _isLoadingCatalogue = false;
+          loadedSuccessfully = true;
+          break;
+        } else {
+          console.warn(`[LiveTV] ${src.name} returned only ${parsedChannels.length} channels (expected >= ${src.minChannels}).`);
+        }
+      } catch (err) {
+        console.warn(`[LiveTV] Catalogue source ${src.name} failed:`, err.message || err);
+      }
+    }
+
+    // Step D: Ultimate emergency fallback if all sources failed
+    if (!loadedSuccessfully) {
+      console.error("[LiveTV] All remote and local catalogue sources failed. Falling back to emergency flagships.");
+      _channels = VERIFIED_FLAGSHIP_CHANNELS.slice();
+      _activeCatalogueSource = "Emergency Flagship Backup";
       _computeStats();
       _onCatalogueLoaded();
       _isLoadingCatalogue = false;
-
-      // In the background, fetch fresh version if needed
-      _fetchAndParseFreshCatalogue(false);
-      return;
+      _updateStatsLine("Could not reach remote IPTV directory. Loaded emergency flagship channels.", true);
     }
-
-    // Step C: Fetch live M3U from IPTV-org master playlist
-    await _fetchAndParseFreshCatalogue(true);
   }
 
-  async function _fetchAndParseFreshCatalogue(updateUIImmediately = true) {
+  async function _revalidateCatalogueInBackground() {
     try {
-      console.log("[LiveTV] Fetching https://iptv-org.github.io/iptv/index.m3u ...");
-      const resp = await fetch("https://iptv-org.github.io/iptv/index.m3u");
+      const primary = CATALOGUE_SOURCES[0];
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const resp = await fetch(primary.url, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (resp.ok) {
         const text = await resp.text();
         const parsed = _parseM3UContent(text);
-        if (parsed.length > 1000) {
-          console.log(`[LiveTV] Successfully parsed ${parsed.length} channels from index.m3u!`);
+        if (parsed.length >= primary.minChannels) {
+          console.log(`[LiveTV] Background revalidation successful: ${parsed.length} channels from ${primary.name}.`);
           _channels = parsed;
+          _activeCatalogueSource = primary.name;
           _computeStats();
-          _setCachedCatalogue(_channels, Array.from(_countryMetaMap.entries()));
-          if (updateUIImmediately) {
-            _onCatalogueLoaded();
-          }
-          _isLoadingCatalogue = false;
-          return;
+          _setCachedCatalogue(_channels, Array.from(_countryMetaMap.entries()), primary.name);
+          _updateStatsLine();
         }
       }
     } catch (e) {
-      console.warn("[LiveTV] iptv-org live fetch failed or offline, loading local bundled dataset:", e);
+      console.log("[LiveTV] Background catalogue revalidation deferred:", e.message || e);
     }
-
-    // Fallback: bundled complete dataset
-    try {
-      const localResp = await fetch("data/livetv_channels.json");
-      if (localResp.ok) {
-        const data = await localResp.json();
-        if (Array.isArray(data) && data.length > 500) {
-          console.log(`[LiveTV] Loaded ${data.length} channels from local bundled dataset.`);
-          _channels = data;
-          _computeStats();
-          if (updateUIImmediately) {
-            _onCatalogueLoaded();
-          }
-          _isLoadingCatalogue = false;
-          return;
-        }
-      }
-    } catch (e) {
-      console.error("[LiveTV] Fallback local dataset load failed:", e);
-    }
-
-    // Ultimate fallback: verified flagship channels
-    if (!_channels || !_channels.length) {
-      _channels = VERIFIED_FLAGSHIP_CHANNELS.slice();
-      _computeStats();
-      _onCatalogueLoaded();
-    }
-    _isLoadingCatalogue = false;
   }
 
   function _computeStats() {
@@ -512,10 +767,10 @@ const LiveTV = (() => {
     _populateLanguageFilter();
     filterChannels();
 
-    // Ensure player has a playable flagship stream if none is loaded
+    // Ensure player has a playable stream if none is loaded
     if (!_currentChannel && _filteredChannels.length) {
-      // Find a verified flagship or first available HTTPS channel
-      const starter = VERIFIED_FLAGSHIP_CHANNELS[0] || _filteredChannels[0];
+      // Find a verified HTTPS channel so browser autoplay/playback succeeds cleanly
+      const starter = _filteredChannels.find(c => c.isHttps) || VERIFIED_FLAGSHIP_CHANNELS[0] || _filteredChannels[0];
       playChannel(starter);
     }
 
@@ -525,20 +780,21 @@ const LiveTV = (() => {
     if (_currentView === "categories") _renderCategoriesGrid();
   }
 
-  function _updateStatsLine(customText = null) {
+  function _updateStatsLine(customText = null, isError = false) {
     const el = document.getElementById("livetv-stats-line");
     if (!el) return;
 
     if (customText) {
-      el.textContent = customText;
+      el.innerHTML = isError ? `<span style="color:#ff6b6b">${_esc(customText)}</span>` : _esc(customText);
       return;
     }
 
     const totalStr = _channels.length.toLocaleString();
     const countryStr = _distinctCountriesCount.toLocaleString();
     const httpsStr = _httpsStreamCount.toLocaleString();
+    const sourceLabel = _activeCatalogueSource ? ` [${_activeCatalogueSource}]` : "";
 
-    el.innerHTML = `Loaded <strong>${totalStr}</strong> verified channels across <strong>${countryStr}</strong> countries <span class="livetv-stats-divider">·</span> <strong>${httpsStr}</strong> secure HTTPS streams`;
+    el.innerHTML = `Loaded <strong>${totalStr}</strong> channels across <strong>${countryStr}</strong> countries <span class="livetv-stats-divider">·</span> <strong>${httpsStr}</strong> secure HTTPS streams <span class="livetv-stats-source" style="opacity:0.75;font-size:0.85em;">${_esc(sourceLabel)}</span> <button class="livetv-refresh-btn" onclick="LiveTV.loadFullCatalogue(true)" title="Refresh catalogue from official IPTV-Org source" style="background:none;border:none;color:var(--accent-primary,#e50914);cursor:pointer;font-size:0.85em;margin-left:6px;text-decoration:underline;font-family:inherit;">⟳ Refresh</button>`;
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -558,7 +814,8 @@ const LiveTV = (() => {
       _populateCountryFilter();
       _populateLanguageFilter();
       filterChannels();
-      playChannel(_channels[0]);
+      const starter = _channels.find(c => c.isHttps) || _channels[0];
+      playChannel(starter);
 
       // Load full catalogue asynchronously
       loadFullCatalogue();
@@ -775,15 +1032,23 @@ const LiveTV = (() => {
       result = result.filter(ch => (ch.language || "").toLowerCase() === _activeLanguage.toLowerCase());
     }
 
-    // 4. Search Query across Name, Category, Country Name, Country Code
+    // 4. Intelligent Search Query across Name, Alt Names, Network, ID, Category, Country & Language
     if (_searchQuery) {
+      const queryTerms = _searchQuery.split(/\s+/).filter(Boolean);
       result = result.filter(ch => {
-        const nameMatch = ch.name && ch.name.toLowerCase().includes(_searchQuery);
-        const catMatch = ch.category && ch.category.toLowerCase().includes(_searchQuery);
-        const countryMatch = (ch.country && ch.country.toLowerCase().includes(_searchQuery)) ||
-                             (ch.countryName && ch.countryName.toLowerCase().includes(_searchQuery));
-        const langMatch = ch.language && ch.language.toLowerCase().includes(_searchQuery);
-        return nameMatch || catMatch || countryMatch || langMatch;
+        const altNamesStr = Array.isArray(ch.altNames) ? ch.altNames.join(" ") : (ch.altNames || "");
+        const combined = (
+          (ch.name || "") + " " +
+          (ch.id || "") + " " +
+          (ch.network || "") + " " +
+          (ch.category || "") + " " +
+          (ch.country || "") + " " +
+          (ch.countryName || "") + " " +
+          (ch.language || "") + " " +
+          altNamesStr
+        ).toLowerCase();
+
+        return queryTerms.every(term => combined.includes(term));
       });
     }
 
@@ -1123,7 +1388,53 @@ const LiveTV = (() => {
 
   // Fallback stream URLs for popular channels with dead upstream feeds
   const CHANNEL_FALLBACK_URLS = {
-    "ZeeTelugu.in@HD": "https://d116gfrn8orazi.cloudfront.net/index.m3u8?akes=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjcxOTc5NzJ9.O4qmdMPbHwKrCg6hFXvD70vjSPWKQd0a7NrjmFdeMB8",
+    "SunGemini.in": ["http://iptvcasomsapi.jprdigital.in/x-media/C0568/master.m3u8", "http://stream.mcquack.net/451/index.m3u8"],
+    "SunGemini.in@SD": ["http://iptvcasomsapi.jprdigital.in/x-media/C0568/master.m3u8", "http://stream.mcquack.net/451/index.m3u8"],
+    "GeminiTV.in": ["http://iptvcasomsapi.jprdigital.in/x-media/C0568/master.m3u8", "http://stream.mcquack.net/451/index.m3u8"],
+    "SunGeminiComedy.in": "http://iptvcasomsapi.jprdigital.in/x-media/C0573/master.m3u8",
+    "GeminiComedy.in": "http://iptvcasomsapi.jprdigital.in/x-media/C0573/master.m3u8",
+    "SunGeminiMovies.in": "http://iptvcasomsapi.jprdigital.in/x-media/C0586/master.m3u8",
+    "GeminiMovies.in": "http://iptvcasomsapi.jprdigital.in/x-media/C0586/master.m3u8",
+    "SunGeminiMusic.in": "http://iptvcasomsapi.jprdigital.in/x-media/C0589/master.m3u8",
+    "GeminiMusic.in": "http://iptvcasomsapi.jprdigital.in/x-media/C0589/master.m3u8",
+    "SunGeminiLife.in": "http://iptvcasomsapi.jprdigital.in/x-media/C0584/master.m3u8",
+    "GeminiLife.in": "http://iptvcasomsapi.jprdigital.in/x-media/C0584/master.m3u8",
+    "StarMaa.in": [
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/chunklist_b2628000.m3u8",
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/playlist.m3u8"
+    ],
+    "StarMaa.in@HD": [
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/chunklist_b2628000.m3u8",
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/playlist.m3u8"
+    ],
+    "MaaTV.in": [
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/chunklist_b2628000.m3u8",
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/playlist.m3u8"
+    ],
+    "MaaTV.in@SD": [
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/chunklist_b2628000.m3u8",
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/playlist.m3u8"
+    ],
+    "StarMaaMovies.in": [
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:maamovies.smil/chunklist_b2628000.m3u8",
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:maamovies.smil/playlist.m3u8"
+    ],
+    "StarMaaMovies.in@HD": [
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:maamovies.smil/chunklist_b2628000.m3u8",
+      "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:maamovies.smil/playlist.m3u8"
+    ],
+    "TejaTV.in": "http://iptvcasomsapi.jprdigital.in/x-media/C0586/master.m3u8",
+    "SunTV.in": ["http://ptuf.ridsys.in/riptv/live/SUN_TV/index.m3u8", "http://103.151.60.162:2122/play/a02a/index.m3u8?hls"],
+    "ZeeTelugu.in": [
+      "http://iptvcasomsapi.jprdigital.in/x-media/C0537/master.m3u8",
+      "https://d1rc86nwwc9fag.cloudfront.net/260723/smil:zeetelugu.smil/chunklist_b2628000.m3u8",
+      "https://raw.githubusercontent.com/amazeyourself/adaptive-streams/refs/heads/main/streams/in/YuppTV/ZeeTeluguHD.m3u8"
+    ],
+    "ZeeTelugu.in@HD": [
+      "http://iptvcasomsapi.jprdigital.in/x-media/C0537/master.m3u8",
+      "https://d1rc86nwwc9fag.cloudfront.net/260723/smil:zeetelugu.smil/chunklist_b2628000.m3u8",
+      "https://raw.githubusercontent.com/amazeyourself/adaptive-streams/refs/heads/main/streams/in/YuppTV/ZeeTeluguHD.m3u8"
+    ],
     "ZeeCinemalu.in@HD": "https://d116gfrn8orazi.cloudfront.net/index.m3u8?akes=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjcxOTc5NzJ9.O4qmdMPbHwKrCg6hFXvD70vjSPWKQd0a7NrjmFdeMB8",
     "TV9Telugu.in@SD": "https://dyjmyiv3bp2ez.cloudfront.net/pub-iotv9telcmjhcs/liveabr/playlist.m3u8",
     "TV9Telugu.in@HD": "https://dyjmyiv3bp2ez.cloudfront.net/pub-iotv9telcmjhcs/liveabr/playlist.m3u8",
@@ -1142,7 +1453,12 @@ const LiveTV = (() => {
       if (_videoEl && (_videoEl.paused || _videoEl.readyState < 3)) {
         console.warn("[LiveTV] Buffering watchdog triggered after " + timeoutMs + "ms for:", _currentChannel?.name);
         _showLoading(false);
-        const errMsg = "Broadcast stream timed out. The upstream server is unreachable or offline.";
+        const isHttpsOrigin = window.location.protocol === "https:";
+        const isHttpStream = (_currentStreamUrl || _currentChannel?.url || "").startsWith("http://");
+        let errMsg = "Broadcast stream timed out. The upstream server is unreachable or offline.";
+        if (isHttpsOrigin && isHttpStream) {
+          errMsg = "This broadcast stream uses HTTP (plain text), which modern browsers block on HTTPS sites. Click 'Direct Stream Link' to open directly or copy into VLC.";
+        }
         _showError(true, errMsg);
         if (_hls) {
           _hls.destroy();
@@ -1163,7 +1479,6 @@ const LiveTV = (() => {
     if (!ch) return;
     _currentChannel = ch;
 
-    _updatePlayerUI(ch);
     _highlightActiveCard(ch.id);
 
     if (!_videoEl) _videoEl = document.getElementById("livetv-video");
@@ -1188,14 +1503,24 @@ const LiveTV = (() => {
     _showError(false);
     _showPlayPrompt(false);
 
-    // Determine target URL (fallback map or ch.url)
-    let streamUrl = ch.url;
-    if (_hasAttemptedFallback && (ch.altUrl || CHANNEL_FALLBACK_URLS[ch.id])) {
-      streamUrl = ch.altUrl || CHANNEL_FALLBACK_URLS[ch.id];
-    } else if (CHANNEL_FALLBACK_URLS[ch.id] && streamUrl.includes("smartplaytv.in")) {
-      // smartplaytv.in endpoints are decommissioned upstream; use verified mirror
-      streamUrl = CHANNEL_FALLBACK_URLS[ch.id];
+    // Determine target URL with healthy stream normalization
+    const channelKey = ch.id || "";
+    const baseKey = channelKey.split("@")[0];
+    const fallbackEntry = CHANNEL_FALLBACK_URLS[channelKey] || CHANNEL_FALLBACK_URLS[baseKey];
+    const fallbackList = Array.isArray(fallbackEntry) ? fallbackEntry : (fallbackEntry ? [fallbackEntry] : []);
+
+    let streamUrl = ch.url || "";
+    // Known non-CORS or decommissioned hosts that must immediately switch to verified healthy streams
+    const hasKnownBadHost = !streamUrl || streamUrl.includes("ptuf.ridsys.in") || streamUrl.includes("smartplaytv.in") || streamUrl.includes("static.france24.com");
+
+    if (hasKnownBadHost && fallbackList.length > 0) {
+      streamUrl = fallbackList[0];
+    } else if (_hasAttemptedFallback && (fallbackList.length > 0 || ch.altUrl)) {
+      streamUrl = fallbackList.find(u => u !== streamUrl) || ch.altUrl || fallbackList[0];
     }
+
+    _currentStreamUrl = streamUrl;
+    _updatePlayerUI(ch, streamUrl);
 
     // Check mixed content warnings (HTTP on HTTPS origin)
     if (window.location.protocol === "https:" && streamUrl.startsWith("http://")) {
@@ -1263,16 +1588,22 @@ const LiveTV = (() => {
 
         console.warn("[LiveTV] Fatal HLS error encountered:", data.type, data.details, data.response?.code);
 
-        // Check if an alternate stream exists
-        const fallbackUrl = ch.altUrl || CHANNEL_FALLBACK_URLS[ch.id];
-        if (fallbackUrl && !_hasAttemptedFallback && fallbackUrl !== streamUrl) {
+        // Check if an alternate stream exists before giving up
+        const allFallbacks = [
+          ...fallbackList,
+          ...(ch.altUrl ? [ch.altUrl] : [])
+        ];
+        const nextFallback = allFallbacks.find(u => u && u !== streamUrl);
+
+        if (nextFallback && !_hasAttemptedFallback) {
           _hasAttemptedFallback = true;
-          console.log("[LiveTV] Primary stream failed, trying backup stream for", ch.name, ":", fallbackUrl);
+          console.log("[LiveTV] Primary stream failed, trying backup stream for", ch.name, ":", nextFallback);
           _showLoading(true, "Switching to backup stream...");
           if (_hls) {
             _hls.destroy();
             _hls = null;
           }
+          ch.altUrl = nextFallback;
           playChannel(ch, true);
           return;
         }
@@ -1283,8 +1614,22 @@ const LiveTV = (() => {
           if (status === 404 || status === 403 || status === 410 || _currentNetworkRetries >= 1) {
             _clearBufferingWatchdog();
             _showLoading(false);
-            let errMsg = "Broadcast stream is currently offline (HTTP " + (status || "404") + " Not Found).";
-            if (status === 403) errMsg = "Stream access restricted (HTTP 403 Forbidden).";
+            const isHttpsOrigin = window.location.protocol === "https:";
+            const isHttpStream = streamUrl.startsWith("http://");
+            let errMsg = "Broadcast stream is currently unreachable.";
+            if (isHttpsOrigin && isHttpStream) {
+              errMsg = "This stream uses plain HTTP, which browsers block on HTTPS sites. Use the Direct Stream Link to open in VLC.";
+            } else if (status === 404) {
+              errMsg = "Broadcast stream is currently offline (HTTP 404 Not Found).";
+            } else if (status === 403) {
+              errMsg = "Stream access restricted (HTTP 403 Forbidden).";
+            } else if (status === 410) {
+              errMsg = "Stream endpoint has expired (HTTP 410 Gone).";
+            } else if (!status || status === 0) {
+              errMsg = "Stream connection failed (CORS or server unreachable).";
+            } else {
+              errMsg = `Broadcast stream error (HTTP ${status}).`;
+            }
             _showError(true, errMsg);
             if (_hls) {
               _hls.destroy();
@@ -1334,7 +1679,7 @@ const LiveTV = (() => {
     }
   }
 
-  function _updatePlayerUI(ch) {
+  function _updatePlayerUI(ch, streamUrl = "") {
     const titleEl = document.getElementById("livetv-player-title");
     const catEl = document.getElementById("livetv-player-cat");
     const countryEl = document.getElementById("livetv-player-country");
@@ -1358,6 +1703,11 @@ const LiveTV = (() => {
       } else {
         logoWrap.innerHTML = `<div class="livetv-player-logo-fallback">${(ch.name || "T")[0].toUpperCase()}</div>`;
       }
+    }
+
+    const extBtn = document.getElementById("livetv-player-ext-btn");
+    if (extBtn) {
+      extBtn.href = streamUrl || _currentStreamUrl || ch.url || "#";
     }
 
     _updateFavoriteUI(ch.id);
@@ -1391,9 +1741,19 @@ const LiveTV = (() => {
   function _showError(show, msg = "") {
     const errorEl = document.getElementById("livetv-player-error");
     const errorMsg = document.getElementById("livetv-player-error-text");
+    const extLink = document.getElementById("livetv-error-ext-link");
     if (errorEl) {
       errorEl.style.display = show ? "flex" : "none";
       if (errorMsg && msg) errorMsg.textContent = msg;
+      if (extLink) {
+        const targetUrl = _currentStreamUrl || _currentChannel?.url;
+        if (targetUrl) {
+          extLink.href = targetUrl;
+          extLink.style.display = "inline-flex";
+        } else {
+          extLink.style.display = "none";
+        }
+      }
     }
   }
 

@@ -1,0 +1,23 @@
+# Cloudflare Pages Direct Route Redirects to SPA Hash Routes
+/home         /#/home            302
+/movies       /#/movies          302
+/series       /#/series          302
+/tv           /#/series          302
+/shows        /#/series          302
+/anime        /#/anime           302
+/donghua      /#/donghua         302
+/livetv       /#/livetv          302
+/live         /#/livetv          302
+/watchlist    /#/watchlist       302
+/history      /#/history-page    302
+/history-page /#/history-page    302
+/continue     /#/continue-page   302
+/continue-page/#/continue-page   302
+/settings     /#/settings-page   302
+/settings-page/#/settings-page   302
+/profile      /#/profile         302
+/search       /#/search          302
+/movie/*      /#/movie/:splat    302
+/tv/*         /#/tv/:splat       302
+/anime/*      /#/anime/:splat    302
+/donghua/*    /#/donghua/:splat  302

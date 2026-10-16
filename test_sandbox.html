@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Provider Sandbox Test Harness</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #fff; margin: 0; padding: 20px; }
+    h1 { font-size: 20px; margin-bottom: 12px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; }
+    select, button { background: #1f2430; color: #fff; border: 1px solid #333d52; padding: 8px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    button:hover { background: #2b3345; }
+    .frame-container { width: 100%; max-width: 900px; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; border: 1px solid #333; position: relative; }
+    iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .log-box { margin-top: 16px; max-width: 900px; background: #161922; border: 1px solid #282e3f; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 13px; max-height: 250px; overflow-y: auto; }
+    .log-line { margin: 4px 0; }
+    .log-line.warn { color: #f59e0b; }
+    .log-line.err { color: #ef4444; }
+    .log-line.success { color: #10b981; }
+    .log-line.info { color: #3b82f6; }
+    .tabs-status { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 10px; }
+    .tabs-status.blocked { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .tabs-status.opened { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+  </style>
+</head>
+<body>
+  <h1>CineJoy Provider Sandbox Test Suite</h1>
+  
+  <div class="controls">
+    <label>Provider:
+      <select id="provider-select">
+        <option value="vidlink">VidLink Pro (vidlink.pro)</option>
+        <option value="vidbolt">VidBolt (vidbolt.pro)</option>
+        <option value="videm">Videm (videm.xyz)</option>
+        <option value="codespecters">CodeSpecters (api.codespecters.com)</option>
+        <option value="cinesrc">CineSrc (cinesrc.st)</option>
+        <option value="filmu">FilmU (embed.filmu.in)</option>
+        <option value="vidcore">VidCore (vidcore.org)</option>
+        <option value="smashystream">SmashyStream (embed.smashystream.com)</option>
+        <option value="twoembed">2Embed (www.2embed.cc)</option>
+        <option value="embedmaster">EmbedMaster (embedmaster.link)</option>
+        <option value="streamflizo">StreamFliz (streamflizoapi.top)</option>
+      </select>
+    </label>
+
+    <label>Sandbox Mode:
+      <select id="sandbox-select">
+        <option value="none">No Sandbox (Unrestricted)</option>
+        <option value="safe" selected>Safe Sandbox (scripts + same-origin + forms + presentation)</option>
+        <option value="strict">Strict Sandbox (scripts + forms, NO same-origin)</option>
+        <option value="popups">Permissive (scripts + same-origin + forms + popups)</option>
+      </select>
+    </label>
+
+    <label>TMDB ID:
+      <input type="text" id="tmdb-id" value="550" style="background:#1f2430; color:#fff; border:1px solid #333d52; padding:6px 10px; border-radius:6px; width:70px;">
+    </label>
+
+    <button id="load-btn" onclick="loadFrame()">Load Player</button>
+    <button id="clear-log-btn" onclick="clearLogs()">Clear Log</button>
+    <span id="tab-tracker" class="tabs-status blocked">New Tabs: 0</span>
+  </div>
+
+  <div class="frame-container" id="frame-wrap">
+    <div id="placeholder" style="display:flex; align-items:center; justify-content:center; height:100%; color:#666;">Click "Load Player" to test</div>
+  </div>
+
+  <div class="log-box" id="log-box">
+    <div class="log-line info">Ready to test providers. Choose a provider and click Load Player.</div>
+  </div>
+
+  <script>
+    let newTabsCount = 0;
+    const originalOpen = window.open;
+
+    // Track window.open attempts from any parent context or leaks
+    window.open = function(url, target, features) {
+      newTabsCount++;
+      log(`[POPUP DETECTED] window.open called with URL: ${url}, target: ${target}`, "err");
+      updateTabTracker();
+      return originalOpen.apply(this, arguments);
+    };
+
+    function log(msg, type = "info") {
+      const box = document.getElementById("log-box");
+      const line = document.createElement("div");
+      line.className = "log-line " + type;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      box.appendChild(line);
+      box.scrollTop = box.scrollHeight;
+      console.log(`[Test] ${msg}`);
+    }
+
+    function clearLogs() {
+      document.getElementById("log-box").innerHTML = "";
+      newTabsCount = 0;
+      updateTabTracker();
+    }
+
+    function updateTabTracker() {
+      const el = document.getElementById("tab-tracker");
+      el.textContent = `New Tabs: ${newTabsCount}`;
+      if (newTabsCount > 0) {
+        el.className = "tabs-status opened";
+      } else {
+        el.className = "tabs-status blocked";
+      }
+    }
+
+    const PROVIDER_URLS = {
+      vidlink: (id) => `https://vidlink.pro/movie/${id}`,
+      vidbolt: (id) => `https://vidbolt.pro/movie/${id}`,
+      videm: (id) => `https://videm.xyz/embed/movie/${id}`,
+      codespecters: (id) => `https://api.codespecters.com/embed/movie/${id}?apikey=DEMO_36c18c68`,
+      cinesrc: (id) => `https://cinesrc.st/embed/movie/${id}`,
+      filmu: (id) => `https://embed.filmu.in/movie/${id}`,
+      vidcore: (id) => `https://vidcore.org/embed/movie/${id}`,
+      smashystream: (id) => `https://embed.smashystream.com/playere.php?tmdb=${id}`,
+      twoembed: (id) => `https://www.2embed.cc/embed/${id}`,
+      embedmaster: (id) => `https://embedmaster.link/movie/${id}`,
+      streamflizo: (id) => `https://streamflizoapi.top/stream/tmdb/${id}`
+    };
+
+    const SANDBOX_MODES = {
+      none: null,
+      safe: "allow-scripts allow-same-origin allow-forms allow-presentation",
+      strict: "allow-scripts allow-forms allow-presentation",
+      popups: "allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
+    };
+
+    function loadFrame() {
+      const pKey = document.getElementById("provider-select").value;
+      const sMode = document.getElementById("sandbox-select").value;
+      const id = document.getElementById("tmdb-id").value.trim() || "550";
+      const urlFn = PROVIDER_URLS[pKey];
+      if (!urlFn) return;
+      const url = urlFn(id);
+
+      const wrap = document.getElementById("frame-wrap");
+      wrap.innerHTML = "";
+
+      const iframe = document.createElement("iframe");
+      iframe.id = "test-stream-frame";
+      iframe.setAttribute("allowfullscreen", "true");
+      iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
+
+      const sandboxVal = SANDBOX_MODES[sMode];
+      if (sandboxVal) {
+        iframe.setAttribute("sandbox", sandboxVal);
+        log(`Loading ${pKey} WITH sandbox="${sandboxVal}"`, "warn");
+      } else {
+        iframe.removeAttribute("sandbox");
+        log(`Loading ${pKey} WITHOUT sandbox (Unrestricted)`, "info");
+      }
+
+      iframe.src = url;
+      wrap.appendChild(iframe);
+
+      log(`URL: ${url}`, "info");
+
+      iframe.onload = () => {
+        log(`Iframe loaded for ${pKey}`, "success");
+      };
+      iframe.onerror = (e) => {
+        log(`Iframe error for ${pKey}`, "err");
+      };
+    }
+
+    // Listen for cross-window messages
+    window.addEventListener("message", (e) => {
+      try {
+        log(`Received message from ${e.origin}: ${JSON.stringify(e.data).slice(0, 100)}`, "info");
+      } catch (err) {}
+    });
+  </script>
+</body>
+</html>

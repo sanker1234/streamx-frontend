@@ -69,129 +69,296 @@ const IMG = {
 //     tv     : (id, s, e)  => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
 //   },
 // ];
+// ── PROVIDER SECURITY & SANDBOX REGISTRY ──────────────────────────────────
+// Records independent testing results, advertising mechanisms, and minimum
+// necessary sandbox restrictions to stop unwanted new tabs while preserving playback.
+const PROVIDER_SECURITY_CONFIG = {
+  nxsha: {
+    tested: true,
+    status: "compatible",
+    sandbox: null,
+    hasAds: false,
+    adMechanism: "none",
+    notes: "Nxsha Platform 2.0 (Moobies) embed engine. Supports multi-server auto-fallback, custom CineJoy brand color (%23ff2a6d), multi-language audio (?lang=), multi-language subtitle tracks (?sub=), ad-branding disable, and direct download endpoint."
+  },
+  cinesrc: {
+    tested: true,
+    status: "compatible",
+    sandbox: null,
+    hasAds: false,
+    adMechanism: "none",
+    notes: "Verified clean streaming provider. Streams HLS with subtitles, quality selector, and fullscreen without unwanted advertising tabs or popunders."
+  },
+  vidlink: {
+    tested: true,
+    status: "compatible",
+    sandbox: null,
+    hasAds: false,
+    adMechanism: "none",
+    notes: "High-quality 1080p player. Actively detects sandbox attributes and halts with 'Please Disable Sandbox'. When run unsandboxed, it streams cleanly."
+  },
+  vidcore: {
+    tested: true,
+    status: "compatible",
+    sandbox: null,
+    hasAds: false,
+    adMechanism: "none",
+    notes: "Clean EdgeOne-hosted player. Streams HLS without unwanted advertising tabs."
+  },
+  videm: {
+    tested: true,
+    status: "incompatible",
+    sandbox: null,
+    hasAds: true,
+    adMechanism: "tagivi_window_open",
+    notes: "Injects tagivi.com popunder script. Actively checks for sandbox via frameElement.hasAttribute('sandbox') and blocks playback with 'Sandbox is not allowed'. Incompatible with desired ad-free experience (Requirement 10).",
+    replacement: "cinesrc"
+  },
+  filmu: {
+    tested: true,
+    status: "incompatible",
+    sandbox: null,
+    hasAds: true,
+    adMechanism: "profiton_window_open",
+    notes: "Injects ProfitOn ad script. Actively checks for sandbox and blocks playback with 'Playback Disabled: Remove sandbox attribute'. Incompatible with desired ad-free experience (Requirement 10).",
+    replacement: "cinesrc"
+  },
+  embedmaster: {
+    tested: true,
+    status: "incompatible",
+    sandbox: null,
+    hasAds: true,
+    adMechanism: "popunder_ad_network",
+    notes: "Actively checks for sandbox and blocks playback with 'Sandbox detected: you must remove sandbox attribute'. Incompatible with desired ad-free experience (Requirement 10).",
+    replacement: "cinesrc"
+  },
+  smashystream: {
+    tested: true,
+    status: "incompatible",
+    sandbox: null,
+    hasAds: true,
+    adMechanism: "profiton_window_open",
+    notes: "Redirects to AnyEmbed with ProfitOn ad integration. Requires unrestricted context. Incompatible (Requirement 10).",
+    replacement: "cinesrc"
+  },
+  vidbolt: {
+    tested: true,
+    status: "incompatible",
+    sandbox: null,
+    hasAds: true,
+    adMechanism: "miscoinbrassic_window_open",
+    notes: "Injects miscoinbrassic ad script. Actively tests document.domain and halts playback with 'Playback disabled: This player can\'t run in a sandboxed iframe'. Incompatible (Requirement 10).",
+    replacement: "cinesrc"
+  },
+  twoembed: {
+    tested: true,
+    status: "incompatible",
+    sandbox: null,
+    hasAds: true,
+    adMechanism: "tagivi_and_target_blank",
+    notes: "Injects tagivi script and transparent ad links. Employs isReallySandboxed() anti-sandbox detector and halts video with 'Sandbox not allowed'. Incompatible (Requirement 10).",
+    replacement: "cinesrc"
+  },
+  codespecters: {
+    tested: true,
+    status: "incompatible",
+    sandbox: null,
+    hasAds: true,
+    adMechanism: "adshield_and_adsterra",
+    notes: "Contains ad-shield play overlay that calls window.open() to an ad network, plus Adsterra popunders. Demo API key is also forbidden outside preview domain. Incompatible (Requirement 10).",
+    replacement: "cinesrc"
+  },
+  vidsrcsbs: {
+    tested: true,
+    status: "offline",
+    sandbox: null,
+    hasAds: false,
+    adMechanism: "unknown",
+    notes: "Domain unreachable (DNS / server connection failure).",
+    replacement: "cinesrc"
+  },
+  streamflizo: {
+    tested: true,
+    status: "offline",
+    sandbox: null,
+    hasAds: false,
+    adMechanism: "unknown",
+    notes: "Endpoint returns HTTP 400 Bad Request.",
+    replacement: "cinesrc"
+  }
+};
+window.PROVIDER_SECURITY_CONFIG = PROVIDER_SECURITY_CONFIG;
+
 const STREAM_SERVERS = [
   {
-    key    : "vidlink",
-    label  : "VidLink Pro",
+    key    : "nxsha",
+    label  : "Moobies (Nxsha)",
     recommended: true,
-    icon   : "▶",
-    desc   : "Ultra Fast · Auto Sub/Dub · 1080p",
-    color  : "#7c3aed",
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://vidlink.pro/movie/${id}`,
-    tv     : (id, s, e)  => `https://vidlink.pro/tv/${id}/${s}/${e}`,
-  },
-  {
-    key    : "vidbolt",
-    label  : "VidBolt",
     icon   : "⚡",
-    desc   : "4K Player · Zero Config",
-    color  : "#10b981",
+    desc   : "Multi-Server · Multi-Lang Audio & Subs · 4K/1080p · Ad-Free",
+    color  : "#f59e0b",
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://vidbolt.pro/movie/${id}`,
-    tv     : (id, s, e)  => `https://vidbolt.pro/tv/${id}/${s}/${e}`,
-  },
-  {
-    key    : "videm",
-    label  : "Videm",
-    icon   : "🎬",
-    desc   : "Fast · Auto-source · Fullscreen",
-    color  : "#3b82f6",
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://videm.xyz/embed/movie/${id}`,
-    tv     : (id, s, e)  => `https://videm.xyz/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    key    : "codespecters",
-    label  : "CodeSpecters",
-    icon   : "💎",
-    desc   : "Ultra HD · Multi-server embed",
-    color  : "#8b5cf6",
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://api.codespecters.com/embed/movie/${id}?apikey=DEMO_36c18c68`,
-    tv     : (id, s, e)  => `https://api.codespecters.com/embed/tv/${id}/${s}/${e}?apikey=DEMO_36c18c69`,
+    movie  : (id, options = {}) => {
+      const params = new URLSearchParams({
+        disable_app_ad: "true",
+        color: "%23ff2a6d"
+      });
+      const prefLang = localStorage.getItem("streamx_audio_lang") || options.lang;
+      if (prefLang) params.set("lang", prefLang);
+      const prefSub = localStorage.getItem("streamx_sub_lang") || options.sub;
+      if (prefSub) params.set("sub", prefSub);
+      if (options.server) params.set("server", options.server);
+      if (options.one_server) params.set("one_server", "true");
+      return `https://web.nxsha.app/embed/movie/${id}?${params.toString().replace(/%2523/g, "%23")}`;
+    },
+    tv     : (id, s, e, options = {}) => {
+      const params = new URLSearchParams({
+        disable_app_ad: "true",
+        color: "%23ff2a6d"
+      });
+      const prefLang = localStorage.getItem("streamx_audio_lang") || options.lang;
+      if (prefLang) params.set("lang", prefLang);
+      const prefSub = localStorage.getItem("streamx_sub_lang") || options.sub;
+      if (prefSub) params.set("sub", prefSub);
+      if (options.server) params.set("server", options.server);
+      if (options.one_server) params.set("one_server", "true");
+      return `https://web.nxsha.app/embed/tv/${id}/${s}/${e}?${params.toString().replace(/%2523/g, "%23")}`;
+    },
   },
   {
     key    : "cinesrc",
     label  : "CineSrc",
+    recommended: true,
     icon   : "🎬",
-    desc   : "Fast · Subtitles · Auto-next",
+    desc   : "Ultra HD · Fast · Auto-next · Ad-Free",
     color  : "#3b82f6",
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
     movie  : (id)        => `https://cinesrc.st/embed/movie/${id}`,
     tv     : (id, s, e)  => `https://cinesrc.st/embed/tv/${id}?s=${s}&e=${e}`,
   },
   {
-    key    : "filmu",
-    label  : "FilmU Embed",
-    icon   : "🎥",
-    desc   : "Multi-source streaming",
-    color  : "#8b5cf6",
+    key    : "vidlink",
+    label  : "VidLink Pro",
+    recommended: true,
+    icon   : "▶",
+    desc   : "Ultra Fast · Auto Sub/Dub · 1080p (Clean)",
+    color  : "#7c3aed",
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://embed.filmu.in/movie/${id}`,
-    tv     : (id, s, e)  => `https://embed.filmu.in/tv/${id}/${s}/${e}`,
+    movie  : (id)        => `https://vidlink.pro/movie/${id}`,
+    tv     : (id, s, e)  => `https://vidlink.pro/tv/${id}/${s}/${e}`,
   },
   {
     key    : "vidcore",
     label  : "VidCore",
+    recommended: true,
     icon   : "⚡",
-    desc   : "HLS · Multi-server player",
+    desc   : "HLS · Multi-server player · Ad-Free",
     color  : "#06b6d4",
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
     movie  : (id)        => `https://vidcore.org/embed/movie/${id}`,
     tv     : (id, s, e)  => `https://vidcore.org/embed/tv/${id}/${s}/${e}`,
   },
   {
-    key    : "vidsrcsbs",
-    label  : "VidSrc",
-    icon   : "📺",
-    desc   : "Fast · Multi-source CDN",
-    color  : "#10b981",
+    key    : "videm",
+    label  : "Videm",
+    icon   : "🛡️",
+    desc   : "Requires Ad Popups · Incompatible",
+    color  : "#3b82f6",
+    incompatible: true,
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://vidsrc.sbs/embed/movie/${id}`,
-    tv     : (id, s, e)  => `https://vidsrc.sbs/embed/tv/${id}/${s}/${e}`,
+    movie  : (id)        => `https://videm.xyz/embed/movie/${id}`,
+    tv     : (id, s, e)  => `https://videm.xyz/embed/tv/${id}/${s}/${e}`,
   },
   {
-    key    : "smashystream",
-    label  : "SmashyStream",
-    icon   : "💥",
-    desc   : "Recommended mirror nodes",
-    color  : "#f59e0b",
-    supportedCategories: ["hollywood", "indian", "kdrama", "cdrama", "jdrama"],
-    movie  : (id)        => `https://embed.smashystream.com/playere.php?tmdb=${id}`,
-    tv     : (id, s, e)  => `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${s}&episode=${e}`,
-  },
-  {
-    key    : "twoembed",
-    label  : "2Embed",
-    icon   : "🎞️",
-    desc   : "Reliable fallback server",
-    color  : "#eab308",
+    key    : "filmu",
+    label  : "FilmU Embed",
+    icon   : "🎥",
+    desc   : "Requires Ad Popups · Incompatible",
+    color  : "#8b5cf6",
+    incompatible: true,
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://www.2embed.cc/embed/${id}`,
-    tv     : (id, s, e)  => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+    movie  : (id)        => `https://embed.filmu.in/movie/${id}`,
+    tv     : (id, s, e)  => `https://embed.filmu.in/tv/${id}/${s}/${e}`,
   },
   {
     key    : "embedmaster",
     label  : "EmbedMaster",
     icon   : "🔮",
-    desc   : "PlayerJS API · Custom subtitles",
+    desc   : "Requires Ad Popups · Incompatible",
     color  : "#a855f7",
+    incompatible: true,
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
     movie  : (id)        => `https://embedmaster.link/movie/${id}`,
     tv     : (id, s, e)  => `https://embedmaster.link/tv/${id}/${s}/${e}`,
   },
   {
+    key    : "smashystream",
+    label  : "SmashyStream",
+    icon   : "💥",
+    desc   : "Requires Ad Popups · Incompatible",
+    color  : "#f59e0b",
+    incompatible: true,
+    supportedCategories: ["hollywood", "indian", "kdrama", "cdrama", "jdrama"],
+    movie  : (id)        => `https://embed.smashystream.com/playere.php?tmdb=${id}`,
+    tv     : (id, s, e)  => `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${s}&episode=${e}`,
+  },
+  {
+    key    : "vidbolt",
+    label  : "VidBolt",
+    icon   : "⚡",
+    desc   : "Requires Ad Popups · Incompatible",
+    color  : "#10b981",
+    incompatible: true,
+    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
+    movie  : (id)        => `https://vidbolt.pro/movie/${id}`,
+    tv     : (id, s, e)  => `https://vidbolt.pro/tv/${id}/${s}/${e}`,
+  },
+  {
+    key    : "twoembed",
+    label  : "2Embed",
+    icon   : "🎞️",
+    desc   : "Requires Ad Popups · Incompatible",
+    color  : "#eab308",
+    incompatible: true,
+    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
+    movie  : (id)        => `https://www.2embed.cc/embed/${id}`,
+    tv     : (id, s, e)  => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+  },
+  {
+    key    : "codespecters",
+    label  : "CodeSpecters",
+    icon   : "💎",
+    desc   : "Ad-Shield & Demo Key Restricted · Incompatible",
+    color  : "#8b5cf6",
+    incompatible: true,
+    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
+    movie  : (id)        => `https://api.codespecters.com/embed/movie/${id}?apikey=DEMO_36c18c68`,
+    tv     : (id, s, e)  => `https://api.codespecters.com/embed/tv/${id}/${s}/${e}?apikey=DEMO_36c18c69`,
+  },
+  {
+    key    : "vidsrcsbs",
+    label  : "VidSrc",
+    icon   : "📺",
+    desc   : "Multi-source CDN (Offline)",
+    color  : "#10b981",
+    incompatible: true,
+    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
+    movie  : (id)        => `https://vidsrc.sbs/embed/movie/${id}`,
+    tv     : (id, s, e)  => `https://vidsrc.sbs/embed/tv/${id}/${s}/${e}`,
+  },
+  {
     key    : "streamflizo",
     label  : "StreamFliz",
     icon   : "🔥",
-    desc   : "Multi-Audio · Backup Node",
+    desc   : "Multi-Audio (Offline)",
     color  : "#ff2a5f",
+    incompatible: true,
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
     movie  : (id)        => `https://streamflizoapi.top/stream/tmdb/${id}`,
     tv     : (id, s, e)  => `https://streamflizoapi.top/stream/tmdb/${id}/${s}/${e}/multi`,
   }
 ];
+window.STREAM_SERVERS = STREAM_SERVERS;
 
 
 // ── DOWNLOAD SERVERS ──────────────────────────────────────────────────────
@@ -255,6 +422,40 @@ const STREAM_SERVERS = [
 // ];
 const DOWNLOAD_SERVERS = [
   {
+    key   : "nxsha_dl",
+    label : "Moobies (Nxsha DL)",
+    icon  : "⚡",
+    desc  : "Direct Download · 1080p/4K Multi-Node",
+    color : "#f59e0b",
+    url   : (item, currentSeason = 1, currentEpisode = 1) => {
+      if (!item) return "#";
+      const id = item.tmdb_id || item.id;
+      if (!id) return "#";
+
+      const isExplicitMovie = item.media === "movie" || item.media_type === "movie" || item.type === "movie";
+      const isTv = !isExplicitMovie && (
+        item.media === "tv" ||
+        item.media === "series" ||
+        item.media_type === "tv" ||
+        item.media_type === "series" ||
+        item.type === "tv" ||
+        item.type === "series" ||
+        Boolean(item.first_air_date) ||
+        Boolean(item.number_of_seasons) ||
+        Boolean(item.season_list?.length) ||
+        Boolean(item.seasons) ||
+        Boolean(item.season)
+      );
+
+      if (isTv) {
+        const s = item.season || currentSeason || 1;
+        const e = item.episode || currentEpisode || 1;
+        return `https://web.nxsha.app/dl/tv/${id}/${s}/${e}`;
+      }
+      return `https://web.nxsha.app/dl/movie/${id}`;
+    },
+  },
+  {
     key   : "vidvault",
     label : "VidVault",
     icon  : "⬇",
@@ -289,6 +490,7 @@ const DOWNLOAD_SERVERS = [
     },
   }
 ];
+window.DOWNLOAD_SERVERS = DOWNLOAD_SERVERS;
 
 
 

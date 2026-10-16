@@ -356,7 +356,17 @@ const App = (() => {
           if (src) {
             img.src = src;
             img.removeAttribute("data-src");
-            img.classList.add("loaded");
+            img.onload = () => img.classList.add("loaded");
+            img.onerror = () => {
+              img.style.display = "none";
+              const fallback = img.nextElementSibling;
+              if (fallback && fallback.classList.contains("card-no-img")) {
+                fallback.style.display = "flex";
+              }
+            };
+            if (img.complete && img.naturalWidth > 0) {
+              img.classList.add("loaded");
+            }
             _imgObserver.unobserve(img);
           }
         }
@@ -1914,9 +1924,9 @@ const App = (() => {
       ? item.rating.toFixed(1) : null;
 
     return `
-      <div class="card" id="card-${item.media}-${item.id}" onclick="App.openItem(${_jsonAttr(item)})" role="button" tabindex="0" aria-label="${_esc(item.title)}">
+      <div class="card" id="card-${item.media}-${item.id}" onclick="App.openItem(${_jsonAttr(item)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();App.openItem(${_jsonAttr(item)});} " role="button" tabindex="0" aria-label="${_esc(item.title)}">
         <div class="card-poster">
-          <img data-src="${item.poster || ""}" alt="${_esc(item.title)}" class="card-img lazy" loading="lazy">
+          <img data-src="${item.poster || ""}" alt="${_esc(item.title)}" class="card-img lazy" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
           <div class="card-no-img" style="display:${item.poster ? "none" : "flex"}">${_esc((item.title || "?").charAt(0))}</div>
           <div class="card-overlay">
             <div class="card-play-btn" aria-hidden="true">${_PLAY_SVG}</div>
@@ -2348,22 +2358,49 @@ const App = (() => {
     }
   }
 
+  /* ── Unified Empty & Error State Helper ───────────────────────────── */
+  const _EMPTY_ICONS = {
+    search: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`,
+    filter: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>`,
+    watchlist: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`,
+    history: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+    continue: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
+    offline: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>`,
+    error: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
+    catalogue: `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line></svg>`
+  };
+
+  function renderEmptyState({ icon = "search", title = "No Results Found", message = "", actionLabel = "", actionOnClick = "", secondaryLabel = "", secondaryOnClick = "", isError = false }) {
+    const iconSvg = _EMPTY_ICONS[icon] || _EMPTY_ICONS.search;
+    return `
+      <div class="empty-state" role="status">
+        <div class="empty-state-icon${isError ? " error" : ""}" aria-hidden="true">${iconSvg}</div>
+        <h3 class="empty-state-title">${_esc(title)}</h3>
+        ${message ? `<p class="empty-state-desc">${_esc(message)}</p>` : ""}
+        ${(actionLabel || secondaryLabel) ? `
+        <div class="empty-state-actions">
+          ${actionLabel ? `<button type="button" class="empty-state-btn primary" onclick="${actionOnClick}">${_esc(actionLabel)}</button>` : ""}
+          ${secondaryLabel ? `<button type="button" class="empty-state-btn secondary" onclick="${secondaryOnClick}">${_esc(secondaryLabel)}</button>` : ""}
+        </div>` : ""}
+      </div>
+    `;
+  }
+
   function _renderSearchEmptyState() {
     const grid = document.getElementById("search-grid");
     if (!grid) return;
     _renderFilterPanel();
     document.getElementById("search-label").textContent = "Search 9CineJoy";
     grid.style.display = "block";
-    grid.innerHTML = `
-      <div class="empty-state" style="padding: 60px 20px; text-align: center; color: var(--text2);">
-        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px; opacity: 0.6; display: block;">
-          <circle cx="11" cy="11" r="8"></circle>
-          <path d="M21 21l-4.35-4.35"></path>
-        </svg>
-        <h3 style="color: #fff; font-size: 18px; margin-bottom: 8px;">Discover Movies, Series, Dramas &amp; Anime</h3>
-        <p style="font-size: 13px; max-width: 440px; margin: 0 auto; color: var(--text3);">Type in the search bar above and press Enter to search across all catalog titles.</p>
-      </div>
-    `;
+    grid.innerHTML = renderEmptyState({
+      icon: "search",
+      title: "Discover Movies, Series, Dramas & Anime",
+      message: "Type in the search bar above or press '/' to search across all catalog titles.",
+      actionLabel: "Explore Trending Movies",
+      actionOnClick: "App.handleNavItemClick('movies', 'browse', 'trending_movies')",
+      secondaryLabel: "Browse Anime",
+      secondaryOnClick: "App.showPage('anime')"
+    });
   }
 
   async function _doSearch(query) {
@@ -2662,12 +2699,16 @@ const App = (() => {
     });
 
     if (!hasAny) {
-      grid.innerHTML = `
-        <div class="empty-state" style="padding: 60px 20px; text-align: center; color: var(--text2);">
-          <p style="font-size:16px; margin-bottom:8px; color:#fff;">No results found matching "${_esc(_searchQuery)}"</p>
-          <p style="font-size:13px; color:var(--text3); max-width:440px; margin:0 auto 16px;">Try checking your spelling or searching for a different title.</p>
-        </div>
-      `;
+      grid.style.display = "block";
+      grid.innerHTML = renderEmptyState({
+        icon: "search",
+        title: `No Results for "${_searchQuery}"`,
+        message: "Try checking your spelling, removing punctuation, or searching for a different title.",
+        actionLabel: "Clear Search",
+        actionOnClick: "document.getElementById('search-input').value = ''; App.showPage('search'); App.renderSearchEmptyState();",
+        secondaryLabel: "Browse Trending Movies",
+        secondaryOnClick: "App.handleNavItemClick('movies', 'browse', 'trending_movies')"
+      });
       document.getElementById("search-label").textContent = "No Results";
     } else {
       grid.innerHTML = html;
@@ -2685,7 +2726,16 @@ const App = (() => {
     grid.style.gap = "20px";
 
     if (!results.length && !append) {
-      grid.innerHTML = `<div class="empty-state"><p>No filtered results for "${_esc(_searchQuery)}"</p></div>`;
+      grid.style.display = "block";
+      grid.innerHTML = renderEmptyState({
+        icon: "filter",
+        title: `No Matches in ${_searchContext.toUpperCase()}`,
+        message: `No ${_searchContext} matched "${_searchQuery}". Try changing or resetting filters.`,
+        actionLabel: "Show All Results",
+        actionOnClick: "App.setSearchContext('all');",
+        secondaryLabel: "Clear Search",
+        secondaryOnClick: "document.getElementById('search-input').value = ''; App.showPage('search'); App.renderSearchEmptyState();"
+      });
       document.getElementById("search-label").textContent = `No Results for "${_searchQuery}"`;
       return;
     }
@@ -2889,7 +2939,22 @@ const App = (() => {
         row = HOME_ROWS.find(r => r.id === "trending_tv") || HOME_ROWS.find(r => r.id === "popular_tv");
       }
     }
-    if (!row) return;
+    if (!row) {
+      _showPage("browse", true);
+      const bGrid = document.getElementById("browse-grid");
+      if (bGrid) {
+        bGrid.innerHTML = renderEmptyState({
+          icon: "catalogue",
+          title: "Category Not Found",
+          message: "The requested catalogue section could not be found.",
+          actionLabel: "Explore All Movies",
+          actionOnClick: "App.handleNavItemClick('movies', 'browse', 'trending_movies')",
+          secondaryLabel: "Back to Home",
+          secondaryOnClick: "App.showPage('home')"
+        });
+      }
+      return;
+    }
 
     _showPage("browse", true);
     let pageTitle = _plainLabel(row.label);
@@ -2909,7 +2974,19 @@ const App = (() => {
       total = data.total_pages;
       const grid = document.getElementById("browse-grid");
       if (!grid) return;
-      if (page === 1) grid.innerHTML = "";
+      if (page === 1) {
+        grid.innerHTML = "";
+        if (!data.results || data.results.length === 0) {
+          grid.innerHTML = renderEmptyState({
+            icon: "catalogue",
+            title: "No Titles in Collection",
+            message: "There are currently no titles available in this collection.",
+            actionLabel: "Explore Trending Movies",
+            actionOnClick: "App.handleNavItemClick('movies', 'browse', 'trending_movies')"
+          });
+          return;
+        }
+      }
       const html = data.results.filter(i => i.poster).map(i => _cardHTML(i)).join("");
       grid.insertAdjacentHTML("beforeend", html);
       grid.querySelectorAll("img[data-src]").forEach(img => _observeImg(img));
@@ -2931,8 +3008,19 @@ const App = (() => {
 
     try { await loadMore(); }
     catch (err) {
-      document.getElementById("browse-grid").innerHTML =
-        `<p class="row-error">${_esc(err.message)}</p>`;
+      const bGrid = document.getElementById("browse-grid");
+      if (bGrid) {
+        bGrid.innerHTML = renderEmptyState({
+          icon: "network",
+          title: "Unable to Load Catalogue",
+          message: err.message || "Failed to fetch titles. Please check your network connection and try again.",
+          actionLabel: "Try Again",
+          actionOnClick: `App.openBrowse('${_esc(rowId)}')`,
+          secondaryLabel: "Return to Home",
+          secondaryOnClick: "App.showPage('home')",
+          isError: true
+        });
+      }
     }
   }
   // ── Load Indian row (for Bollywood, Tollywood, etc.) ─────────────────
@@ -2987,13 +3075,18 @@ const App = (() => {
     const container = document.getElementById("wl-grid");
     if (!container) return;
     const items = Watchlist.getAll();
-    document.getElementById("wl-count").textContent = `(${items.length} title${items.length !== 1 ? "s" : ""})`;
+    const countEl = document.getElementById("wl-count");
+    if (countEl) countEl.textContent = `(${items.length} title${items.length !== 1 ? "s" : ""})`;
     if (!items.length) {
-      container.innerHTML = `<div class="empty-state">
-        <p style="font-size:40px;margin-bottom:12px">Movies</p>
-        <p>Your watchlist is empty.</p>
-        <p style="font-size:12px;margin-top:6px">Use Save on any title to add it.</p>
-      </div>`;
+      container.innerHTML = renderEmptyState({
+        icon: "watchlist",
+        title: "Your Watchlist is Empty",
+        message: "Bookmark movies, TV series, or anime by tapping the Save button on any title to watch them anytime.",
+        actionLabel: "Explore Home",
+        actionOnClick: "App.showPage('home')",
+        secondaryLabel: "Browse Trending Movies",
+        secondaryOnClick: "App.handleNavItemClick('movies', 'browse', 'trending_movies')"
+      });
       return;
     }
     container.innerHTML = items.map(i => _cardHTML(i)).join("");
@@ -3001,7 +3094,7 @@ const App = (() => {
   }
 
   // ── Hash-based routing ────────────────────────────────────────────────
-  // Returns true if it routed to a non-home page (so init can skip home load)
+  // Returns true if it routed to a page (so init can skip redundant home load)
   async function _handleRoute() {
     const hash = window.location.hash || "";
     const path = hash.startsWith("#") ? hash.slice(1) : hash;
@@ -3023,9 +3116,9 @@ const App = (() => {
         _showPage("home", true);
       }
       if (!document.getElementById("home-rows")?.children.length) {
-        _loadGeneralHomeContent().catch(() => {});
+        await _loadGeneralHomeContent();
       }
-      return false;
+      return true;
     }
 
     // Direct section routes
@@ -3081,7 +3174,7 @@ const App = (() => {
     if (path.startsWith("/manga") || path.startsWith("/manhwa") || path.startsWith("/manhua") || path.startsWith("/read")) {
       window.location.hash = "#/";
       _showPage("home", true);
-      return false;
+      return true;
     }
 
     // Anime/Donghua detail: #/anime/:id or #/donghua/:id
@@ -3089,6 +3182,10 @@ const App = (() => {
     if (animeMatch) {
       const media = animeMatch[1];
       const id = animeMatch[2];
+      if (!id || id === "undefined" || id === "null") {
+        _showPage("404", true);
+        return true;
+      }
       const item = { id: parseInt(id) || id, media, title: "Loading…", poster: "", backdrop: "" };
       await _openAnimeDetail(item, true /* skipHashPush */);
       // Lazy preload home shell in background only if needed
@@ -3102,7 +3199,11 @@ const App = (() => {
     const mediaMatch = path.match(/^\/(movie|tv|drama)\/(\d+)$/);
     if (mediaMatch) {
       const media = mediaMatch[1] === "drama" ? "tv" : mediaMatch[1];
-      const id = parseInt(mediaMatch[2]);
+      const id = parseInt(mediaMatch[2], 10);
+      if (!id || isNaN(id) || id <= 0) {
+        _showPage("404", true);
+        return true;
+      }
       const item = { id, media, title: "Loading…", poster: "", backdrop: "" };
       Player.open(item, true /* skipHashPush */);
       // Lazy preload home shell in background only if needed
@@ -3153,7 +3254,15 @@ const App = (() => {
       return true;
     }
 
-    return false;
+    // 404 Not Found Page route
+    if (path === "/404") {
+      _showPage("404", true);
+      return true;
+    }
+
+    // Unmatched unknown route -> show dedicated 404 page
+    _showPage("404", true);
+    return true;
   }
 
   // ── Page routing ──────────────────────────────────────────────────────
@@ -3184,7 +3293,7 @@ const App = (() => {
 
     const pages = [
       "home", "anime", "livetv", "search", "browse", "watchlist",
-      "history-page", "continue-page", "settings-page", "profile"
+      "history-page", "continue-page", "settings-page", "profile", "404"
     ];
 
     pages.forEach(p => {
@@ -3192,9 +3301,30 @@ const App = (() => {
       if (el) el.style.display = p === page ? "block" : "none";
     });
 
-    if (page !== "search") document.getElementById("search-input").value = "";
+    if (page !== "search") {
+      const sInput = document.getElementById("search-input");
+      if (sInput) sInput.value = "";
+    }
 
     window.scrollTo({ top: 0, behavior: "instant" });
+
+    // Set page titles
+    const titleMap = {
+      home: "9CineJoy — Cinema & Live TV",
+      anime: "Anime & Donghua — 9CineJoy",
+      livetv: "Live TV & Sports — 9CineJoy",
+      search: "Search — 9CineJoy",
+      browse: "Browse — 9CineJoy",
+      watchlist: "Watchlist — 9CineJoy",
+      "history-page": "History — 9CineJoy",
+      "continue-page": "Continue Watching — 9CineJoy",
+      "settings-page": "Settings — 9CineJoy",
+      profile: "Profile — 9CineJoy",
+      "404": "Scene Not Found (404) — 9CineJoy"
+    };
+    if (titleMap[page]) {
+      document.title = titleMap[page];
+    }
 
     // Page-specific initializers
     if (page === "home") {
@@ -3250,7 +3380,8 @@ const App = (() => {
         watchlist: "#/watchlist",
         "history-page": "#/history-page",
         "continue-page": "#/continue-page",
-        "settings-page": "#/settings-page"
+        "settings-page": "#/settings-page",
+        "404": "#/404"
       };
       const newHash = hashMap[page] || `#/${page}`;
       if (window.location.hash !== newHash) {
@@ -3259,63 +3390,6 @@ const App = (() => {
     }
 
     _updateActiveNavLinks(page, _activeRowId);
-  }
-
-  function _updateActiveNavLinks(page, rowId = null) {
-    // 0. Floating Glass Navbar items (Reference Design)
-    document.querySelectorAll(".glass-nav-item").forEach(item => {
-      item.classList.remove("active");
-    });
-    if (page === "home") {
-      document.getElementById("nav-link-home")?.classList.add("active");
-    } else if (page === "anime") {
-      document.getElementById("nav-link-anime")?.classList.add("active");
-    } else if (page === "livetv") {
-      document.getElementById("nav-link-livetv")?.classList.add("active");
-    } else if (page === "browse" && rowId) {
-      if (rowId.includes("movie")) {
-        document.getElementById("nav-link-movies")?.classList.add("active");
-      } else if (rowId.includes("tv") || rowId.includes("series")) {
-        document.getElementById("nav-link-tv")?.classList.add("active");
-      }
-    }
-
-    // 1. Desktop links
-    const desktopLinks = document.querySelectorAll(".nav-links .nav-link");
-    desktopLinks.forEach(link => {
-      link.classList.remove("active");
-      const onclickAttr = link.getAttribute("onclick") || "";
-      if (page === "home" && onclickAttr.includes("showPage('home')")) {
-        link.classList.add("active");
-      } else if (page === "browse" && rowId) {
-        const match = onclickAttr.match(/openBrowse\('([^']+)'\)/);
-        const matchKey = match ? match[1] : "";
-        if (matchKey && (rowId === matchKey || rowId.startsWith(matchKey + "_"))) {
-          link.classList.add("active");
-        }
-      }
-    });
-
-    // 2. Mobile drawer links
-    const drawerLinks = document.querySelectorAll(".drawer-link");
-    drawerLinks.forEach(link => {
-      link.classList.remove("active");
-      const onclickAttr = link.getAttribute("onclick") || "";
-      if (page === "home" && onclickAttr.includes("showMobilePage('home')")) {
-        link.classList.add("active");
-      } else if (page === "watchlist" && onclickAttr.includes("showMobilePage('watchlist')")) {
-        link.classList.add("active");
-      } else if (page === "browse" && rowId) {
-        const match = onclickAttr.match(/openMobileBrowse\('([^']+)'\)/);
-        const matchKey = match ? match[1] : "";
-        const cleanRowId = rowId.split("_")[0];
-        if (matchKey && (rowId === matchKey || cleanRowId === matchKey ||
-          (rowId.includes("movies") && matchKey === "trending_movies") ||
-          (rowId.includes("tv") && matchKey === "trending_tv"))) {
-          link.classList.add("active");
-        }
-      }
-    });
   }
 
   function showPage(page) { _showPage(page); }
@@ -3436,17 +3510,23 @@ const App = (() => {
     } catch (err) {
       console.error("Anime detail error:", err);
       bg.innerHTML = `
-        <div class="player-modal cinematic-detail-modal">
-          <div class="pm-hero-top-bar" style="position:relative;background:none;backdrop-filter:none;padding:20px 24px;">
-            <button class="pm-hero-back-btn" onclick="App._closeAnimeDetail()" aria-label="Go back">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-              <span>Back</span>
+        <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true" aria-label="Anime Error">
+          <div class="pm-hero-top-bar" style="position:relative;background:none;backdrop-filter:none;padding:16px 20px;">
+            <button class="pm-hero-back-btn" onclick="App._closeAnimeDetail()" aria-label="Close">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <span>Close</span>
             </button>
           </div>
-          <div class="pm-cinematic-body" style="padding:60px 20px;text-align:center;color:var(--text3)">
-            <p style="font-size:32px;margin-bottom:12px">⚠️</p>
-            <p style="font-size:18px;color:var(--text);margin-bottom:8px">Failed to load content</p>
-            <p>${_esc(err.message)}</p>
+          <div class="empty-state" role="alert" style="padding:48px 24px 64px;">
+            <div class="empty-state-icon error" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <h3 class="empty-state-title">Unable to Load Anime Details</h3>
+            <p class="empty-state-desc">${_esc(err.message || "Failed to load anime metadata. The title may no longer be available.")}</p>
+            <div class="empty-state-actions">
+              <button type="button" class="empty-state-btn primary" onclick="App._closeAnimeDetail(); App.showPage('anime');">Back to Anime Hub</button>
+              <button type="button" class="empty-state-btn secondary" onclick="App._closeAnimeDetail()">Close</button>
+            </div>
           </div>
         </div>`;
     }
@@ -5052,7 +5132,42 @@ const App = (() => {
     }
   }
 
-  function _setAnimePlayerMode(mode, embedUrl = null) {
+  function _isAnimeServerUnsandboxed(provKey) {
+    if (!provKey) return true; // Default server1 is unsandboxed
+    const raw = String(provKey).toLowerCase().trim();
+    // Servers 1, 4, 5, 6, 7, 9 have sandbox removed
+    const unsandboxedIds = new Set(["1", "4", "5", "6", "7", "9"]);
+    if (unsandboxedIds.has(raw)) return true;
+
+    const sMatch = raw.match(/^server\s*(\d+)$/i);
+    if (sMatch && unsandboxedIds.has(sMatch[1])) return true;
+
+    const aliasMap = {
+      anikoto: "1",
+      megavid: "2",
+      vidcloud: "3",
+      zokoanime: "4",
+      anixo: "5",
+      vidnest: "6",
+      vidsync: "7",
+      anilink: "7",
+      aniembed: "8",
+      vidbolt: "9"
+    };
+    if (aliasMap[raw] && unsandboxedIds.has(aliasMap[raw])) return true;
+
+    try {
+      if (typeof _serverLabel === "function") {
+        const lbl = _serverLabel(raw);
+        const lMatch = String(lbl).match(/Server\s*(\d+)/i);
+        if (lMatch && unsandboxedIds.has(lMatch[1])) return true;
+      }
+    } catch (_) {}
+
+    return false;
+  }
+
+  function _setAnimePlayerMode(mode, embedUrl = null, server = null) {
     const video = document.getElementById("anime-video-player");
     let iframe = document.getElementById("anime-iframe-player");
 
@@ -5076,7 +5191,14 @@ const App = (() => {
           }
         }
         newIframe.id = "anime-iframe-player";
-        newIframe.removeAttribute("sandbox");
+        const currentServer = server || _activeProvider || "server1";
+        if (_isAnimeServerUnsandboxed(currentServer)) {
+          newIframe.removeAttribute("sandbox");
+          console.log(`[Anime Player] Sandbox DISABLED for server: ${currentServer}`);
+        } else {
+          newIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-presentation");
+          console.log(`[Anime Player] Sandbox ENABLED for server: ${currentServer}`);
+        }
         newIframe.setAttribute("allowfullscreen", "true");
         newIframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
         newIframe.className = "player-visible";
@@ -5256,7 +5378,7 @@ const App = (() => {
         // Embed Provider (Servers 2-9, or Server 1 embed)
         const embedUrl = data.embedUrl || (data.sources && data.sources[0]?.url);
         console.log(">>> Loading embed iframe URL:", embedUrl);
-        _setAnimePlayerMode("embed", embedUrl);
+        _setAnimePlayerMode("embed", embedUrl, _activeProvider || targetServer || data.provider);
         _renderPlayerControls(data, null);
       } else {
         // Direct Source / HLS Provider (Server 2 MegaVid, Server 1 Anikoto)
@@ -5821,7 +5943,7 @@ const App = (() => {
     const isMP4 = (sourceObj && !sourceObj.isM3U8 && !sourceObj.isEmbed && url.includes(".mp4")) || url.includes(".mp4") || url.includes("/video.mp4");
     const isEmbed = (sourceObj && sourceObj.isEmbed) || (!isM3U8 && !isMP4 && (url.includes("megaplay.buzz") || url.includes("/stream/") || url.includes("anikoto") || url.includes("/embed") || url.includes("/e/")));
     if (isEmbed) {
-      _setAnimePlayerMode("embed", url);
+      _setAnimePlayerMode("embed", url, _activeProvider);
     } else {
       _setAnimePlayerMode("video");
 
@@ -6452,7 +6574,15 @@ const App = (() => {
     const watched = StreamXHistory.getWatchHistory();
 
     if (!watched.length) {
-      grid.innerHTML = `<div class="empty-state"><p>No history available. Start watching!</p></div>`;
+      grid.innerHTML = renderEmptyState({
+        icon: "history",
+        title: "No Watch History Yet",
+        message: "Titles you watch will appear here so you can easily pick up where you left off.",
+        actionLabel: "Explore Trending Movies",
+        actionOnClick: "App.handleNavItemClick('movies', 'browse', 'trending_movies')",
+        secondaryLabel: "Browse TV Shows",
+        secondaryOnClick: "App.handleNavItemClick('series', 'browse', 'trending_tv')"
+      });
       return;
     }
 
@@ -6481,7 +6611,15 @@ const App = (() => {
     const watched = StreamXHistory.getWatchHistory();
 
     if (!watched.length) {
-      grid.innerHTML = `<div class="empty-state"><p>Your Continue Watching list is empty</p></div>`;
+      grid.innerHTML = renderEmptyState({
+        icon: "history",
+        title: "Nothing to Resume",
+        message: "Episodes or movies you start watching will automatically appear here.",
+        actionLabel: "Explore Home",
+        actionOnClick: "App.showPage('home')",
+        secondaryLabel: "Browse Trending",
+        secondaryOnClick: "App.handleNavItemClick('movies', 'browse', 'trending_movies')"
+      });
       return;
     }
 
@@ -6661,7 +6799,10 @@ const App = (() => {
     renderStreamingPlatformSection: _renderStreamingPlatformSection,
 
     // Live TV Module Reference
-    LiveTV: window.LiveTV
+    LiveTV: window.LiveTV,
+
+    // Empty and Error State Utility
+    renderEmptyState
   };
 })();
 
@@ -6677,7 +6818,7 @@ document.addEventListener("DOMContentLoaded", () => App.init());
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("./sw.js?v=13.0")
+      .register("./sw.js?v=16.0")
       .then(reg => {
         reg.update();
         if (reg.waiting) {
