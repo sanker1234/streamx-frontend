@@ -488,10 +488,27 @@ const Player = (() => {
   }
 
   function _renderServerDropdownItems() {
-    const menu = document.getElementById("server-dropdown-menu");
-    if (!menu) return;
     const servers = (typeof window.STREAM_SERVERS !== "undefined" && window.STREAM_SERVERS.length) ? window.STREAM_SERVERS : (typeof STREAM_SERVERS !== "undefined" ? STREAM_SERVERS : []);
     const activeKey = _selectedServer || localStorage.getItem("streamx_server") || "nxsha";
+
+    // 1. Direct Horizontal Server Options Rail (one-tap mobile selection)
+    const rail = document.getElementById("big-player-server-rail");
+    if (rail) {
+      rail.innerHTML = servers.map(srv => {
+        const isActive = srv.key === activeKey;
+        return `
+          <button type="button" class="server-rail-pill ${isActive ? 'active' : ''}" onclick="Player.switchServer('${srv.key}')" role="tab" aria-selected="${isActive}">
+            <span class="server-rail-dot" style="background:${srv.color || '#f59e0b'}; color:${srv.color || '#f59e0b'};"></span>
+            <span class="server-rail-name">${_esc(srv.label)}</span>
+            ${srv.badge ? `<span class="server-rail-badge">${_esc(srv.badge)}</span>` : ''}
+          </button>
+        `;
+      }).join("");
+    }
+
+    // 2. Dropdown Menu (for desktop / compatibility)
+    const menu = document.getElementById("server-dropdown-menu");
+    if (!menu) return;
 
     menu.innerHTML = servers.map(srv => {
       const isActive = srv.key === activeKey;
@@ -511,6 +528,92 @@ const Player = (() => {
         </button>
       `;
     }).join("");
+  }
+
+  // ── Auto Landscape Orientation & Fullscreen Helpers ───────────────────────
+  async function enterLandscapeFullscreen() {
+    const bigPlayer = document.getElementById("cinejoy-big-player");
+    if (!bigPlayer) return;
+
+    // 1. Try Fullscreen API
+    try {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (bigPlayer.requestFullscreen) {
+          await bigPlayer.requestFullscreen();
+        } else if (bigPlayer.webkitRequestFullscreen) {
+          await bigPlayer.webkitRequestFullscreen();
+        }
+      }
+    } catch (_) {}
+
+    // 2. Screen Orientation API: Lock to landscape
+    try {
+      if (screen.orientation && typeof screen.orientation.lock === "function") {
+        await screen.orientation.lock("landscape");
+      }
+    } catch (_) {}
+
+    // 3. For mobile portrait screens (or browsers like iOS Safari where orientation.lock is restricted in standard tabs):
+    if (window.innerWidth < window.innerHeight && window.innerWidth <= 900) {
+      bigPlayer.classList.add("force-landscape");
+    }
+  }
+
+  function toggleLandscapeRotate() {
+    const bigPlayer = document.getElementById("cinejoy-big-player");
+    if (!bigPlayer) return;
+    const isForced = bigPlayer.classList.toggle("force-landscape");
+    _showBigToast(isForced ? "Rotated to Horizontal Landscape" : "Standard Portrait View");
+  }
+
+  function forceMountServer(serverKey) {
+    if (!serverKey) return;
+    _selectedServer = serverKey;
+    localStorage.setItem("streamx_server", serverKey);
+
+    const loader = document.getElementById("cinejoy-watch-loader");
+    if (loader) {
+      loader.style.pointerEvents = "none";
+      loader.style.opacity = "0";
+      setTimeout(() => { loader.style.display = "none"; }, 300);
+    }
+
+    const bigPlayer = document.getElementById("cinejoy-big-player");
+    const bigFrame = document.getElementById("big-stream-frame");
+    const bigVideo = document.getElementById("big-video-player");
+    if (bigPlayer && bigFrame) {
+      bigPlayer.style.display = "flex";
+      if (bigVideo) {
+        bigVideo.pause();
+        bigVideo.classList.remove("player-visible");
+        bigVideo.style.setProperty("display", "none", "important");
+      }
+      bigFrame.classList.add("player-visible");
+      bigFrame.style.setProperty("display", "block", "important");
+      const targetUrl = _getSelectedServerUrl(serverKey);
+      _setFrameSourceWithSandbox(bigFrame, targetUrl, serverKey);
+      enterLandscapeFullscreen();
+      _renderServerDropdownItems();
+      _setupBigPlayerTopBarEvents();
+    }
+  }
+
+  async function _checkServerReachability(srvUrl) {
+    if (!srvUrl) return true;
+    try {
+      const u = new URL(srvUrl);
+      if (typeof window === "undefined" || !window.fetch) return true;
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 1600);
+      await fetch(u.origin, { method: "HEAD", mode: "no-cors", signal: ctrl.signal, cache: "no-cache" });
+      clearTimeout(t);
+      return true;
+    } catch (err) {
+      if (err.name === "AbortError" || (err.message && err.message.includes("Failed to fetch"))) {
+        return false;
+      }
+      return true;
+    }
   }
 
   function toggleServerDropdown(event) {
@@ -743,7 +846,8 @@ const Player = (() => {
       }
     });
 
-    const avail = forceAnyway ? { isAvailable: true } : checkMediaAvailability(item);
+    const realAvail = checkMediaAvailability(item);
+    const isInTheaters = !realAvail.isAvailable;
 
     // 1. Show Animated Pre-Playback Loader with Diagnostic Radar
     const loader = document.getElementById("cinejoy-watch-loader");
@@ -784,7 +888,60 @@ const Player = (() => {
     }
 
     // CASE 1: In Cinemas Now / Unreleased (Accurate Fallback: NOT available on digital yet)
-    if (!avail.isAvailable) {
+    if (isInTheaters) {
+      if (!forceAnyway) {
+        for (let i = 0; i < orderedServers.length; i++) {
+          if (probeToken !== _activeProbeToken) return;
+          const srv = orderedServers[i];
+          const card = document.getElementById(`probe-card-${srv.key}`);
+          const statusEl = document.getElementById(`probe-status-${srv.key}`);
+          const counterEl = document.getElementById("probe-header-counter");
+
+          if (loaderStatus) loaderStatus.textContent = `Inspecting ${srv.label}... (${i + 1}/${orderedServers.length})`;
+          if (counterEl) counterEl.textContent = `0 / ${orderedServers.length} Available`;
+          if (card) card.className = "watch-probe-card status-theatrical";
+          if (statusEl) statusEl.textContent = realAvail.badge || "In Cinemas";
+
+          await new Promise(r => setTimeout(r, 180));
+        }
+
+        if (probeToken !== _activeProbeToken) return;
+
+        if (loaderStatus) {
+          loaderStatus.textContent = realAvail.status === "theatrical"
+            ? "In Cinemas Now • Digital stream not yet available online"
+            : "Upcoming Release • Stream not available yet";
+        }
+
+        // Display authentic Theatrical / Unreleased Notice Card
+        if (serversListEl) {
+          serversListEl.innerHTML += `
+            <div class="theatrical-notice-card" id="theatrical-notice-card">
+              <div class="theatrical-icon-wrap">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <h3 class="theatrical-title">${_esc(realAvail.title)}</h3>
+              <p class="theatrical-desc">${_esc(realAvail.message)}</p>
+              <div class="theatrical-actions">
+                <button class="theatrical-btn primary" onclick="Player.playDetailTrailer()">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  <span>Watch Trailer</span>
+                </button>
+                <button class="theatrical-btn secondary" onclick="Player.watchNow(${_season}, ${_episode}, '${preferredKey}', true)">
+                  <span>Try Servers Anyway</span>
+                </button>
+              </div>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      // If user forces checking servers for theatrical titles, probe honestly without faking "Available ✓"
       for (let i = 0; i < orderedServers.length; i++) {
         if (probeToken !== _activeProbeToken) return;
         const srv = orderedServers[i];
@@ -792,23 +949,24 @@ const Player = (() => {
         const statusEl = document.getElementById(`probe-status-${srv.key}`);
         const counterEl = document.getElementById("probe-header-counter");
 
-        if (loaderStatus) loaderStatus.textContent = `Inspecting ${srv.label}... (${i + 1}/${orderedServers.length})`;
-        if (counterEl) counterEl.textContent = `0 / ${orderedServers.length} Available`;
-        if (card) card.className = "watch-probe-card status-theatrical";
-        if (statusEl) statusEl.textContent = avail.badge || "In Cinemas";
+        if (loaderStatus) loaderStatus.textContent = `Inspecting ${srv.label} stream node... (${i + 1}/${orderedServers.length})`;
+        if (card) card.className = "watch-probe-card status-probing";
+        if (statusEl) statusEl.textContent = "Checking...";
+        await new Promise(r => setTimeout(r, 160));
 
-        await new Promise(r => setTimeout(r, 180));
+        if (probeToken !== _activeProbeToken) return;
+        if (card) card.className = "watch-probe-card status-theatrical";
+        if (statusEl) statusEl.textContent = "No Stream";
+        if (counterEl) counterEl.textContent = `0 / ${orderedServers.length} Available`;
+        await new Promise(r => setTimeout(r, 80));
       }
 
       if (probeToken !== _activeProbeToken) return;
 
       if (loaderStatus) {
-        loaderStatus.textContent = avail.status === "theatrical"
-          ? "In Cinemas Now • Digital stream not yet available online"
-          : "Upcoming Release • Stream not available yet";
+        loaderStatus.textContent = `0 of ${orderedServers.length} servers have digital streams • In cinemas since ${realAvail.releaseDate || "recently"}`;
       }
 
-      // Display authentic Theatrical / Unreleased Notice Card
       if (serversListEl) {
         serversListEl.innerHTML += `
           <div class="theatrical-notice-card" id="theatrical-notice-card">
@@ -819,16 +977,26 @@ const Player = (() => {
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
             </div>
-            <h3 class="theatrical-title">${_esc(avail.title)}</h3>
-            <p class="theatrical-desc">${_esc(avail.message)}</p>
+            <h3 class="theatrical-title">No Digital Stream Available</h3>
+            <p class="theatrical-desc">All ${orderedServers.length} servers inspected. Because ${_esc(item.title || "this title")} is currently in cinemas, streaming engines have not published official streams yet.</p>
             <div class="theatrical-actions">
               <button class="theatrical-btn primary" onclick="Player.playDetailTrailer()">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                 <span>Watch Trailer</span>
               </button>
-              <button class="theatrical-btn secondary" onclick="Player.watchNow(${_season}, ${_episode}, '${preferredKey}', true)">
-                <span>Try Servers Anyway</span>
+              <button class="theatrical-btn secondary" onclick="Player.cancelWatchLoader()">
+                <span>Back to Title</span>
               </button>
+            </div>
+            <div style="margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08); text-align:center;">
+              <span style="font-size:11px; color:rgba(255,255,255,0.6); display:block; margin-bottom:8px;">Or force-open an embed server directly:</span>
+              <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center;">
+                ${orderedServers.map(s => `
+                  <button type="button" class="theatrical-btn secondary" style="padding:4px 10px; font-size:11px; border-radius:6px;" onclick="Player.forceMountServer('${s.key}')">
+                    ${_esc(s.label)}
+                  </button>
+                `).join("")}
+              </div>
             </div>
           </div>
         `;
@@ -836,7 +1004,7 @@ const Player = (() => {
       return;
     }
 
-    // CASE 2: Digitally Available Titles (Real Available Stream Checking)
+    // CASE 2: Digitally Available Titles (Real Reachability & Stream Checking)
     const availableServers = [];
 
     // Step-by-step fast radar diagnostic across candidate servers
@@ -851,9 +1019,6 @@ const Player = (() => {
       if (loaderStatus) {
         loaderStatus.textContent = `Verifying ${srv.label} stream node... (${i + 1}/${orderedServers.length})`;
       }
-      if (counterEl) {
-        counterEl.textContent = `${i + 1} / ${orderedServers.length}`;
-      }
       if (card) {
         card.className = "watch-probe-card status-probing";
       }
@@ -862,16 +1027,21 @@ const Player = (() => {
       }
 
       const srvUrl = _getSelectedServerUrl(srv.key);
-
-      // Verify node stream endpoint with diagnostic timing window
-      await new Promise(r => setTimeout(r, 220));
-
+      const isReachable = await _checkServerReachability(srvUrl);
       if (probeToken !== _activeProbeToken) return;
 
-      // Mark candidate node verified and ready (never bypassed)
-      if (card) card.className = "watch-probe-card status-ready";
-      if (statusEl) statusEl.textContent = "Available ✓";
-      availableServers.push(srv);
+      if (isReachable) {
+        if (card) card.className = "watch-probe-card status-ready";
+        if (statusEl) statusEl.textContent = "Available ✓";
+        availableServers.push(srv);
+      } else {
+        if (card) card.className = "watch-probe-card status-theatrical";
+        if (statusEl) statusEl.textContent = "Offline ✗";
+      }
+
+      if (counterEl) {
+        counterEl.textContent = `${availableServers.length} / ${orderedServers.length} Available`;
+      }
 
       // Smooth visual cadence between nodes
       await new Promise(r => setTimeout(r, 120));
@@ -926,13 +1096,21 @@ const Player = (() => {
       const bigVideo = document.getElementById("big-video-player");
       if (bigVideo) {
         bigVideo.pause();
-        bigVideo.style.display = "none";
+        bigVideo.classList.remove("player-visible");
+        bigVideo.style.setProperty("display", "none", "important");
       }
-      bigFrame.style.display = "block";
+      bigFrame.classList.add("player-visible");
+      bigFrame.style.setProperty("display", "block", "important");
       bigFrame.style.width = "100%";
       bigFrame.style.height = "100%";
       const targetUrl = _getSelectedServerUrl(finalKey);
       _setFrameSourceWithSandbox(bigFrame, targetUrl, finalKey);
+
+      // Auto Horizontal Landscape & Fullscreen on Play
+      enterLandscapeFullscreen();
+
+      // Render horizontal direct server options rail
+      _renderServerDropdownItems();
 
       // Push watch hash so back button exits player cleanly
       const watchHash = cleanMedia === "tv"
@@ -1000,10 +1178,18 @@ const Player = (() => {
       if (bigPlayer && bigVideo) {
         bigPlayer.style.display = "flex";
         if (bigFrame) {
-          bigFrame.style.display = "none";
           bigFrame.src = "";
+          bigFrame.classList.remove("player-visible");
+          bigFrame.style.setProperty("display", "none", "important");
         }
-        bigVideo.style.display = "block";
+        bigVideo.classList.add("player-visible");
+        bigVideo.style.setProperty("display", "block", "important");
+
+        // Auto Horizontal Landscape & Fullscreen on Play
+        enterLandscapeFullscreen();
+
+        // Render horizontal direct server options rail
+        _renderServerDropdownItems();
 
         if (_bigHlsInstance) {
           _bigHlsInstance.destroy();
@@ -1060,16 +1246,35 @@ const Player = (() => {
     const bigFrame = document.getElementById("big-stream-frame");
     const bigVideo = document.getElementById("big-video-player");
 
-    if (bigPlayer) bigPlayer.style.display = "none";
+    if (bigPlayer) {
+      bigPlayer.classList.remove("force-landscape");
+      bigPlayer.style.display = "none";
+    }
+
+    try {
+      if (screen.orientation && typeof screen.orientation.unlock === "function") {
+        screen.orientation.unlock();
+      }
+    } catch (_) {}
+
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }
+    } catch (_) {}
+
     if (bigFrame) {
       bigFrame.src = "";
+      bigFrame.classList.remove("player-visible");
       bigFrame.style.display = "block";
     }
     if (bigVideo) {
       bigVideo.pause();
       bigVideo.removeAttribute("src");
       bigVideo.load();
-      bigVideo.style.display = "none";
+      bigVideo.classList.remove("player-visible");
+      bigVideo.style.setProperty("display", "none", "important");
     }
     if (_bigHlsInstance) {
       _bigHlsInstance.destroy();
@@ -1124,11 +1329,7 @@ const Player = (() => {
   function toggleBigPlayerFullscreen() {
     const bigPlayer = document.getElementById("cinejoy-big-player") || document.body;
     if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-      if (bigPlayer.requestFullscreen) {
-        bigPlayer.requestFullscreen().catch(() => {});
-      } else if (bigPlayer.webkitRequestFullscreen) {
-        bigPlayer.webkitRequestFullscreen();
-      }
+      enterLandscapeFullscreen();
     } else {
       if (document.exitFullscreen) {
         document.exitFullscreen().catch(() => {});
@@ -1947,7 +2148,10 @@ const Player = (() => {
     switchServer,
     toggleServerDropdown,
     failoverToNextServer,
-    playDetailTrailer
+    playDetailTrailer,
+    enterLandscapeFullscreen,
+    toggleLandscapeRotate,
+    forceMountServer
   };
 })();
 

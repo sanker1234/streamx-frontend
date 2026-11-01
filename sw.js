@@ -1,4 +1,4 @@
-const CACHE_NAME = "nine-cinejoy-v26";
+const CACHE_NAME = "nine-cinejoy-v27";
 
 const CORE_ASSETS = [
   "./",
