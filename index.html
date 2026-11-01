@@ -50,10 +50,10 @@
     }
   </script>
   <link rel="canonical" href="https://cinejoy.pages.dev/">
-  <link rel="stylesheet" href="css/style.css?v=20.0">
-  <link rel="stylesheet" href="css/player-universal.css?v=1.1">
+  <link rel="stylesheet" href="css/style.css?v=21.0">
+  <link rel="stylesheet" href="css/player-universal.css?v=2.0">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <link rel="manifest" href="manifest.json?v=20.0">
+  <link rel="manifest" href="manifest.json?v=21.0">
 </head>
 <!-- ── Premium CineJoy Initial Branded Loading Screen ──────── -->
 <div id="cinejoy-loader" class="cinejoy-loader-screen" aria-label="Loading CineJoy" role="status">
@@ -182,20 +182,14 @@
     </button>
   </div>
 
-  <div class="nav-right" style="display:none">
-    <!-- User Profile & Dropdown -->
-    <div class="nav-profile-container" id="nav-profile-container">
-      <div class="nav-profile" id="nav-profile-btn" onclick="App.toggleProfileDropdown(event)" role="button"
-        aria-label="Library & Preferences" tabindex="0">
-        <div class="profile-avatar-icon">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </div>
-      </div>
-    </div>
+  <!-- Mobile Top Header Right Actions (Search & Settings) -->
+  <div class="glass-nav-right-mobile" id="glass-nav-right-mobile">
+    <button class="mobile-search-btn" id="mobile-header-search-btn" onclick="App.toggleSearchModal(true)" aria-label="Search" title="Search">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    </button>
+    <button class="mobile-search-btn mobile-settings-icon-btn" onclick="App.showPage('settings-page')" aria-label="Settings" title="Settings">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
   </div>
 </nav>
 
@@ -1671,12 +1665,12 @@
     </svg>
     <span>Movies</span>
   </button>
-  <button class="mobile-bottom-nav-item" id="mob-nav-tv"
-    onclick="App.handleNavItemClick('series', 'browse', 'trending_tv')" aria-label="TV Shows">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-      <path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z" />
+  <button class="mobile-bottom-nav-item" id="mob-nav-search" onclick="App.toggleSearchModal(true)" aria-label="Search">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="8" />
+      <path d="M21 21l-4.35-4.35" />
     </svg>
-    <span>TV Shows</span>
+    <span>Search</span>
   </button>
   <button class="mobile-bottom-nav-item" id="mob-nav-anime" onclick="App.showPage('anime')" aria-label="Anime">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
@@ -1684,12 +1678,11 @@
     </svg>
     <span>Anime</span>
   </button>
-  <button class="mobile-bottom-nav-item" id="mob-nav-livetv" onclick="App.showPage('livetv')" aria-label="Live TV">
+  <button class="mobile-bottom-nav-item" id="mob-nav-watchlist" onclick="App.showPage('watchlist')" aria-label="My List">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-      <path
-        d="M21 6h-7.59l3.29-3.3a1 1 0 10-1.41-1.41L12 4.59 8.71 1.29A1 1 0 007.29 2.7L10.59 6H3a2 2 0 00-2 2v12a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2zm0 14H3V8h18v12zM9 10v8l7-4-7-4z" />
+      <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z" />
     </svg>
-    <span>Live TV</span>
+    <span>My List</span>
   </button>
 </nav>
 
@@ -1702,15 +1695,15 @@
 </button>
 
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=20.0"></script>
-<script src="js/tmdb.js?v=20.0"></script>
-<script src="js/anilist.js?v=20.0"></script>
-<script src="js/watchlist.js?v=20.0"></script>
-<script src="js/history.js?v=20.0"></script>
-<script src="js/universalPlayer.js?v=1.9"></script>
-<script src="js/player.js?v=20.0"></script>
-<script src="js/livetv.js?v=20.0"></script>
-<script src="js/app.js?v=20.0"></script>
+<script src="js/config.js?v=21.0"></script>
+<script src="js/tmdb.js?v=21.0"></script>
+<script src="js/anilist.js?v=21.0"></script>
+<script src="js/watchlist.js?v=21.0"></script>
+<script src="js/history.js?v=21.0"></script>
+<script src="js/universalPlayer.js?v=2.0"></script>
+<script src="js/player.js?v=21.0"></script>
+<script src="js/livetv.js?v=21.0"></script>
+<script src="js/app.js?v=21.0"></script>
 
 </body>
 

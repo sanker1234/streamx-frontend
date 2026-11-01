@@ -1019,8 +1019,9 @@ const App = (() => {
     const ratingVal = typeof item.rating === "number" && !isNaN(item.rating) && item.rating > 0
       ? item.rating.toFixed(1) : null;
 
+    const backdropImg = item.backdrop || item.poster_lg || item.poster || "";
     hero.innerHTML = `
-      <div class="hero-backdrop" style="background-image: url('${item.backdrop || ""}')"></div>
+      <div class="hero-backdrop" style="background-image: url('${backdropImg}')"></div>
       <div class="hero-video-layer" id="hero-video-layer"></div>
       <div class="hero-cinematic-vignette"></div>
 
@@ -1193,8 +1194,9 @@ const App = (() => {
     const ratingVal = typeof item.rating === "number" && !isNaN(item.rating) && item.rating > 0
       ? item.rating.toFixed(1) : null;
 
+    const backdropImg = item.backdrop || item.poster_lg || item.poster || "";
     hero.innerHTML = `
-      <div class="hero-backdrop" style="background-image: url('${item.backdrop || ""}')"></div>
+      <div class="hero-backdrop" style="background-image: url('${backdropImg}')"></div>
       <div class="hero-video-layer" id="anime-hero-video-layer"></div>
       <div class="hero-cinematic-vignette anime-hero-overlay"></div>
 
@@ -2941,10 +2943,12 @@ const App = (() => {
         secondaryLabel: "Browse Trending Movies",
         secondaryOnClick: "App.handleNavItemClick('movies', 'browse', 'trending_movies')"
       });
-      document.getElementById("search-label").textContent = "No Results";
+      const sLabel = document.getElementById("search-label");
+      if (sLabel) sLabel.textContent = "";
     } else {
       grid.innerHTML = html;
-      document.getElementById("search-label").textContent = `Search results for "${_searchQuery}"`;
+      const sLabel = document.getElementById("search-label");
+      if (sLabel) sLabel.textContent = `Search results for "${_searchQuery}"`;
       grid.querySelectorAll("img[data-src]").forEach(img => _observeImg(img));
     }
   }
@@ -2968,7 +2972,8 @@ const App = (() => {
         secondaryLabel: "Clear Search",
         secondaryOnClick: "document.getElementById('search-input').value = ''; App.showPage('search'); App.renderSearchEmptyState();"
       });
-      document.getElementById("search-label").textContent = `No Results for "${_searchQuery}"`;
+      const sLabel = document.getElementById("search-label");
+      if (sLabel) sLabel.textContent = "";
       return;
     }
 
@@ -3540,6 +3545,7 @@ const App = (() => {
         const params = new URLSearchParams(path.slice(searchIdx));
         query = params.get("q") || "";
       }
+      toggleSearchModal(false);
       const input = document.getElementById("search-input");
       if (input) input.value = query;
       if (query.trim()) {
@@ -4766,6 +4772,9 @@ const App = (() => {
       document.getElementById("mob-nav-extensions")?.classList.add("active");
     } else if (page === "watchlist") {
       document.getElementById("nav-link-watchlist")?.classList.add("active");
+      document.getElementById("mob-nav-watchlist")?.classList.add("active");
+    } else if (page === "search") {
+      document.getElementById("mob-nav-search")?.classList.add("active");
     } else if (page === "movies" || (page === "browse" && rowId && rowId.includes("movie"))) {
       document.getElementById("nav-link-movies")?.classList.add("active");
       document.getElementById("mob-nav-movies")?.classList.add("active");
