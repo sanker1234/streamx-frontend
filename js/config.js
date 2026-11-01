@@ -6,18 +6,18 @@
 
 // ── TMDB API ──────────────────────────────────────────────────────────────
 const TMDB_API_KEY = ""; // https://www.themoviedb.org/settings/api
-const TMDB_BASE    = "https://api.themoviedb.org/3";
-const TMDB_IMG     = "https://image.tmdb.org/t/p";
+const TMDB_BASE = "https://api.themoviedb.org/3";
+const TMDB_IMG = "https://image.tmdb.org/t/p";
 
 // Image size presets
 const IMG = {
-  poster_sm  : `${TMDB_IMG}/w185`,
-  poster_md  : `${TMDB_IMG}/w342`,
-  poster_lg  : `${TMDB_IMG}/w500`,
+  poster_sm: `${TMDB_IMG}/w185`,
+  poster_md: `${TMDB_IMG}/w342`,
+  poster_lg: `${TMDB_IMG}/w500`,
   backdrop_sm: `${TMDB_IMG}/w780`,
   backdrop_lg: `${TMDB_IMG}/w1280`,
-  still      : `${TMDB_IMG}/w300`,
-  profile    : `${TMDB_IMG}/w185`,
+  still: `${TMDB_IMG}/w300`,
+  profile: `${TMDB_IMG}/w185`,
 };
 
 // ── STREAM SERVERS ────────────────────────────────────────────────────────
@@ -70,292 +70,284 @@ const IMG = {
 //   },
 // ];
 // ── PROVIDER SECURITY & SANDBOX REGISTRY ──────────────────────────────────
-// Records independent testing results, advertising mechanisms, and minimum
-// necessary sandbox restrictions to stop unwanted new tabs while preserving playback.
+// NXsha maintains secure sandbox restrictions (allow-scripts allow-same-origin allow-forms).
+// External embed engines (0vidads, Vidy, Atlantic, CinemaOS, VidRift, etc.) are unsandboxed
+// (sandbox: null) so they are not blocked by iframe sandbox restrictions.
 const PROVIDER_SECURITY_CONFIG = {
   nxsha: {
     tested: true,
     status: "compatible",
-    sandbox: null,
+    isDirect: false,
+    sandbox: "allow-scripts allow-same-origin allow-forms",
     hasAds: false,
     adMechanism: "none",
-    notes: "Nxsha Platform 2.0 (Moobies) embed engine. Supports multi-server auto-fallback, custom CineJoy brand color (%23ff2a6d), multi-language audio (?lang=), multi-language subtitle tracks (?sub=), ad-branding disable, and direct download endpoint."
+    notes: "NXsha embed player (web.nxsha.app/embed). Sandboxed with allow-scripts allow-same-origin allow-forms to stop top-navigation redirects and new tab popups."
   },
-  cinesrc: {
-    tested: true,
-    status: "compatible",
-    sandbox: null,
-    hasAds: false,
-    adMechanism: "none",
-    notes: "Verified clean streaming provider. Streams HLS with subtitles, quality selector, and fullscreen without unwanted advertising tabs or popunders."
-  },
-  vidlink: {
-    tested: true,
-    status: "compatible",
-    sandbox: null,
-    hasAds: false,
-    adMechanism: "none",
-    notes: "High-quality 1080p player. Actively detects sandbox attributes and halts with 'Please Disable Sandbox'. When run unsandboxed, it streams cleanly."
-  },
-  vidcore: {
-    tested: true,
-    status: "compatible",
-    sandbox: null,
-    hasAds: false,
-    adMechanism: "none",
-    notes: "Clean EdgeOne-hosted player. Streams HLS without unwanted advertising tabs."
-  },
-  videm: {
-    tested: true,
-    status: "incompatible",
-    sandbox: null,
-    hasAds: true,
-    adMechanism: "tagivi_window_open",
-    notes: "Injects tagivi.com popunder script. Actively checks for sandbox via frameElement.hasAttribute('sandbox') and blocks playback with 'Sandbox is not allowed'. Incompatible with desired ad-free experience (Requirement 10).",
-    replacement: "cinesrc"
-  },
-  filmu: {
-    tested: true,
-    status: "incompatible",
-    sandbox: null,
-    hasAds: true,
-    adMechanism: "profiton_window_open",
-    notes: "Injects ProfitOn ad script. Actively checks for sandbox and blocks playback with 'Playback Disabled: Remove sandbox attribute'. Incompatible with desired ad-free experience (Requirement 10).",
-    replacement: "cinesrc"
-  },
-  embedmaster: {
-    tested: true,
-    status: "incompatible",
-    sandbox: null,
-    hasAds: true,
-    adMechanism: "popunder_ad_network",
-    notes: "Actively checks for sandbox and blocks playback with 'Sandbox detected: you must remove sandbox attribute'. Incompatible with desired ad-free experience (Requirement 10).",
-    replacement: "cinesrc"
-  },
-  smashystream: {
-    tested: true,
-    status: "incompatible",
-    sandbox: null,
-    hasAds: true,
-    adMechanism: "profiton_window_open",
-    notes: "Redirects to AnyEmbed with ProfitOn ad integration. Requires unrestricted context. Incompatible (Requirement 10).",
-    replacement: "cinesrc"
-  },
-  vidbolt: {
-    tested: true,
-    status: "incompatible",
-    sandbox: null,
-    hasAds: true,
-    adMechanism: "miscoinbrassic_window_open",
-    notes: "Injects miscoinbrassic ad script. Actively tests document.domain and halts playback with 'Playback disabled: This player can\'t run in a sandboxed iframe'. Incompatible (Requirement 10).",
-    replacement: "cinesrc"
-  },
-  twoembed: {
-    tested: true,
-    status: "incompatible",
-    sandbox: null,
-    hasAds: true,
-    adMechanism: "tagivi_and_target_blank",
-    notes: "Injects tagivi script and transparent ad links. Employs isReallySandboxed() anti-sandbox detector and halts video with 'Sandbox not allowed'. Incompatible (Requirement 10).",
-    replacement: "cinesrc"
-  },
-  codespecters: {
-    tested: true,
-    status: "incompatible",
-    sandbox: null,
-    hasAds: true,
-    adMechanism: "adshield_and_adsterra",
-    notes: "Contains ad-shield play overlay that calls window.open() to an ad network, plus Adsterra popunders. Demo API key is also forbidden outside preview domain. Incompatible (Requirement 10).",
-    replacement: "cinesrc"
-  },
-  vidsrcsbs: {
-    tested: true,
-    status: "offline",
-    sandbox: null,
-    hasAds: false,
-    adMechanism: "unknown",
-    notes: "Domain unreachable (DNS / server connection failure).",
-    replacement: "cinesrc"
-  },
-  streamflizo: {
-    tested: true,
-    status: "offline",
-    sandbox: null,
-    hasAds: false,
-    adMechanism: "unknown",
-    notes: "Endpoint returns HTTP 400 Bad Request.",
-    replacement: "cinesrc"
-  }
+  cinesrc: { tested: true, status: "compatible", sandbox: null },
+  "0vidads": { tested: true, status: "compatible", sandbox: null },
+  atlantic: { tested: true, status: "compatible", sandbox: null },
+  cinemaos: { tested: true, status: "compatible", sandbox: null },
+  vidcore: { tested: true, status: "compatible", sandbox: null },
+  mapple: { tested: true, status: "compatible", sandbox: null },
+  vidrift: { tested: true, status: "compatible", sandbox: null },
+  vidy: { tested: true, status: "compatible", sandbox: null },
+  cinezo: { tested: true, status: "compatible", sandbox: null },
+  vidrock: { tested: true, status: "compatible", sandbox: null },
+  velarium: { tested: true, status: "compatible", sandbox: null },
+  stellar: { tested: true, status: "compatible", sandbox: null },
+  fmov: { tested: true, status: "compatible", sandbox: null },
+  vidup: { tested: true, status: "compatible", sandbox: null }
 };
 window.PROVIDER_SECURITY_CONFIG = PROVIDER_SECURITY_CONFIG;
 
+// Normalizes language preference to standard ISO 639-1 code accepted by NXsha
+function normalizeNxshaLang(lang) {
+  if (!lang) return null;
+  const clean = String(lang).trim().toLowerCase();
+  const map = {
+    te: "te", telugu: "te",
+    hi: "hi", hindi: "hi",
+    ta: "ta", tamil: "ta",
+    kn: "kn", kannada: "kn",
+    ml: "ml", malayalam: "ml",
+    en: "en", english: "en",
+    es: "es", spanish: "es",
+    fr: "fr", french: "fr",
+    ko: "ko", korean: "ko",
+    ja: "ja", japanese: "ja",
+    zh: "zh", chinese: "zh"
+  };
+  return map[clean] || (/^[a-z]{2}$/.test(clean) ? clean : null);
+}
+
 const STREAM_SERVERS = [
+  // ── 1ST PRIORITY (DEFAULT): NXSHA ──────────────────────────────────────────
   {
-    key    : "nxsha",
-    label  : "Moobies (Nxsha)",
+    key: "nxsha",
+    label: "NXsha",
+    category: "embed",
+    isDirect: false,
+    playbackType: "embed",
     recommended: true,
-    icon   : "⚡",
-    desc   : "Multi-Server · Multi-Lang Audio & Subs · 4K/1080p · Ad-Free",
-    color  : "#f59e0b",
+    desc: "NXsha Embed Engine · Direct Playback · Ad-Free",
+    badge: "Direct 4K",
+    color: "#f59e0b",
     supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id, options = {}) => {
+    movie: (id, options = {}) => {
       const params = new URLSearchParams({
         disable_app_ad: "true",
-        color: "%23ff2a6d"
+        color: "#EBEAE6"
       });
-      const prefLang = localStorage.getItem("streamx_audio_lang") || options.lang;
-      if (prefLang) params.set("lang", prefLang);
-      const prefSub = localStorage.getItem("streamx_sub_lang") || options.sub;
-      if (prefSub) params.set("sub", prefSub);
-      if (options.server) params.set("server", options.server);
-      if (options.one_server) params.set("one_server", "true");
+      const rawLang = options.lang || localStorage.getItem("streamx_audio_lang");
+      const isoLang = normalizeNxshaLang(rawLang);
+      if (isoLang) params.set("lang", isoLang);
+
+      const rawSub = options.sub || localStorage.getItem("streamx_sub_lang");
+      const isoSub = normalizeNxshaLang(rawSub);
+      if (isoSub) params.set("sub", isoSub);
+
       return `https://web.nxsha.app/embed/movie/${id}?${params.toString().replace(/%2523/g, "%23")}`;
     },
-    tv     : (id, s, e, options = {}) => {
+    tv: (id, s, e, options = {}) => {
       const params = new URLSearchParams({
         disable_app_ad: "true",
-        color: "%23ff2a6d"
+        color: "#EBEAE6"
       });
-      const prefLang = localStorage.getItem("streamx_audio_lang") || options.lang;
-      if (prefLang) params.set("lang", prefLang);
-      const prefSub = localStorage.getItem("streamx_sub_lang") || options.sub;
-      if (prefSub) params.set("sub", prefSub);
-      if (options.server) params.set("server", options.server);
-      if (options.one_server) params.set("one_server", "true");
-      return `https://web.nxsha.app/embed/tv/${id}/${s}/${e}?${params.toString().replace(/%2523/g, "%23")}`;
+      const rawLang = options.lang || localStorage.getItem("streamx_audio_lang");
+      const isoLang = normalizeNxshaLang(rawLang);
+      if (isoLang) params.set("lang", isoLang);
+
+      const rawSub = options.sub || localStorage.getItem("streamx_sub_lang");
+      const isoSub = normalizeNxshaLang(rawSub);
+      if (isoSub) params.set("sub", isoSub);
+
+      return `https://web.nxsha.app/embed/tv/${id}/${s || 1}/${e || 1}?${params.toString().replace(/%2523/g, "%23")}`;
     },
+    anime: (id, e, options = {}) => {
+      return `https://web.nxsha.app/embed/tv/${id}/1/${e || 1}?disable_app_ad=true&color=%23EBEAE6`;
+    }
   },
+
+  // ── 2ND PRIORITY: CINESRC ──────────────────────────────────────────────────
   {
-    key    : "cinesrc",
-    label  : "CineSrc",
-    recommended: true,
-    icon   : "🎬",
-    desc   : "Ultra HD · Fast · Auto-next · Ad-Free",
-    color  : "#3b82f6",
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://cinesrc.st/embed/movie/${id}`,
-    tv     : (id, s, e)  => `https://cinesrc.st/embed/tv/${id}?s=${s}&e=${e}`,
+    key: "cinesrc",
+    label: "CineSrc",
+    category: "embed",
+    badge: "HLS Stream",
+    desc: "CineSrc Fast Engine · Clean Video Player",
+    color: "#f59e0b",
+    movie: (id) => `https://cinesrc.st/embed/movie/${id}?seek=15&autoplay=true&autonext=true&color=%23f59e0b`,
+    tv: (id, s, e) => `https://cinesrc.st/embed/tv/${id}?s=${s || 1}&e=${e || 1}&seek=15&autoplay=true&autonext=true&color=%23f59e0b`,
+    anime: (id, e) => `https://cinesrc.st/embed/tv/${id}?s=1&e=${e || 1}&seek=15&autoplay=true&autonext=true&color=%23f59e0b`
   },
+
+  // ── 3RD PRIORITY: 0VIDADS ──────────────────────────────────────────────────
   {
-    key    : "vidlink",
-    label  : "VidLink Pro",
-    recommended: true,
-    icon   : "▶",
-    desc   : "Ultra Fast · Auto Sub/Dub · 1080p (Clean)",
-    color  : "#7c3aed",
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://vidlink.pro/movie/${id}`,
-    tv     : (id, s, e)  => `https://vidlink.pro/tv/${id}/${s}/${e}`,
+    key: "0vidads",
+    label: "0vidads",
+    category: "embed",
+    badge: "Ad-Free",
+    desc: "0vidads High-Speed Embed · Auto-Next",
+    color: "#8B5CF6",
+    movie: (id) => `https://0vidads.top/embed/movie/${id}`,
+    tv: (id, s, e) => `https://0vidads.top/embed/tv/${id}/${s || 1}/${e || 1}?nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true`,
+    anime: (id, e) => `https://0vidads.top/embed/tv/${id}/1/${e || 1}?nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true`
   },
+
+  // ── 3RD PRIORITY: ATLANTIC ────────────────────────────────────────────────
   {
-    key    : "vidcore",
-    label  : "VidCore",
-    recommended: true,
-    icon   : "⚡",
-    desc   : "HLS · Multi-server player · Ad-Free",
-    color  : "#06b6d4",
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://vidcore.org/embed/movie/${id}`,
-    tv     : (id, s, e)  => `https://vidcore.org/embed/tv/${id}/${s}/${e}`,
+    key: "atlantic",
+    label: "Atlantic",
+    category: "embed",
+    badge: "Fast HD",
+    desc: "Atlantic Engine · Clean Video Stream",
+    color: "#38bdf8",
+    movie: (id) => `https://atlantic.st/embed/movie/${id}`,
+    tv: (id, s, e) => `https://atlantic.st/embed/tv/${id}/${s || 1}/${e || 1}`,
+    anime: (id, e) => `https://atlantic.st/embed/tv/${id}/1/${e || 1}`
   },
+
+  // ── 4TH PRIORITY: CINEMAOS ────────────────────────────────────────────────
   {
-    key    : "videm",
-    label  : "Videm",
-    icon   : "🛡️",
-    desc   : "Requires Ad Popups · Incompatible",
-    color  : "#3b82f6",
-    incompatible: true,
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://videm.xyz/embed/movie/${id}`,
-    tv     : (id, s, e)  => `https://videm.xyz/embed/tv/${id}/${s}/${e}`,
+    key: "cinemaos",
+    label: "CinemaOS",
+    category: "embed",
+    badge: "Cinema Pro",
+    desc: "CinemaOS Fast Responsive Player",
+    color: "#ffffff",
+    movie: (id) => `https://cinemaos.tech/player/${id}?theme=ffffff`,
+    tv: (id, s, e) => `https://cinemaos.tech/player/${id}/${s || 1}/${e || 1}?theme=ffffff`,
+    anime: (id, e) => `https://cinemaos.tech/player/${id}/1/${e || 1}?theme=ffffff`
   },
+
+  // ── VIDCORE ───────────────────────────────────────────────────────────────
   {
-    key    : "filmu",
-    label  : "FilmU Embed",
-    icon   : "🎥",
-    desc   : "Requires Ad Popups · Incompatible",
-    color  : "#8b5cf6",
-    incompatible: true,
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://embed.filmu.in/movie/${id}`,
-    tv     : (id, s, e)  => `https://embed.filmu.in/tv/${id}/${s}/${e}`,
+    key: "vidcore",
+    label: "VidCore",
+    category: "embed",
+    badge: "EdgeOne CDN",
+    desc: "VidCore High-Speed Streaming Mirror",
+    color: "#3b82f6",
+    movie: (id) => `https://vidcore.io/movie/${id}?autoPlay=true`,
+    tv: (id, s, e) => `https://vidcore.io/tv/${id}/${s || 1}/${e || 1}?autoPlay=true`,
+    anime: (id, e) => `https://vidcore.io/tv/${id}/1/${e || 1}?autoPlay=true`
   },
+
+  // ── MAPPLE ────────────────────────────────────────────────────────────────
   {
-    key    : "embedmaster",
-    label  : "EmbedMaster",
-    icon   : "🔮",
-    desc   : "Requires Ad Popups · Incompatible",
-    color  : "#a855f7",
-    incompatible: true,
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://embedmaster.link/movie/${id}`,
-    tv     : (id, s, e)  => `https://embedmaster.link/tv/${id}/${s}/${e}`,
+    key: "mapple",
+    label: "Mapple",
+    category: "embed",
+    badge: "Auto-Next",
+    desc: "Mapple Direct Cloud Player",
+    color: "#10b981",
+    movie: (id) => `https://mapple.fun/watch/movie/${id}?autoPlay=true`,
+    tv: (id, s, e) => `https://mapple.fun/watch/tv/${id}-${s || 1}-${e || 1}?autoPlay=true&autoNext=true&nextButton=true`,
+    anime: (id, e) => `https://mapple.fun/watch/tv/${id}-1-${e || 1}?autoPlay=true&autoNext=true&nextButton=true`
   },
+
+  // ── 5TH PRIORITY: VIDRIFT ─────────────────────────────────────────────────
   {
-    key    : "smashystream",
-    label  : "SmashyStream",
-    icon   : "💥",
-    desc   : "Requires Ad Popups · Incompatible",
-    color  : "#f59e0b",
-    incompatible: true,
-    supportedCategories: ["hollywood", "indian", "kdrama", "cdrama", "jdrama"],
-    movie  : (id)        => `https://embed.smashystream.com/playere.php?tmdb=${id}`,
-    tv     : (id, s, e)  => `https://embed.smashystream.com/playere.php?tmdb=${id}&season=${s}&episode=${e}`,
+    key: "vidrift",
+    label: "VidRift",
+    category: "embed",
+    badge: "Multi-Source",
+    desc: "VidRift Stream · Built-In Servers & Failover",
+    color: "#00d1b2",
+    movie: (id) => `https://embed.vidrift.net/embed/movie/${id}?exit=1`,
+    tv: (id, s, e) => `https://embed.vidrift.net/embed/tv/${id}/${s || 1}/${e || 1}?exit=1`,
+    anime: (id, e) => `https://embed.vidrift.net/embed/anilist/${id}/${e || 1}?exit=1`
   },
+
+  // ── 6TH PRIORITY: VIDY ───────────────────────────────────────────────────
   {
-    key    : "vidbolt",
-    label  : "VidBolt",
-    icon   : "⚡",
-    desc   : "Requires Ad Popups · Incompatible",
-    color  : "#10b981",
-    incompatible: true,
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://vidbolt.pro/movie/${id}`,
-    tv     : (id, s, e)  => `https://vidbolt.pro/tv/${id}/${s}/${e}`,
+    key: "vidy",
+    label: "Vidy",
+    category: "embed",
+    badge: "StreamX",
+    desc: "Vidy Engine · Progress Tracking & Episodes",
+    color: "#DC2626",
+    movie: (id) => `https://vidy.st/movie/${id}?color=DC2626&autoplay=true`,
+    tv: (id, s, e) => `https://vidy.st/tv/${id}/${s || 1}/${e || 1}?nextEpisode=true&episodeSelector=true&autoplayNextEpisode=true&color=DC2626&autoplay=true`,
+    anime: (id, e) => `https://vidy.st/anime/${id}/${e || 1}?color=DC2626&episodeSelector=true&autoplay=true`
   },
+
+  // ── 7TH PRIORITY: CINEZO ──────────────────────────────────────────────────
   {
-    key    : "twoembed",
-    label  : "2Embed",
-    icon   : "🎞️",
-    desc   : "Requires Ad Popups · Incompatible",
-    color  : "#eab308",
-    incompatible: true,
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://www.2embed.cc/embed/${id}`,
-    tv     : (id, s, e)  => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+    key: "cinezo",
+    label: "Cinezo",
+    category: "embed",
+    badge: "Universal",
+    desc: "Cinezo Live Stream · Multi-server & Chromecast",
+    color: "#e8b86d",
+    movie: (id) => `https://player.cinezo.live/embed/movie/${id}?autoplay=true&poster=true&chromecast=true`,
+    tv: (id, s, e) => `https://player.cinezo.live/embed/tv/${id}/${s || 1}/${e || 1}?autoplay=true&poster=true&chromecast=true&nextButton=true`,
+    anime: (id, e) => `https://player.cinezo.live/embed/anime/${id}/${e || 1}?dub=true&autoplay=true`
   },
+
+  // ── 8TH PRIORITY: VIDROCK ─────────────────────────────────────────────────
   {
-    key    : "codespecters",
-    label  : "CodeSpecters",
-    icon   : "💎",
-    desc   : "Ad-Shield & Demo Key Restricted · Incompatible",
-    color  : "#8b5cf6",
-    incompatible: true,
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://api.codespecters.com/embed/movie/${id}?apikey=DEMO_36c18c68`,
-    tv     : (id, s, e)  => `https://api.codespecters.com/embed/tv/${id}/${s}/${e}?apikey=DEMO_36c18c69`,
+    key: "vidrock",
+    label: "VidRock",
+    category: "embed",
+    badge: "Cloud Stream",
+    desc: "VidRock High-Speed Mirror",
+    color: "#f8fafc",
+    movie: (id) => `https://vidrock.net/movie/${id}?autoplay=true`,
+    tv: (id, s, e) => `https://vidrock.net/tv/${id}/${s || 1}/${e || 1}?autoplay=true&autonext=true`,
+    anime: (id, e) => `https://vidrock.net/tv/${id}/1/${e || 1}?autoplay=true&autonext=true`
   },
+
+  // ── 9TH PRIORITY: VELARIUM ────────────────────────────────────────────────
   {
-    key    : "vidsrcsbs",
-    label  : "VidSrc",
-    icon   : "📺",
-    desc   : "Multi-source CDN (Offline)",
-    color  : "#10b981",
-    incompatible: true,
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://vidsrc.sbs/embed/movie/${id}`,
-    tv     : (id, s, e)  => `https://vidsrc.sbs/embed/tv/${id}/${s}/${e}`,
+    key: "velarium",
+    label: "Velarium",
+    category: "embed",
+    badge: "4K Master",
+    desc: "Velarium Global Master · Intros & Outros Skipped",
+    color: "#A8E6CF",
+    movie: (id) => `https://velarium.cc/en/watch/movie/${id}?autoPlay=true&title=true&poster=true`,
+    tv: (id, s, e) => `https://velarium.cc/en/watch/tv/${id}-${s || 1}-${e || 1}?autoPlay=true&autoNext=true&nextButton=true`,
+    anime: (id, e) => `https://velarium.cc/en/watch/tv/${id}-1-${e || 1}?autoPlay=true&autoNext=true&nextButton=true`
   },
+
+  // ── 10TH PRIORITY: STELLAR ────────────────────────────────────────────────
   {
-    key    : "streamflizo",
-    label  : "StreamFliz",
-    icon   : "🔥",
-    desc   : "Multi-Audio (Offline)",
-    color  : "#ff2a5f",
-    incompatible: true,
-    supportedCategories: ["hollywood", "kdrama", "cdrama", "jdrama", "indian"],
-    movie  : (id)        => `https://streamflizoapi.top/stream/tmdb/${id}`,
-    tv     : (id, s, e)  => `https://streamflizoapi.top/stream/tmdb/${id}/${s}/${e}/multi`,
+    key: "stellar",
+    label: "Stellar",
+    category: "embed",
+    badge: "Ad-Free",
+    desc: "Stellar 4K Player · Ultra-Clean Stream",
+    color: "#9B8CFF",
+    movie: (id) => `https://stellar.rip/en/watch/embed/movie/${id}?autoPlay=true&title=true&poster=true`,
+    tv: (id, s, e) => `https://stellar.rip/en/watch/embed/tv/${id}-${s || 1}-${e || 1}?autoPlay=true&autoNext=true&nextButton=true`,
+    anime: (id, e) => `https://stellar.rip/en/watch/embed/tv/${id}-1-${e || 1}?autoPlay=true&autoNext=true&nextButton=true`
+  },
+
+  // ── 11TH PRIORITY: FMOV ───────────────────────────────────────────────────
+  {
+    key: "fmov",
+    label: "FMOV",
+    category: "embed",
+    badge: "Vector Core",
+    desc: "FMOV High-Speed Failover Engine",
+    color: "#14b8a6",
+    movie: (id) => `https://fmov.my/embed/movie/${id}?autoplay=1&color=14b8a6`,
+    tv: (id, s, e) => `https://fmov.my/embed/series/${id}/${s || 1}/${e || 1}?autoplay=1&color=14b8a6&autoplayNextEpisode=true`,
+    anime: (id, e) => `https://fmov.my/embed/anime/${id}/${e || 1}?autoplay=1&color=14b8a6&autoplayNextEpisode=true`
+  },
+
+  // ── VIDUP ──────────────────────────────────────────────────
+  {
+    key: "vidup",
+    label: "VidUp",
+    category: "embed",
+    badge: "Direct Play",
+    desc: "VidUp Stream · Seamless Autoplay",
+    color: "#FF0000",
+    movie: (id) => `https://vidup.to/movie/${id}?autoPlay=true&theme=FF0000`,
+    tv: (id, s, e) => `https://vidup.to/tv/${id}/${s || 1}/${e || 1}?autoPlay=true&nextButton=true&autoNext=true&theme=FF0000`,
+    anime: (id, e) => `https://vidup.to/tv/${id}/1/${e || 1}?autoPlay=true&nextButton=true&autoNext=true&theme=FF0000`
   }
 ];
 window.STREAM_SERVERS = STREAM_SERVERS;
@@ -422,12 +414,12 @@ window.STREAM_SERVERS = STREAM_SERVERS;
 // ];
 const DOWNLOAD_SERVERS = [
   {
-    key   : "nxsha_dl",
-    label : "Moobies (Nxsha DL)",
-    icon  : "⚡",
-    desc  : "Direct Download · 1080p/4K Multi-Node",
-    color : "#f59e0b",
-    url   : (item, currentSeason = 1, currentEpisode = 1) => {
+    key: "nxsha_dl",
+    label: "Moobies (Nxsha DL)",
+    icon: "",
+    desc: "Direct Download · 1080p/4K Multi-Node",
+    color: "#f59e0b",
+    url: (item, currentSeason = 1, currentEpisode = 1) => {
       if (!item) return "#";
       const id = item.tmdb_id || item.id;
       if (!id) return "#";
@@ -456,12 +448,12 @@ const DOWNLOAD_SERVERS = [
     },
   },
   {
-    key   : "vidvault",
-    label : "VidVault",
-    icon  : "⬇",
-    desc  : "Direct Download · Works with TMDB ID",
-    color : "#00d2ff",
-    url   : (item, currentSeason = 1, currentEpisode = 1) => {
+    key: "vidvault",
+    label: "VidVault",
+    icon: "",
+    desc: "Direct Download · Works with TMDB ID",
+    color: "#00d2ff",
+    url: (item, currentSeason = 1, currentEpisode = 1) => {
       if (!item) return "#";
       const id = item.tmdb_id || item.id;
       if (!id) return "#";
@@ -594,188 +586,265 @@ const STREAMING_PLATFORMS = [
     accentColor: "#1ee380",
     badgeLabel: "Hulu Original",
     logoHtml: `<span class="platform-logo-txt hulu-txt">hulu</span>`
+  },
+  {
+    id: "peacock",
+    name: "Peacock",
+    headline: "Only on Peacock",
+    tagline: "Stream hit movies, current NBC shows, live sports & originals",
+    providerId: "386|387",
+    color: "#000000",
+    accentColor: "#e5a823",
+    badgeLabel: "Peacock Original",
+    logoHtml: `<span class="platform-logo-txt peacock-txt">peacock</span>`
+  },
+  {
+    id: "crunchyroll",
+    name: "Crunchyroll",
+    headline: "Anime on Crunchyroll",
+    tagline: "The world's largest anime library & simulcasts",
+    providerId: "283",
+    color: "#F47521",
+    accentColor: "#f97316",
+    badgeLabel: "Crunchyroll",
+    logoHtml: `<span class="platform-logo-txt cr-txt">CRUNCHYROLL</span>`
+  },
+  {
+    id: "starz",
+    name: "Starz",
+    headline: "Only on Starz",
+    tagline: "Obsession-worthy original series and hit movies",
+    providerId: "43",
+    color: "#002D32",
+    accentColor: "#06b6d4",
+    badgeLabel: "Starz",
+    logoHtml: `<span class="platform-logo-txt starz-txt">STARZ</span>`
+  },
+  {
+    id: "amc",
+    name: "AMC+",
+    headline: "Only on AMC+",
+    tagline: "The best of AMC, BBC America, IFC Films & Sundance",
+    providerId: "528",
+    color: "#004750",
+    accentColor: "#14b8a6",
+    badgeLabel: "AMC+ Original",
+    logoHtml: `<span class="platform-logo-txt amc-txt">amc+</span>`
+  },
+  {
+    id: "mgm",
+    name: "MGM+",
+    headline: "Only on MGM+",
+    tagline: "Acclaimed series, hit movies and original docs",
+    providerId: "584",
+    color: "#1A1A1A",
+    accentColor: "#fbbf24",
+    badgeLabel: "MGM+",
+    logoHtml: `<span class="platform-logo-txt mgm-txt">MGM+</span>`
+  },
+  {
+    id: "tubi",
+    name: "Tubi TV",
+    headline: "Watch on Tubi",
+    tagline: "1000s of free movies and hit TV shows",
+    providerId: "73",
+    color: "#501258",
+    accentColor: "#eab308",
+    badgeLabel: "Tubi",
+    logoHtml: `<span class="platform-logo-txt tubi-txt">tubi</span>`
+  },
+  {
+    id: "pluto",
+    name: "Pluto TV",
+    headline: "Watch on Pluto TV",
+    tagline: "Drop in to 100s of channels and 1000s of movies free",
+    providerId: "300",
+    color: "#000000",
+    accentColor: "#facc15",
+    badgeLabel: "Pluto",
+    logoHtml: `<span class="platform-logo-txt pluto-txt">pluto tv</span>`
   }
 ];
 
 // Home page row configuration — drives what TMDB endpoints are called
 const HOME_ROWS = [
-  { id: "upcoming_tv",     label: "Current & Upcoming TV Shows", endpoint: "/tv/on_the_air",                                           media: "tv",    cardType: "backdrop", category: "tv" },
-  { id: "trending_week",   label: "Trending This Week",          subtitle: "What everyone is watching this week", endpoint: "/trending/all/week", media: "mixed", cardType: "poster", category: "all" },
-  { id: "trending_movies", label: "Trending Movies",             endpoint: "/trending/movie/week",                                         media: "movie", cardType: "poster", category: "movie" },
-  { id: "trending_tv",     label: "Trending TV Shows",           endpoint: "/trending/tv/week",                                            media: "tv",    cardType: "poster", category: "tv" },
-  { id: "popular_movies",  label: "Popular Movies",              endpoint: "/movie/popular",                                               media: "movie", cardType: "poster", category: "movie" },
-  { id: "popular_tv",      label: "Popular TV Shows",            endpoint: "/tv/popular",                                                  media: "tv",    cardType: "poster", category: "tv" },
-  { id: "top_movies",      label: "Top 10 / Most Watched",       endpoint: "/movie/top_rated",                                             media: "movie", cardType: "poster", category: "movie" },
-  { id: "top_tv",          label: "Top Rated TV Shows",          endpoint: "/tv/top_rated",                                                media: "tv",    cardType: "poster", category: "tv" },
-  { id: "now_playing",     label: "Now Playing in Theatres",     endpoint: "/movie/now_playing",                                           media: "movie", cardType: "poster", category: "movie" },
-  { id: "upcoming",        label: "Coming Soon",                 endpoint: "/movie/upcoming",                                              media: "movie", cardType: "poster", category: "movie" },
-  { id: "action",          label: "Action & Thriller",           endpoint: "/discover/movie?with_genres=28,53",                            media: "movie", cardType: "poster", category: "movie" },
-  { id: "scifi",           label: "Sci-Fi & Fantasy",            endpoint: "/discover/movie?with_genres=878,14",                           media: "movie", cardType: "poster", category: "movie" },
-  { id: "kdrama",          label: "K-Drama Hits",                endpoint: "/discover/tv?with_origin_country=KR&with_genres=18",           media: "tv",    cardType: "poster", category: "tv" },
-  { id: "cdrama",          label: "C-Drama",                     endpoint: "/discover/tv?with_origin_country=CN&with_genres=18",           media: "tv",    cardType: "poster", category: "tv" },
-  { id: "jdrama",          label: "J-Drama",                     endpoint: "/discover/tv?with_origin_country=JP&with_genres=18",           media: "tv",    cardType: "poster", category: "tv" },
-  { id: "bollywood",       label: "Bollywood Hits",              endpoint: "/discover/movie?with_origin_country=IN&with_original_language=hi", media: "movie", cardType: "poster", category: "movie" },
-  { id: "tollywood",       label: "Tollywood Hits",              endpoint: "/discover/movie?with_origin_country=IN&with_original_language=te", media: "movie", cardType: "poster", category: "movie" },
-  { id: "kollywood",       label: "Kollywood",                   endpoint: "/discover/movie?with_origin_country=IN&with_original_language=ta", media: "movie", cardType: "poster", category: "movie" },
-  { id: "mollywood",       label: "Mollywood",                   endpoint: "/discover/movie?with_origin_country=IN&with_original_language=ml", media: "movie", cardType: "poster", category: "movie" },
-  { id: "sandalwood",      label: "Kannada",                     endpoint: "/discover/movie?with_origin_country=IN&with_original_language=kn", media: "movie", cardType: "poster", category: "movie" },
+  { id: "upcoming_tv", label: "Current & Upcoming TV Shows", endpoint: "/tv/on_the_air", media: "tv", cardType: "backdrop", category: "tv" },
+  { id: "trending_week", label: "Trending This Week", subtitle: "What everyone is watching this week", endpoint: "/trending/all/week", media: "mixed", cardType: "poster", category: "all" },
+  { id: "trending_movies", label: "Trending Movies", endpoint: "/trending/movie/week", media: "movie", cardType: "poster", category: "movie" },
+  { id: "trending_tv", label: "Trending TV Shows", endpoint: "/trending/tv/week", media: "tv", cardType: "poster", category: "tv" },
+  { id: "popular_movies", label: "Popular Movies", endpoint: "/movie/popular", media: "movie", cardType: "poster", category: "movie" },
+  { id: "popular_tv", label: "Popular TV Shows", endpoint: "/tv/popular", media: "tv", cardType: "poster", category: "tv" },
+  { id: "top_movies", label: "Top 10 / Most Watched", endpoint: "/movie/top_rated", media: "movie", cardType: "poster", category: "movie" },
+  { id: "top_tv", label: "Top Rated TV Shows", endpoint: "/tv/top_rated", media: "tv", cardType: "poster", category: "tv" },
+  { id: "now_playing", label: "Now Playing in Theatres", endpoint: "/movie/now_playing", media: "movie", cardType: "poster", category: "movie" },
+  { id: "upcoming", label: "Coming Soon", endpoint: "/movie/upcoming", media: "movie", cardType: "poster", category: "movie" },
+  { id: "action", label: "Action & Thriller", endpoint: "/discover/movie?with_genres=28,53", media: "movie", cardType: "poster", category: "movie" },
+  { id: "scifi", label: "Sci-Fi & Fantasy", endpoint: "/discover/movie?with_genres=878,14", media: "movie", cardType: "poster", category: "movie" },
+  { id: "kdrama", label: "K-Drama Hits", endpoint: "/discover/tv?with_origin_country=KR&with_genres=18", media: "tv", cardType: "poster", category: "tv" },
+  { id: "cdrama", label: "C-Drama", endpoint: "/discover/tv?with_origin_country=CN&with_genres=18", media: "tv", cardType: "poster", category: "tv" },
+  { id: "jdrama", label: "J-Drama", endpoint: "/discover/tv?with_origin_country=JP&with_genres=18", media: "tv", cardType: "poster", category: "tv" },
+  { id: "bollywood", label: "Bollywood Hits", endpoint: "/discover/movie?with_origin_country=IN&with_original_language=hi", media: "movie", cardType: "poster", category: "movie" },
+  { id: "tollywood", label: "Tollywood Hits", endpoint: "/discover/movie?with_origin_country=IN&with_original_language=te", media: "movie", cardType: "poster", category: "movie" },
+  { id: "kollywood", label: "Kollywood", endpoint: "/discover/movie?with_origin_country=IN&with_original_language=ta", media: "movie", cardType: "poster", category: "movie" },
+  { id: "mollywood", label: "Mollywood", endpoint: "/discover/movie?with_origin_country=IN&with_original_language=ml", media: "movie", cardType: "poster", category: "movie" },
+  { id: "sandalwood", label: "Kannada", endpoint: "/discover/movie?with_origin_country=IN&with_original_language=kn", media: "movie", cardType: "poster", category: "movie" },
   // ===== Bollywood =====
-{
-  id: "bollywood_trending",
-  label: "Trending Hindi Movies",
-  endpoint: "/discover/movie?with_original_language=hi&sort_by=popularity.desc",
-  media: "movie"
-},
-{
-  id: "bollywood_popular",
-  label: "Popular Hindi Movies",
-  endpoint: "/discover/movie?with_original_language=hi&sort_by=vote_count.desc",
-  media: "movie"
-},
-{
-  id: "bollywood_top",
-  label: "Top Rated Hindi Movies",
-  endpoint: "/discover/movie?with_original_language=hi&sort_by=vote_average.desc&vote_count.gte=100",
-  media: "movie"
-},
-{
-  id: "bollywood_tv",
-  label: "Hindi TV Shows",
-  endpoint: "/discover/tv?with_original_language=hi",
-  media: "tv"
-},
+  {
+    id: "bollywood_trending",
+    label: "Trending Hindi Movies",
+    endpoint: "/discover/movie?with_original_language=hi&sort_by=popularity.desc",
+    media: "movie"
+  },
+  {
+    id: "bollywood_popular",
+    label: "Popular Hindi Movies",
+    endpoint: "/discover/movie?with_original_language=hi&sort_by=vote_count.desc",
+    media: "movie"
+  },
+  {
+    id: "bollywood_top",
+    label: "Top Rated Hindi Movies",
+    endpoint: "/discover/movie?with_original_language=hi&sort_by=vote_average.desc&vote_count.gte=100",
+    media: "movie"
+  },
+  {
+    id: "bollywood_tv",
+    label: "Hindi TV Shows",
+    endpoint: "/discover/tv?with_original_language=hi",
+    media: "tv"
+  },
 
-// ===== Tollywood =====
-{
-  id: "tollywood_trending",
-  label: "Trending Telugu Movies",
-  endpoint: "/discover/movie?with_original_language=te&sort_by=popularity.desc",
-  media: "movie"
-},
-{
-  id: "tollywood_popular",
-  label: "Popular Telugu Movies",
-  endpoint: "/discover/movie?with_original_language=te&sort_by=vote_count.desc",
-  media: "movie"
-},
-{
-  id: "tollywood_top",
-  label: "Top Rated Telugu Movies",
-  endpoint: "/discover/movie?with_original_language=te&sort_by=vote_average.desc&vote_count.gte=100",
-  media: "movie"
-},
-{
-  id: "tollywood_tv",
-  label: "Telugu TV Shows",
-  endpoint: "/discover/tv?with_original_language=te",
-  media: "tv"
-},
+  // ===== Tollywood =====
+  {
+    id: "tollywood_trending",
+    label: "Trending Telugu Movies",
+    endpoint: "/discover/movie?with_original_language=te&sort_by=popularity.desc",
+    media: "movie"
+  },
+  {
+    id: "tollywood_popular",
+    label: "Popular Telugu Movies",
+    endpoint: "/discover/movie?with_original_language=te&sort_by=vote_count.desc",
+    media: "movie"
+  },
+  {
+    id: "tollywood_top",
+    label: "Top Rated Telugu Movies",
+    endpoint: "/discover/movie?with_original_language=te&sort_by=vote_average.desc&vote_count.gte=100",
+    media: "movie"
+  },
+  {
+    id: "tollywood_tv",
+    label: "Telugu TV Shows",
+    endpoint: "/discover/tv?with_original_language=te",
+    media: "tv"
+  },
 
-// ===== Kollywood =====
-{
-  id: "kollywood_trending",
-  label: "Trending Tamil Movies",
-  endpoint: "/discover/movie?with_original_language=ta&sort_by=popularity.desc",
-  media: "movie"
-},
-{
-  id: "kollywood_popular",
-  label: "Popular Tamil Movies",
-  endpoint: "/discover/movie?with_original_language=ta&sort_by=vote_count.desc",
-  media: "movie"
-},
-{
-  id: "kollywood_top",
-  label: "Top Rated Tamil Movies",
-  endpoint: "/discover/movie?with_original_language=ta&sort_by=vote_average.desc&vote_count.gte=100",
-  media: "movie"
-},
-{
-  id: "kollywood_tv",
-  label: "Tamil TV Shows",
-  endpoint: "/discover/tv?with_original_language=ta",
-  media: "tv"
-},
+  // ===== Kollywood =====
+  {
+    id: "kollywood_trending",
+    label: "Trending Tamil Movies",
+    endpoint: "/discover/movie?with_original_language=ta&sort_by=popularity.desc",
+    media: "movie"
+  },
+  {
+    id: "kollywood_popular",
+    label: "Popular Tamil Movies",
+    endpoint: "/discover/movie?with_original_language=ta&sort_by=vote_count.desc",
+    media: "movie"
+  },
+  {
+    id: "kollywood_top",
+    label: "Top Rated Tamil Movies",
+    endpoint: "/discover/movie?with_original_language=ta&sort_by=vote_average.desc&vote_count.gte=100",
+    media: "movie"
+  },
+  {
+    id: "kollywood_tv",
+    label: "Tamil TV Shows",
+    endpoint: "/discover/tv?with_original_language=ta",
+    media: "tv"
+  },
 
-// ===== Mollywood =====
-{
-  id: "mollywood_trending",
-  label: "Trending Malayalam Movies",
-  endpoint: "/discover/movie?with_original_language=ml&sort_by=popularity.desc",
-  media: "movie"
-},
-{
-  id: "mollywood_popular",
-  label: "Popular Malayalam Movies",
-  endpoint: "/discover/movie?with_original_language=ml&sort_by=vote_count.desc",
-  media: "movie"
-},
-{
-  id: "mollywood_top",
-  label: "Top Rated Malayalam Movies",
-  endpoint: "/discover/movie?with_original_language=ml&sort_by=vote_average.desc&vote_count.gte=100",
-  media: "movie"
-},
-{
-  id: "mollywood_tv",
-  label: "Malayalam TV Shows",
-  endpoint: "/discover/tv?with_original_language=ml",
-  media: "tv"
-},
+  // ===== Mollywood =====
+  {
+    id: "mollywood_trending",
+    label: "Trending Malayalam Movies",
+    endpoint: "/discover/movie?with_original_language=ml&sort_by=popularity.desc",
+    media: "movie"
+  },
+  {
+    id: "mollywood_popular",
+    label: "Popular Malayalam Movies",
+    endpoint: "/discover/movie?with_original_language=ml&sort_by=vote_count.desc",
+    media: "movie"
+  },
+  {
+    id: "mollywood_top",
+    label: "Top Rated Malayalam Movies",
+    endpoint: "/discover/movie?with_original_language=ml&sort_by=vote_average.desc&vote_count.gte=100",
+    media: "movie"
+  },
+  {
+    id: "mollywood_tv",
+    label: "Malayalam TV Shows",
+    endpoint: "/discover/tv?with_original_language=ml",
+    media: "tv"
+  },
 
-// ===== Kannada =====
-{
-  id: "sandalwood_trending",
-  label: "Trending Kannada Movies",
-  endpoint: "/discover/movie?with_original_language=kn&sort_by=popularity.desc",
-  media: "movie"
-},
-{
-  id: "sandalwood_popular",
-  label: "Popular Kannada Movies",
-  endpoint: "/discover/movie?with_original_language=kn&sort_by=vote_count.desc",
-  media: "movie"
-},
-{
-  id: "sandalwood_top",
-  label: "Top Rated Kannada Movies",
-  endpoint: "/discover/movie?with_original_language=kn&sort_by=vote_average.desc&vote_count.gte=100",
-  media: "movie"
-},
-{
-  id: "sandalwood_tv",
-  label: "Kannada TV Shows",
-  endpoint: "/discover/tv?with_original_language=kn",
-  media: "tv"
-},
-  { id: "horror",          label: "Horror",               endpoint: "/discover/movie?with_genres=27",                               media: "movie"  },
-  { id: "comedy",          label: "Comedy",               endpoint: "/discover/movie?with_genres=35",                               media: "movie"  },
-  { id: "documentary",     label: "Documentaries",        endpoint: "/discover/movie?with_genres=99",                               media: "movie"  },
+  // ===== Kannada =====
+  {
+    id: "sandalwood_trending",
+    label: "Trending Kannada Movies",
+    endpoint: "/discover/movie?with_original_language=kn&sort_by=popularity.desc",
+    media: "movie"
+  },
+  {
+    id: "sandalwood_popular",
+    label: "Popular Kannada Movies",
+    endpoint: "/discover/movie?with_original_language=kn&sort_by=vote_count.desc",
+    media: "movie"
+  },
+  {
+    id: "sandalwood_top",
+    label: "Top Rated Kannada Movies",
+    endpoint: "/discover/movie?with_original_language=kn&sort_by=vote_average.desc&vote_count.gte=100",
+    media: "movie"
+  },
+  {
+    id: "sandalwood_tv",
+    label: "Kannada TV Shows",
+    endpoint: "/discover/tv?with_original_language=kn",
+    media: "tv"
+  },
+  { id: "horror", label: "Horror", endpoint: "/discover/movie?with_genres=27", media: "movie" },
+  { id: "comedy", label: "Comedy", endpoint: "/discover/movie?with_genres=35", media: "movie" },
+  { id: "documentary", label: "Documentaries", endpoint: "/discover/movie?with_genres=99", media: "movie" },
 ];
 
 // Dedicated Anime & Donghua Rows Configuration
 const ANIME_ROWS = [
-  { id: "anime_trending",  label: "Trending Anime",       endpoint: "/trending",                                 media: "anime" },
-  { id: "anime_popular",   label: "Popular Anime",        endpoint: "/popular",                                  media: "anime" },
-  { id: "anime_top",       label: "Top Rated Anime",      endpoint: "/popular?sort=SCORE_DESC",                  media: "anime" },
-  { id: "anime_airing",    label: "Currently Airing",     endpoint: "/airing",                                   media: "anime" },
-  { id: "anime_upcoming",  label: "Upcoming Anime",       endpoint: "/upcoming",                                 media: "anime" },
-  { id: "donghua_trending", label: "Trending Donghua",     endpoint: "/trending?origin=CN",                       media: "donghua" },
-  { id: "donghua_popular",  label: "Popular Donghua",      endpoint: "/popular?origin=CN",                        media: "donghua" },
-  { id: "donghua_top",      label: "Top Rated Donghua",     endpoint: "/popular?sort=SCORE_DESC&origin=CN",        media: "donghua" },
-  { id: "donghua_airing",   label: "Currently Airing Donghua", endpoint: "/airing?origin=CN",                     media: "donghua" },
-  { id: "donghua_upcoming", label: "Upcoming Donghua",     endpoint: "/upcoming?origin=CN",                       media: "donghua" }
+  { id: "anime_trending", label: "Trending Anime", endpoint: "/trending", media: "anime" },
+  { id: "anime_popular", label: "Popular Anime", endpoint: "/popular", media: "anime" },
+  { id: "anime_top", label: "Top Rated Anime", endpoint: "/popular?sort=SCORE_DESC", media: "anime" },
+  { id: "anime_airing", label: "Currently Airing", endpoint: "/airing", media: "anime" },
+  { id: "anime_upcoming", label: "Upcoming Anime", endpoint: "/upcoming", media: "anime" },
+  { id: "donghua_trending", label: "Trending Donghua", endpoint: "/trending?origin=CN", media: "donghua" },
+  { id: "donghua_popular", label: "Popular Donghua", endpoint: "/popular?origin=CN", media: "donghua" },
+  { id: "donghua_top", label: "Top Rated Donghua", endpoint: "/popular?sort=SCORE_DESC&origin=CN", media: "donghua" },
+  { id: "donghua_airing", label: "Currently Airing Donghua", endpoint: "/airing?origin=CN", media: "donghua" },
+  { id: "donghua_upcoming", label: "Upcoming Donghua", endpoint: "/upcoming?origin=CN", media: "donghua" }
 ];
 
 // App settings
 const APP_CONFIG = {
-  name           : "9CineJoy",
-  version        : "2.0",
-  items_per_row  : 20,       // items fetched per row
-  hero_count     : 8,        // number of hero banner items to rotate
+  name: "CineJoy",
+  version: "2.0",
+  items_per_row: 20,       // items fetched per row
+  hero_count: 8,        // number of hero banner items to rotate
   search_debounce: 400,      // ms debounce on search input
-  history_limit  : 50,       // max items in continue watching
-  img_lazy_root  : null,     // IntersectionObserver root
+  history_limit: 50,       // max items in continue watching
+  img_lazy_root: null,     // IntersectionObserver root
   img_lazy_margin: "200px",  // load images 200px before visible
 };
 
@@ -850,9 +919,8 @@ function getStreamXBackendUrl() {
 
   if (isLocal) {
     _probeLocalBackendAsync();
-    // Default to production cloud backend until local is confirmed alive
-    // This prevents instant "Failed to fetch" if user runs frontend without starting node on port 3000
-    return _verifiedBackendUrl || PROD_STREAMX_BACKEND;
+    // When running on localhost, default to local backend on port 3000
+    return _verifiedBackendUrl || LOCAL_STREAMX_BACKEND;
   }
 
   return PROD_STREAMX_BACKEND;
@@ -863,14 +931,16 @@ async function _probeLocalBackendAsync() {
   _backendFailoverTried = true;
   try {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 600);
+    const t = setTimeout(() => ctrl.abort(), 2500);
     const res = await fetch(`${LOCAL_STREAMX_BACKEND}/`, { signal: ctrl.signal, cache: "no-store" });
     clearTimeout(t);
     if (res.ok) {
       _verifiedBackendUrl = LOCAL_STREAMX_BACKEND;
     }
   } catch (e) {
-    _verifiedBackendUrl = PROD_STREAMX_BACKEND;
+    // When running locally, remain pinned to local backend to avoid breaking local dev endpoints
+    const isLocal = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
+    _verifiedBackendUrl = isLocal ? LOCAL_STREAMX_BACKEND : PROD_STREAMX_BACKEND;
   }
 }
 

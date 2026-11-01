@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CinePro HLS Proxy Playback QA</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.light.min.js"></script>
+<style>body{background:#111;color:#eee;font-family:monospace}pre{white-space:pre-wrap;color:#9f9}</style>
+</head>
+<body>
+<h3>Sidecar-proxied HLS playability test</h3>
+<video id="v" controls muted playsinline style="width:480px"></video>
+<pre id="log"></pre>
+<script>
+const params = new URLSearchParams(location.search);
+const src = params.get("src");
+const log = (...a) => { document.getElementById("log").textContent += a.join(" ") + "\n"; };
+if (!src) {
+  log("NO SRC. Pass ?src=<proxied master url>");
+} else {
+  const video = document.getElementById("v");
+  if (!Hls.isSupported()) { log("hls.js unsupported"); }
+  else {
+    const hls = new Hls({ enableWorker: true, lowLatencyMode: false });
+    log("loading:", src.slice(0, 90));
+    hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
+      log("MANIFEST_PARSED levels=" + data.levels.length + " heis=" + (data.levels[0] && data.levels[0].height));
+      video.play().catch((e) => log("play() rejected:", e.message));
+    });
+    hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (e, data) => {
+      log("AUDIO_TRACKS=" + data.audioTracks.length + " " + JSON.stringify(data.audioTracks.map((t) => ({ name: t.name, lang: t.lang }))));
+    });
+    hls.on(Hls.Events.ERROR, (e, data) => {
+      log("ERROR fatal=" + data.fatal + " type=" + data.type + " details=" + data.details + (data.response ? " HTTP " + data.response.code : ""));
+    });
+    hls.on(Hls.Events.FRAG_CHANGED, () => {
+      log("PLAYING url=" + location.protocol + "//... currentTime=" + video.currentTime.toFixed(1) + " dur=" + (video.duration || 0).toFixed(0) + " level=" + video.videoWidth + "x" + video.videoHeight);
+      document.title = "PLAYING " + video.videoWidth + "x" + video.videoHeight;
+    });
+    hls.loadSource(src);
+    hls.attachMedia(video);
+  }
+}
+</script>
+</body>
+</html>

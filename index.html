@@ -1,33 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="CineJoy — Stream movies, series, dramas and anime with a polished cinema-style interface.">
+  <meta name="description"
+    content="CineJoy — Stream movies, series, dramas and anime with a polished cinema-style interface.">
   <meta name="theme-color" content="#07080d">
 
   <!-- PWA & Mobile Web App Meta Tags -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="9CineJoy">
-  <link rel="icon" type="image/x-icon" href="favicon.ico?v=13.0">
-  <link rel="icon" type="image/svg+xml" href="icons/cinejoy-icon.svg?v=13.0">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=13.0">
-  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png?v=13.0">
-  <link rel="apple-touch-icon" href="icons/icon-192.png?v=13.0">
-  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=13.0">
-  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=13.0">
+  <meta name="apple-mobile-web-app-title" content="CineJoy">
+  <link rel="icon" type="image/x-icon" href="favicon.ico?v=20.0">
+  <link rel="icon" type="image/svg+xml" href="icons/cinejoy-icon.svg?v=20.0">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=20.0">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png?v=20.0">
+  <link rel="apple-touch-icon" href="icons/icon-192.png?v=20.0">
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=20.0">
+  <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=20.0">
 
   <!-- Open Graph -->
-  <meta property="og:title"       content="9CineJoy — Movies, Series, Dramas &amp; Anime">
-  <meta property="og:description" content="Movies, series, dramas and anime with multiple servers and a polished cinematic browsing experience.">
-  <meta property="og:type"        content="website">
+  <meta property="og:title" content="CineJoy — Movies, Series, Dramas &amp; Anime">
+  <meta property="og:description"
+    content="Movies, series, dramas and anime with multiple servers and a polished cinematic browsing experience.">
+  <meta property="og:type" content="website">
 
-  <title>9CineJoy — Movies, Series, Dramas &amp; Anime</title>
+  <title>CineJoy — Movies, Series, Dramas &amp; Anime</title>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(regs) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
         for (var i = 0; i < regs.length; i++) {
           regs[i].update();
           if (regs[i].waiting) {
@@ -37,49 +40,37 @@
       });
     }
     if ('caches' in window) {
-      caches.keys().then(function(keys) {
-        keys.forEach(function(k) {
-          if (k !== 'nine-cinejoy-v15') {
+      caches.keys().then(function (keys) {
+        keys.forEach(function (k) {
+          if (k !== 'cinejoy-v20') {
             caches.delete(k);
           }
         });
       });
     }
   </script>
-  <link rel="canonical" href="https://9cinejoy.pages.dev/">
-  <link rel="stylesheet" href="css/style.css?v=15.0">
+  <link rel="canonical" href="https://cinejoy.pages.dev/">
+  <link rel="stylesheet" href="css/style.css?v=20.0">
+  <link rel="stylesheet" href="css/player-universal.css?v=1.1">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <link rel="manifest" href="manifest.json?v=15.0">
+  <link rel="manifest" href="manifest.json?v=20.0">
 </head>
-<!-- ── Premium 9CineJoy Initial Branded Loading Screen ──────── -->
-<div id="cinejoy-loader" class="cinejoy-loader-screen" aria-label="Loading 9CineJoy" role="status">
+<!-- ── Premium CineJoy Initial Branded Loading Screen ──────── -->
+<div id="cinejoy-loader" class="cinejoy-loader-screen" aria-label="Loading CineJoy" role="status">
   <div class="cinejoy-loader-backdrop"></div>
   <div class="cinejoy-loader-content">
     <div class="loader-logo-wrap">
-      <svg class="loader-logo-svg" viewBox="0 0 64 64" width="76" height="76" aria-hidden="true">
-        <defs>
-          <linearGradient id="cjLoaderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ff3b65"/>
-            <stop offset="55%" stop-color="#e50914"/>
-            <stop offset="100%" stop-color="#990011"/>
-          </linearGradient>
-          <filter id="cjLoaderGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="5" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <!-- CineJoy C-mark arc -->
-        <path d="M32 8 C18.7 8 8 18.7 8 32 C8 45.3 18.7 56 32 56 C43.2 56 52.4 48.3 55.1 37.8 C55.8 35.3 53.9 33 51.4 33 C49.5 33 47.8 34.4 47.3 36.3 C45.2 43.6 39.1 48.8 32 48.8 C22.7 48.8 15.2 41.3 15.2 32 C15.2 22.7 22.7 15.2 32 15.2 C39.1 15.2 45.2 20.4 47.3 27.7 C47.8 29.6 49.5 31 51.4 31 C53.9 31 55.8 28.7 55.1 26.2 C52.4 15.7 43.2 8 32 8 Z" fill="url(#cjLoaderGrad)" filter="url(#cjLoaderGlow)"/>
-        <!-- Central Play Triangle -->
-        <path d="M28 22.5 C28 21.6 29 21 29.8 21.5 L42.8 29 C43.5 29.4 43.5 30.6 42.8 31 L29.8 38.5 C29 39 28 38.4 28 37.5 Z" fill="#ffffff"/>
+      <svg class="loader-logo-svg" viewBox="0 0 100 100" width="80" height="80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M22 16 C16 16 12 20 12 26 L12 42 C16 42 19 45 19 50 C19 55 16 58 12 58 L12 74 C12 80 16 84 22 84 L78 84 C84 84 88 80 88 74 L88 58 C84 58 81 55 81 50 C81 45 84 42 88 42 L88 26 C88 20 84 16 78 16 Z" fill="#ffffff"/>
+        <path d="M26 16 L36 30 M46 16 L56 30 M66 16 L76 30" stroke="#050505" stroke-width="4" stroke-linecap="round"/>
+        <line x1="16" y1="30" x2="84" y2="30" stroke="#050505" stroke-width="3"/>
+        <polygon points="36,44 36,58 48,51" fill="#050505"/>
+        <path d="M58 52 Q66 42 74 52" stroke="#050505" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M42 66 Q55 76 68 66" stroke="#050505" stroke-width="4.5" stroke-linecap="round" fill="none"/>
       </svg>
       <div class="loader-ambient-glow"></div>
     </div>
-    <div class="loader-brand-title"><span class="loader-brand-nine">9</span>Cine<span class="loader-brand-accent">Joy</span></div>
+    <div class="loader-brand-title">Cine<span class="loader-brand-accent">Joy</span></div>
     <div class="loader-brand-sub">MOVIES &bull; TV SHOWS &bull; ANIME</div>
     <div class="loader-progress-track">
       <div class="loader-progress-bar"></div>
@@ -88,22 +79,35 @@
   </div>
 </div>
 
+<!-- ── Atmospheric Ambient Bleed (cinejoy.pk Background Glow) ────── -->
+<div class="ambient-bleed" id="ambient-bleed" aria-hidden="true"></div>
+
 <!-- ── Smooth Cinematic Action / Transition Loader ──────────── -->
 <div id="cinejoy-action-loader" class="cinejoy-action-loader" aria-hidden="true" style="display:none">
   <div class="action-loader-spinner-wrap">
     <div class="action-loader-glow"></div>
     <div class="action-loader-ring"></div>
-    <div class="action-loader-logo-badge">9</div>
+    <div class="action-loader-logo-badge">CJ</div>
   </div>
   <div class="action-loader-text" id="action-loader-text">Opening cinema experience...</div>
 </div>
 
-<!-- ── Minimal Top Header Navigation (Floating Glass Pill) ─────── -->
+<!-- ── Minimal Top Header Navigation (Floating Glass Pill - cinejoy.pk style) ─────── -->
 <nav role="navigation" aria-label="Main navigation" id="top-header" class="top-header floating-glass-nav">
   <div class="glass-nav-left">
+    <!-- Subpage Back Button (Matches cinejoy.pk) -->
+    <button class="header-back-btn" id="header-back-btn" onclick="App.goBack()" aria-label="Go back" style="display:none">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+    </button>
+
     <!-- Mobile Hamburger Menu Button -->
-    <button class="nav-icon-btn mobile-hamburger-btn" id="mobile-hamburger-btn" aria-label="Open Navigation Menu" onclick="App.toggleMobileDrawer()">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <button class="nav-icon-btn mobile-hamburger-btn" id="mobile-hamburger-btn" aria-label="Open Navigation Menu"
+      onclick="App.toggleMobileDrawer()">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <line x1="3" y1="12" x2="21" y2="12"></line>
         <line x1="3" y1="6" x2="21" y2="6"></line>
         <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -111,121 +115,121 @@
     </button>
 
     <div class="nav-logo header-logo" onclick="App.showPage('home')" role="link" tabindex="0"
-         onkeydown="if(event.key==='Enter')App.showPage('home')" aria-label="9CineJoy Home">
-      <svg class="brand-logo-svg" viewBox="0 0 64 64" width="28" height="28" aria-hidden="true">
-        <defs>
-          <linearGradient id="cjNavGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ff3b65"/>
-            <stop offset="60%" stop-color="#e50914"/>
-            <stop offset="100%" stop-color="#990011"/>
-          </linearGradient>
-          <filter id="cjNavGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="3" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <path d="M32 8 C18.7 8 8 18.7 8 32 C8 45.3 18.7 56 32 56 C43.2 56 52.4 48.3 55.1 37.8 C55.8 35.3 53.9 33 51.4 33 C49.5 33 47.8 34.4 47.3 36.3 C45.2 43.6 39.1 48.8 32 48.8 C22.7 48.8 15.2 41.3 15.2 32 C15.2 22.7 22.7 15.2 32 15.2 C39.1 15.2 45.2 20.4 47.3 27.7 C47.8 29.6 49.5 31 51.4 31 C53.9 31 55.8 28.7 55.1 26.2 C52.4 15.7 43.2 8 32 8 Z" fill="url(#cjNavGrad)" filter="url(#cjNavGlow)"/>
-        <path d="M28 22.5 C28 21.6 29 21 29.8 21.5 L42.8 29 C43.5 29.4 43.5 30.6 42.8 31 L29.8 38.5 C29 39 28 38.4 28 37.5 Z" fill="#ffffff"/>
+      onkeydown="if(event.key==='Enter')App.showPage('home')" aria-label="CineJoy Home">
+      <svg class="brand-logo-svg" viewBox="0 0 100 100" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M22 16 C16 16 12 20 12 26 L12 42 C16 42 19 45 19 50 C19 55 16 58 12 58 L12 74 C12 80 16 84 22 84 L78 84 C84 84 88 80 88 74 L88 58 C84 58 81 55 81 50 C81 45 84 42 88 42 L88 26 C88 20 84 16 78 16 Z" fill="#ffffff"/>
+        <path d="M26 16 L36 30 M46 16 L56 30 M66 16 L76 30" stroke="#090a10" stroke-width="4" stroke-linecap="round"/>
+        <line x1="16" y1="30" x2="84" y2="30" stroke="#090a10" stroke-width="3"/>
+        <polygon points="36,44 36,58 48,51" fill="#090a10"/>
+        <path d="M58 52 Q66 42 74 52" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M42 66 Q55 76 68 66" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
       </svg>
-      <span class="logo-text"><span class="brand-nine">9</span>Cine<span class="brand-accent">Joy</span></span>
-    </div>
-
-    <!-- Center Navigation Links (Reference Design) -->
-    <div class="nav-links glass-nav-links" id="nav-links">
-      <a href="#/" class="glass-nav-item active" id="nav-link-home" onclick="App.showPage('home'); return false;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-        <span>Home</span>
-      </a>
-      <a href="#/movies" class="glass-nav-item" id="nav-link-movies" onclick="App.handleNavItemClick('movies', 'browse', 'trending_movies'); return false;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
-        <span>Movies</span>
-      </a>
-      <a href="#/series" class="glass-nav-item" id="nav-link-tv" onclick="App.handleNavItemClick('series', 'browse', 'trending_tv'); return false;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
-        <span>TV Shows</span>
-      </a>
-      <a href="#/anime" class="glass-nav-item" id="nav-link-anime" onclick="App.showPage('anime'); return false;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.1-4.5h7.6z"/></svg>
-        <span>Anime</span>
-      </a>
-      <a href="#/livetv" class="glass-nav-item" id="nav-link-livetv" onclick="App.showPage('livetv'); return false;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M21 6h-7.59l3.29-3.3a1 1 0 10-1.41-1.41L12 4.59 8.71 1.29A1 1 0 007.29 2.7L10.59 6H3a2 2 0 00-2 2v12a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2zm0 14H3V8h18v12zM9 10v8l7-4-7-4z"/></svg>
-        <span>Live TV</span>
-      </a>
+      <span class="logo-text desktop-hide-logo-text">Cine<span class="brand-accent">Joy</span></span>
     </div>
   </div>
 
-  <div class="nav-right">
-    <!-- Capsule Search Input with ⌘ K -->
-    <div class="search-wrap" id="header-search-wrap" role="search">
-      <button class="search-icon-btn" id="search-submit-btn" onclick="App.triggerSearch()" aria-label="Submit search" type="button">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
-             viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="M21 21l-4.35-4.35"/>
-        </svg>
-      </button>
-      <input type="search" id="search-input" placeholder="Search movies, shows, anime..."
-             aria-label="Search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-             enterkeyhint="search" inputmode="search"
-             oninput="App.onSearchInput(this.value)"
-             onkeydown="if(event.key==='Enter'){event.preventDefault();App.triggerSearch();}">
-      <button class="search-close-mobile-btn" onclick="App.toggleMobileSearch(false)" aria-label="Close search" type="button">✕</button>
-      <kbd class="search-kbd" title="Press ⌘K or / to search">⌘ K</kbd>
-      <div id="search-history" class="search-history"></div>
-    </div>
-
-    <!-- Mobile Search Toggle Icon Button -->
-    <button class="nav-icon-btn mobile-search-btn" id="mobile-search-btn" aria-label="Open Search" onclick="App.toggleMobileSearch()">
-      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/>
-        <path d="M21 21l-4.35-4.35"/>
+  <!-- Center / Right Sleek Floating Glass Pill (Matching cinejoy.pk) -->
+  <div class="nav-links glass-nav-links glass-header" id="nav-links">
+    <a href="#/" class="glass-nav-item active" id="nav-link-home" onclick="App.showPage('home'); return false;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+      </svg>
+      <span>Home</span>
+    </a>
+    <a href="#/movies" class="glass-nav-item" id="nav-link-movies"
+      onclick="App.handleNavItemClick('movies', 'browse', 'trending_movies'); return false;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+      </svg>
+      <span>Movies</span>
+    </a>
+    <a href="#/series" class="glass-nav-item" id="nav-link-tv"
+      onclick="App.handleNavItemClick('series', 'browse', 'trending_tv'); return false;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        <path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z" />
+      </svg>
+      <span>Shows</span>
+    </a>
+    <a href="#/anime" class="glass-nav-item" id="nav-link-anime" onclick="App.showPage('anime'); return false;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        <path d="M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.1-4.5h7.6z" />
+      </svg>
+      <span>Anime</span>
+    </a>
+    <a href="#/livetv" class="glass-nav-item" id="nav-link-livetv" onclick="App.showPage('livetv'); return false;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z" />
+      </svg>
+      <span>Live TV</span>
+    </a>
+    <a href="#/watchlist" class="glass-nav-item" id="nav-link-watchlist" onclick="App.showPage('watchlist'); return false;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z" />
+      </svg>
+      <span>My List</span>
+    </a>
+    <button class="glass-nav-icon-btn" id="nav-search-btn" onclick="App.toggleSearchModal(true)" aria-label="Search movies and shows" title="Search (⌘K)">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" />
+        <path d="M21 21l-4.35-4.35" />
       </svg>
     </button>
-    
-    <!-- Quick Watchlist Navigation Icon -->
-    <button class="nav-icon-btn" aria-label="My Watchlist" title="My Watchlist" onclick="App.showPage('watchlist')">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      <span class="notification-badge" id="nav-wl-badge" style="display:none"></span>
-    </button>
-
-    <!-- PWA Install / Download App Button -->
-    <button class="nav-download-pill" id="nav-download-btn" aria-label="Download 9CineJoy App" title="Download 9CineJoy App (PWA)" onclick="App.installPWA()">
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="7 10 12 15 17 10"/>
-        <line x1="12" y1="15" x2="12" y2="3"/>
+    <button class="glass-nav-icon-btn" id="nav-settings-btn" onclick="App.showPage('settings-page')" aria-label="Settings" title="Settings">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
       </svg>
-      <span>Download</span>
     </button>
+  </div>
 
-    <!-- Premium Notifications Placeholder -->
-    <button class="nav-icon-btn" aria-label="Notifications" onclick="App.showNotificationsToast()">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-      <span class="notification-badge"></span>
-    </button>
-
+  <div class="nav-right" style="display:none">
     <!-- User Profile & Dropdown -->
     <div class="nav-profile-container" id="nav-profile-container">
-      <div class="nav-profile" id="nav-profile-btn" onclick="App.toggleProfileDropdown(event)" role="button" aria-label="Library & Preferences" tabindex="0">
+      <div class="nav-profile" id="nav-profile-btn" onclick="App.toggleProfileDropdown(event)" role="button"
+        aria-label="Library & Preferences" tabindex="0">
         <div class="profile-avatar-icon">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
           </svg>
         </div>
       </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Search Overlay Modal (Triggered by 🔍 or ⌘K) ────────── -->
+<div id="search-modal-backdrop" class="search-modal-backdrop" style="display:none" onclick="if(event.target===this)App.toggleSearchModal(false)">
+  <div class="search-modal-dialog">
+    <div class="search-wrap" id="header-search-wrap" role="search">
+      <button class="search-icon-btn" id="search-submit-btn" onclick="App.triggerSearch()" aria-label="Submit search" type="button">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+      </button>
+      <input type="search" id="search-input" placeholder="Search movies, shows, anime..." aria-label="Search"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+        inputmode="search" oninput="App.onSearchInput(this.value)"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();App.triggerSearch();}">
+      <button class="search-close-mobile-btn" onclick="App.toggleSearchModal(false)" aria-label="Close search" type="button">✕</button>
+      <kbd class="search-kbd" title="Press ⌘K or / to search">ESC</kbd>
+      <div id="search-history" class="search-history"></div>
+    </div>
+    <!-- Live Search Preview Container inside Modal -->
+    <div id="search-modal-live-results" class="search-modal-live-results" style="display:none"></div>
+  </div>
+</div>
 
       <!-- Streaming Profile Dropdown Menu -->
       <div id="profile-dropdown-menu" class="profile-dropdown" style="display:none" role="menu">
         <div class="pdrop-header" onclick="App.showPage('profile'); App.closeProfileDropdown();">
           <div class="pdrop-avatar-icon">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
             </svg>
           </div>
           <div class="pdrop-info">
@@ -250,27 +254,44 @@
         <div class="pdrop-divider"></div>
         <div class="pdrop-menu-items">
           <button class="pdrop-item" onclick="App.showPage('profile'); App.closeProfileDropdown();">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path
+                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
             <span>Library &amp; Preferences</span>
           </button>
           <button class="pdrop-item" onclick="App.showPage('watchlist'); App.closeProfileDropdown();">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
             <span>My Watchlist</span>
           </button>
           <button class="pdrop-item" onclick="App.showPage('continue-page'); App.closeProfileDropdown();">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
+            </svg>
             <span>Continue Watching</span>
           </button>
           <button class="pdrop-item" onclick="App.showPage('history-page'); App.closeProfileDropdown();">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path
+                d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
+            </svg>
             <span>Watch History</span>
           </button>
           <button class="pdrop-item" onclick="App.showPage('settings-page'); App.closeProfileDropdown();">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46.22 14.24 0 14 0h-4c-.24 0-.46.22-.49.49l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.27.25.49.49.49h4c.24 0 .46-.22.49-.49l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path
+                d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46.22 14.24 0 14 0h-4c-.24 0-.46.22-.49.49l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.27.25.49.49.49h4c.24 0 .46-.22.49-.49l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
+            </svg>
             <span>Settings &amp; Theme</span>
           </button>
           <button class="pdrop-item" onclick="App.openEditProfileModal(); App.closeProfileDropdown();">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path
+                d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+            </svg>
             <span>Edit Profile &amp; Avatar</span>
           </button>
         </div>
@@ -285,23 +306,42 @@
   <!-- General entertainment hero banner — TMDB /trending/all/week -->
   <div id="hero" role="banner" aria-label="Featured movies and series"></div>
 
+  <!-- Browse by Provider Row -->
+  <div id="browse-providers-container" class="browse-providers-section"></div>
+
+  <!-- ── Interactive Streaming Platform Section (Netflix, Hulu, Prime Video, Disney+, etc.) ── -->
+  <section id="streaming-platform-section" class="streaming-platform-section" aria-label="Streaming Platform Spotlight">
+  </section>
+
   <!-- ── Floating Category Switcher (Positioned Below Hero / Above Rows) ─────────────── -->
   <div class="category-switcher-container" role="tablist" aria-label="Media category filter">
     <div class="category-switcher-glass">
-      <button class="cat-pill active" id="cat-pill-all" role="tab" aria-selected="true" onclick="App.filterCategory('all')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+      <button class="cat-pill active" id="cat-pill-all" role="tab" aria-selected="true"
+        onclick="App.filterCategory('all')">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
+          <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
+        </svg>
         <span>All</span>
       </button>
-      <button class="cat-pill" id="cat-pill-movies" role="tab" aria-selected="false" onclick="App.filterCategory('movie')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+      <button class="cat-pill" id="cat-pill-movies" role="tab" aria-selected="false"
+        onclick="App.filterCategory('movie')">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
+          <path
+            d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+        </svg>
         <span>Movies</span>
       </button>
       <button class="cat-pill" id="cat-pill-tv" role="tab" aria-selected="false" onclick="App.filterCategory('tv')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
+          <path
+            d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z" />
+        </svg>
         <span>TV Shows</span>
       </button>
       <button class="cat-pill" id="cat-pill-anime" role="tab" aria-selected="false" onclick="App.showPage('anime')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.1-4.5h7.6z"/></svg>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
+          <path d="M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.1-4.5h7.6z" />
+        </svg>
         <span>Anime</span>
       </button>
     </div>
@@ -309,9 +349,6 @@
 
   <!-- Continue Watching & Recently Viewed — populated from localStorage -->
   <div id="history-rows" aria-label="Watch history"></div>
-
-  <!-- ── Interactive Streaming Platform Section (Netflix, Hulu, Prime Video, Disney+, etc.) ── -->
-  <section id="streaming-platform-section" class="streaming-platform-section" aria-label="Streaming Platform Spotlight"></section>
 
   <!-- General entertainment content browsing rows -->
   <div id="home-rows" aria-label="Movie and series browsing rows"></div>
@@ -323,12 +360,20 @@
 
   <!-- ── Destination Switcher ─────────────── -->
   <div class="home-destinations-bar anime-destinations-bar" role="tablist" aria-label="Content sections">
-    <button class="dest-btn" id="anime-dest-btn-general" role="tab" aria-selected="false" onclick="App.showPage('home')">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+    <button class="dest-btn" id="anime-dest-btn-general" role="tab" aria-selected="false"
+      onclick="App.showPage('home')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        <path
+          d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+      </svg>
       <span>Movies, Series &amp; Dramas</span>
     </button>
-    <button class="dest-btn active" id="anime-dest-btn-anime" role="tab" aria-selected="true" onclick="App.showPage('anime')">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+    <button class="dest-btn active" id="anime-dest-btn-anime" role="tab" aria-selected="true"
+      onclick="App.showPage('anime')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+        <path
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+      </svg>
       <span>Anime &amp; Donghua</span>
     </button>
   </div>
@@ -353,7 +398,8 @@
 </div>
 
 <!-- ── DEDICATED LIVE TV WEBPAGE ─────────────────────── -->
-<div id="page-livetv" class="page livetv-page" style="display:none" role="main" aria-label="Live TV and Global Broadcasts">
+<div id="page-livetv" class="page livetv-page" style="display:none" role="main"
+  aria-label="Live TV and Global Broadcasts">
   <div class="livetv-container">
 
     <!-- Live TV Header Bar -->
@@ -369,20 +415,37 @@
 
       <!-- View Switcher Tabs matching Reference Project -->
       <div class="livetv-view-tabs" role="tablist" aria-label="Live TV Views">
-        <button class="livetv-view-tab active" data-view="channels" onclick="LiveTV.switchView('channels')" role="tab" aria-selected="true">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+        <button class="livetv-view-tab active" data-view="channels" onclick="LiveTV.switchView('channels')" role="tab"
+          aria-selected="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="15" rx="2" ry="2" />
+            <polyline points="17 2 12 7 7 2" />
+          </svg>
           <span>Channels Guide</span>
         </button>
-        <button class="livetv-view-tab" data-view="countries" onclick="LiveTV.switchView('countries')" role="tab" aria-selected="false">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        <button class="livetv-view-tab" data-view="countries" onclick="LiveTV.switchView('countries')" role="tab"
+          aria-selected="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+          </svg>
           <span>Countries</span>
         </button>
-        <button class="livetv-view-tab" data-view="languages" onclick="LiveTV.switchView('languages')" role="tab" aria-selected="false">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
+        <button class="livetv-view-tab" data-view="languages" onclick="LiveTV.switchView('languages')" role="tab"
+          aria-selected="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6" />
+          </svg>
           <span>Languages</span>
         </button>
-        <button class="livetv-view-tab" data-view="categories" onclick="LiveTV.switchView('categories')" role="tab" aria-selected="false">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <button class="livetv-view-tab" data-view="categories" onclick="LiveTV.switchView('categories')" role="tab"
+          aria-selected="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
           <span>Categories</span>
         </button>
       </div>
@@ -390,18 +453,32 @@
       <!-- Search & Selectors Toolbar -->
       <div class="livetv-toolbar">
         <div class="livetv-search-box">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input type="text" id="livetv-search" placeholder="Search channels, countries, genres..." oninput="LiveTV.onSearchInput(this.value)" autocomplete="off" />
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input type="text" id="livetv-search" placeholder="Search channels, countries, genres..."
+            oninput="LiveTV.onSearchInput(this.value)" autocomplete="off" />
         </div>
         <div class="livetv-country-select-wrap">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-          <select id="livetv-country-select" onchange="LiveTV.setCountry(this.value)" aria-label="Filter channels by country">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+            aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+          </svg>
+          <select id="livetv-country-select" onchange="LiveTV.setCountry(this.value)"
+            aria-label="Filter channels by country">
             <option value="all">All Countries</option>
           </select>
         </div>
         <div class="livetv-lang-select-wrap">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
-          <select id="livetv-language-select" onchange="LiveTV.setLanguage(this.value)" aria-label="Filter channels by language">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+            aria-hidden="true">
+            <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6" />
+          </svg>
+          <select id="livetv-language-select" onchange="LiveTV.setLanguage(this.value)"
+            aria-label="Filter channels by language">
             <option value="all">All Languages</option>
           </select>
         </div>
@@ -420,12 +497,18 @@
         <button class="livetv-cat-pill" data-cat="news" onclick="LiveTV.setCategory('news')">News</button>
         <button class="livetv-cat-pill" data-cat="sports" onclick="LiveTV.setCategory('sports')">Sports</button>
         <button class="livetv-cat-pill" data-cat="movies" onclick="LiveTV.setCategory('movies')">Movies</button>
-        <button class="livetv-cat-pill" data-cat="animation" onclick="LiveTV.setCategory('animation')">Animation</button>
+        <button class="livetv-cat-pill" data-cat="animation"
+          onclick="LiveTV.setCategory('animation')">Animation</button>
         <button class="livetv-cat-pill" data-cat="music" onclick="LiveTV.setCategory('music')">Music</button>
-        <button class="livetv-cat-pill" data-cat="documentary" onclick="LiveTV.setCategory('documentary')">Documentary</button>
-        <button class="livetv-cat-pill" data-cat="entertainment" onclick="LiveTV.setCategory('entertainment')">Entertainment</button>
+        <button class="livetv-cat-pill" data-cat="documentary"
+          onclick="LiveTV.setCategory('documentary')">Documentary</button>
+        <button class="livetv-cat-pill" data-cat="entertainment"
+          onclick="LiveTV.setCategory('entertainment')">Entertainment</button>
         <button class="livetv-cat-pill livetv-cat-fav" data-cat="favorites" onclick="LiveTV.setCategory('favorites')">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="#e50914"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="#e50914">
+            <path
+              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
           <span>Favorites</span>
         </button>
       </div>
@@ -446,9 +529,12 @@
               </div>
 
               <!-- Autoplay Click Prompt -->
-              <div id="livetv-player-prompt" class="livetv-player-overlay livetv-prompt-overlay" style="display:none" onclick="LiveTV.handleUserPlayClick()">
+              <div id="livetv-player-prompt" class="livetv-player-overlay livetv-prompt-overlay" style="display:none"
+                onclick="LiveTV.handleUserPlayClick()">
                 <button class="livetv-big-play-btn" aria-label="Play broadcast">
-                  <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
                 </button>
                 <span>Click to Unmute / Play</span>
               </div>
@@ -456,12 +542,14 @@
               <!-- Error Overlay -->
               <div id="livetv-player-error" class="livetv-player-overlay livetv-error-overlay" style="display:none">
                 <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="#ff4d4f" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4M12 16h.01" />
                 </svg>
                 <span id="livetv-player-error-text">Stream offline or temporarily unreachable.</span>
                 <div class="livetv-error-actions">
                   <button class="btn-primary" onclick="LiveTV.retryCurrentChannel()">Retry Stream</button>
-                  <a id="livetv-error-ext-link" class="btn-secondary" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Direct Stream Link ↗</a>
+                  <a id="livetv-error-ext-link" class="btn-secondary" href="#" target="_blank" rel="noopener noreferrer"
+                    style="display:none">Direct Stream Link ↗</a>
                   <button class="btn-secondary" onclick="LiveTV.playNextChannel()">Next Channel</button>
                 </div>
               </div>
@@ -479,35 +567,39 @@
                     <span class="livetv-badge-pill livetv-badge-live">
                       <span class="live-dot"></span> LIVE
                     </span>
-                    <span id="livetv-player-country" class="livetv-badge-pill livetv-badge-country">🇺🇸 United States</span>
+                    <span id="livetv-player-country" class="livetv-badge-pill livetv-badge-country">🇺🇸 United
+                      States</span>
                   </div>
                   <p id="livetv-player-cat" class="livetv-player-channel-cat">Documentary &amp; Space Science</p>
                 </div>
               </div>
 
               <div class="livetv-player-actions">
-                <a id="livetv-player-ext-btn" class="livetv-action-btn" title="Open Stream Link Directly (VLC / Player)" href="#" target="_blank" rel="noopener noreferrer">
+                <a id="livetv-player-ext-btn" class="livetv-action-btn" title="Open Stream Link Directly (VLC / Player)"
+                  href="#" target="_blank" rel="noopener noreferrer">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
                   </svg>
                   <span>Direct Stream</span>
                 </a>
-                <button id="livetv-player-fav-btn" class="livetv-action-btn livetv-fav-btn" onclick="LiveTV.toggleFavorite(LiveTV._currentChannel?.id)">
+                <button id="livetv-player-fav-btn" class="livetv-action-btn livetv-fav-btn"
+                  onclick="LiveTV.toggleFavorite(LiveTV._currentChannel?.id)">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    <path
+                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                   </svg>
                   <span>Favorite</span>
                 </button>
                 <button class="livetv-action-btn" title="Reload live stream" onclick="LiveTV.retryCurrentChannel()">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M23 4v6h-6M1 20v-6h6"/>
-                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                    <path d="M23 4v6h-6M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
                   </svg>
                   <span>Reload</span>
                 </button>
                 <button class="livetv-action-btn" title="Fullscreen" onclick="LiveTV.toggleFullscreen()">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+                    <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
                   </svg>
                   <span>Fullscreen</span>
                 </button>
@@ -574,11 +666,61 @@
   <div id="search-grid" class="search-grid"></div>
 </div>
 
-<!-- ── BROWSE PAGE ────────────────────────────────── -->
+<!-- ── BROWSE PAGE (cinejoy.pk style with Filter Bar & Upcoming) ── -->
 <div id="page-browse" class="page" style="display:none" role="main" aria-label="Browse content">
-  <div class="browse-header">
-    <button class="back-btn" onclick="App.showPage('home')" aria-label="Back to home"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Back</button>
-    <h1 id="browse-title"></h1>
+  <div class="browse-header-row">
+    <div class="browse-title-wrap">
+      <h1 id="browse-title">Movies</h1>
+    </div>
+    <div class="browse-filter-bar" id="browse-filter-bar">
+      <div class="glass-select-wrap">
+        <select id="browse-filter-genre" class="glass-select-pill" onchange="App.onBrowseFilterChange('genre', this.value)">
+          <option value="">Genre ▾</option>
+        </select>
+      </div>
+      <div class="glass-select-wrap">
+        <select id="browse-filter-year" class="glass-select-pill" onchange="App.onBrowseFilterChange('year', this.value)">
+          <option value="">Year ▾</option>
+        </select>
+      </div>
+      <div class="glass-select-wrap">
+        <select id="browse-filter-sort" class="glass-select-pill" onchange="App.onBrowseFilterChange('sort', this.value)">
+          <option value="popularity.desc">• Popular ▾</option>
+          <option value="vote_average.desc">• Top Rated ▾</option>
+          <option value="primary_release_date.desc">• Latest ▾</option>
+        </select>
+      </div>
+      <div class="glass-select-wrap">
+        <select id="browse-filter-provider" class="glass-select-pill" onchange="App.onBrowseFilterChange('provider', this.value)">
+          <option value="">Provider ▾</option>
+          <option value="8">Netflix</option>
+          <option value="9">Amazon Prime</option>
+          <option value="15">Hulu</option>
+          <option value="384">HBO Max</option>
+          <option value="350">Apple TV+</option>
+          <option value="337">Disney+</option>
+          <option value="283">Crunchyroll</option>
+          <option value="531">Paramount+</option>
+        </select>
+      </div>
+      <div class="glass-select-wrap">
+        <select id="browse-filter-country" class="glass-select-pill" onchange="App.onBrowseFilterChange('country', this.value)">
+          <option value="">Country ▾</option>
+          <option value="US">United States</option>
+          <option value="GB">United Kingdom</option>
+          <option value="KR">South Korea</option>
+          <option value="JP">Japan</option>
+          <option value="IN">India</option>
+          <option value="ES">Spain</option>
+          <option value="FR">France</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <!-- Upcoming Section for Movies Page (Matches Screenshot 5) -->
+  <div id="browse-upcoming-section" class="browse-upcoming-section" style="display:none">
+    <h2 class="browse-section-subtitle">Upcoming</h2>
+    <div class="upcoming-scroll" id="browse-upcoming-scroll"></div>
   </div>
   <div id="browse-grid" class="browse-grid"></div>
   <div id="browse-rows"></div>
@@ -587,7 +729,10 @@
 <!-- ── WATCHLIST PAGE ─────────────────────────────── -->
 <div id="page-watchlist" class="page" style="display:none" role="main" aria-label="My Watchlist">
   <div class="wl-header">
-    <button class="back-btn" onclick="App.showPage('home')" aria-label="Back to home"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Back</button>
+    <button class="back-btn" onclick="App.showPage('home')" aria-label="Back to home"><svg viewBox="0 0 24 24"
+        width="14" height="14" fill="currentColor" aria-hidden="true">
+        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+      </svg> Back</button>
     <h1>My Watchlist</h1>
     <span id="wl-count"></span>
   </div>
@@ -597,7 +742,10 @@
 <!-- ── LIBRARY HISTORY PAGE ───────────────────────── -->
 <div id="page-history-page" class="page" style="display:none" role="main" aria-label="Library history">
   <div class="wl-header">
-    <button class="back-btn" onclick="App.showPage('home')" aria-label="Back to home"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Back</button>
+    <button class="back-btn" onclick="App.showPage('home')" aria-label="Back to home"><svg viewBox="0 0 24 24"
+        width="14" height="14" fill="currentColor" aria-hidden="true">
+        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+      </svg> Back</button>
     <h1>Library History</h1>
     <button class="wl-nav-btn" onclick="App.clearAllHistory()">Clear History</button>
   </div>
@@ -607,102 +755,413 @@
 <!-- ── LIBRARY CONTINUE PAGE ──────────────────────── -->
 <div id="page-continue-page" class="page" style="display:none" role="main" aria-label="Continue library items">
   <div class="wl-header">
-    <button class="back-btn" onclick="App.showPage('home')" aria-label="Back to home"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Back</button>
+    <button class="back-btn" onclick="App.showPage('home')" aria-label="Back to home"><svg viewBox="0 0 24 24"
+        width="14" height="14" fill="currentColor" aria-hidden="true">
+        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+      </svg> Back</button>
     <h1>Continue Watching & Reading</h1>
   </div>
   <div id="continue-page-grid" class="wl-grid"></div>
 </div>
 
-<!-- ── SETTINGS PAGE ──────────────────────────────── -->
-<div id="page-settings-page" class="page" style="display:none" role="main" aria-label="Settings">
-  <div class="wl-header">
-    <button class="back-btn" onclick="App.showPage('home')" aria-label="Back to home"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Back</button>
-    <h1>Settings</h1>
+<!-- ── SETTINGS PAGE (CineJoy Modern Tabbed Design) ──────────────── -->
+<div id="page-settings-page" class="page cinejoy-settings-page" style="display:none" role="main" aria-label="Settings">
+  <div class="settings-page-header">
+    <button class="settings-back-btn" onclick="App.showPage('home')" aria-label="Back to home">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+    </button>
+    <div class="settings-header-brand">
+      <span class="cinejoy-logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+      </span>
+    </div>
   </div>
-  <div class="settings-content-wrapper" style="padding:20px; max-width:600px; margin:0 auto;">
-    <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); padding:24px; border-radius:12px; margin-bottom:20px;">
-      <h3 style="margin-bottom:8px">Visual Preferences</h3>
-      <p style="color:var(--text2); font-size:13px; margin-bottom:16px">Adjust the core color palette of 9CineJoy.</p>
-      <div style="display:flex; flex-direction:column; gap:8px">
-        <label style="font-size:12px; color:var(--text2)">Theme Preset</label>
-        <select id="theme-selector" class="nav-link active" style="width:100%; height:38px; text-align:left; border:1px solid var(--border)" onchange="App.changeTheme(this.value)">
-          <option value="default">9CineJoy Prism (Signature Neon Rose &amp; Indigo)</option>
-          <option value="sapphire">Nordic Sapphire (Blue Accent)</option>
-          <option value="emerald">Emerald Forest (Green Accent)</option>
-          <option value="crimson">Crimson Night (Red Accent)</option>
-        </select>
-      </div>
-    </div>
-    <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); padding:24px; border-radius:12px; margin-bottom:20px;">
-      <h3 style="margin-bottom:8px">Player Preferences</h3>
-      <p style="color:var(--text2); font-size:13px; margin-bottom:16px">Configure video playback preferences (stored locally).</p>
-      <div style="display:flex; flex-direction:column; gap:12px">
-        <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" id="pref-auto-next" onchange="App.savePlayerPreference('streamx_auto_next', this.checked)">
-          <span>Auto Next Episode</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" id="pref-autoplay" onchange="App.savePlayerPreference('streamx_autoplay', this.checked)">
-          <span>Auto Play</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" id="pref-skip-intro" onchange="App.savePlayerPreference('streamx_auto_skip_intro', this.checked)">
-          <span>Skip Intro Automatically</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" id="pref-skip-outro" onchange="App.savePlayerPreference('streamx_auto_skip_outro', this.checked)">
-          <span>Skip Outro Automatically</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" id="pref-resume" onchange="App.savePlayerPreference('streamx_resume_playback', this.checked)">
-          <span>Resume Playback</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" id="pref-remember-server" onchange="App.savePlayerPreference('streamx_remember_server', this.checked)">
-          <span>Remember Server</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" id="pref-remember-quality" onchange="App.savePlayerPreference('streamx_remember_quality', this.checked)">
-          <span>Remember Quality</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer;">
-          <input type="checkbox" id="pref-remember-subdub" onchange="App.savePlayerPreference('streamx_remember_sub_dub', this.checked)">
-          <span>Remember Sub/Dub Preference</span>
-        </label>
-        <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
-          <label style="font-size:12px; color:var(--text2)">Default Sub/Dub Preferred</label>
-          <select id="pref-subdub-selector" class="nav-link active" style="width:100%; height:38px; text-align:left; border:1px solid var(--border)" onchange="App.savePlayerPreference('streamx_sub_dub', this.value)">
-            <option value="sub">Subtitled (SUB)</option>
-            <option value="dub">Dubbed (DUB)</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); padding:24px; border-radius:12px; margin-bottom:20px;">
-      <h3 style="margin-bottom:8px">PWA Mobile App &amp; Offline</h3>
-      <p style="color:var(--text2); font-size:13px; margin-bottom:16px">Install 9CineJoy as a standalone application on iOS, Android, macOS, or Windows for instant cinema access without browser bars.</p>
-      <div style="display:flex; flex-direction:column; gap:12px;">
-        <button id="settings-install-pwa-btn" class="btn-primary" onclick="App.installPWA()" style="display:inline-flex; align-items:center; gap:8px;">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
-          <span>Install 9CineJoy App</span>
-        </button>
-        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px; font-size:12px; color:var(--text2); line-height:1.5;">
-          <strong>📱 iOS / iPhone users:</strong> Tap the Safari Share button <span style="color:#00d2ff">⎋</span> and select <span style="color:#fff">"Add to Home Screen ➕"</span>.
-        </div>
-      </div>
-    </div>
-    <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); padding:24px; border-radius:12px; margin-bottom:20px;">
-      <h3 style="margin-bottom:8px">Legal &amp; Important Guidelines</h3>
-      <p style="color:var(--text2); font-size:13px; margin-bottom:16px">Read our non-hosting disclaimer, DMCA policy, zero-tracking privacy, and streaming tips.</p>
-      <button class="btn-primary" onclick="App.openDisclaimerModal('non-hosting')" style="display:inline-flex; align-items:center; gap:8px;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-        <span>View Disclaimer &amp; Guidelines</span>
+
+  <!-- Horizontal Settings Navigation Tabs (Screenshots 9 & 10) -->
+  <div class="settings-tabs-bar-wrap">
+    <div class="settings-tabs-bar" role="tablist" aria-label="Settings navigation">
+      <button class="settings-tab-btn active" data-tab="account" onclick="App.switchSettingsTab('account')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Account</span>
+      </button>
+      <button class="settings-tab-btn" data-tab="appearance" onclick="App.switchSettingsTab('appearance')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 0 0 0 14v6"/></svg>
+        <span>Appearance</span>
+      </button>
+      <button class="settings-tab-btn" data-tab="playback" onclick="App.switchSettingsTab('playback')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span>Playback</span>
+      </button>
+      <button class="settings-tab-btn" data-tab="servers" onclick="App.switchSettingsTab('servers')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        <span>Servers</span>
+      </button>
+      <button class="settings-tab-btn" data-tab="subtitles" onclick="App.switchSettingsTab('subtitles')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="15" x2="17" y2="15"/><line x1="7" y1="11" x2="17" y2="11"/></svg>
+        <span>Subtitles</span>
+      </button>
+      <button class="settings-tab-btn" data-tab="ads" onclick="App.switchSettingsTab('ads')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span>Ads</span>
       </button>
     </div>
-    <div class="settings-card" style="background:var(--surface); border:1px solid var(--border); padding:24px; border-radius:12px">
-      <h3 style="margin-bottom:8px">Local Storage &amp; Cache</h3>
-      <p style="color:var(--text2); font-size:13px; margin-bottom:16px">Reset user settings, continue watch lists, and bookmarks.</p>
-      <button class="wl-nav-btn" style="background:var(--red); border-color:var(--red)" onclick="App.clearAllStorage()">Clear All Storage</button>
+  </div>
+
+  <div class="settings-container">
+    <!-- 1. ACCOUNT CARD -->
+    <div class="settings-card-section" id="settings-card-account" data-section="account">
+      <div class="settings-glass-card">
+        <div class="settings-card-header">
+          <h2>Account</h2>
+          <p>Sign in to sync your settings and watch progress across devices.</p>
+        </div>
+        <div class="settings-auth-banner">
+          <div class="auth-info">
+            <span class="auth-status-title">Not signed in</span>
+            <span class="auth-status-desc">Create an account or sign in to sync your data</span>
+          </div>
+          <button type="button" class="settings-white-pill-btn" onclick="App.showProfileToast()">Sign In</button>
+        </div>
+        <div class="settings-integration-row">
+          <div class="integration-icon trakt-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14h-2v-4h2v4zm0-6h-2V8h2v2zm4 6h-2V8h2v8z"/></svg>
+          </div>
+          <div class="integration-details">
+            <span class="integration-name">Connect Trakt</span>
+            <span class="integration-desc">Sync your watchlist, history and progress from Trakt</span>
+          </div>
+          <button type="button" class="settings-sm-btn" onclick="App.showProfileToast('Trakt integration coming soon')">Connect</button>
+        </div>
+        <div class="settings-integration-row">
+          <div class="integration-icon simkl-icon">
+            <span style="font-weight:900;font-size:14px;color:#fff;">S</span>
+          </div>
+          <div class="integration-details">
+            <span class="integration-name">Connect Simkl</span>
+            <span class="integration-desc">Sync your watchlist, history and progress from Simkl</span>
+          </div>
+          <button type="button" class="settings-sm-btn" onclick="App.showProfileToast('Simkl integration coming soon')">Connect</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. APPEARANCE CARD (Screenshot 9) -->
+    <div class="settings-card-section" id="settings-card-appearance" data-section="appearance" style="display:none">
+      <div class="settings-glass-card">
+        <div class="settings-card-header">
+          <h2>Appearance</h2>
+          <p>Change the look of the site to suit your needs.</p>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Theme</span>
+            <span class="option-desc">Pick a color palette for the entire interface.</span>
+          </div>
+          <div class="option-control">
+            <select id="theme-selector" class="settings-dropdown" onchange="App.changeTheme(this.value)">
+              <option value="default">&#x1F7E2; Default</option>
+              <option value="sapphire">&#x1F535; Sapphire</option>
+              <option value="emerald">&#x1F7E2; Emerald</option>
+              <option value="crimson">&#x1F534; Crimson</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Episode View Style</span>
+            <span class="option-desc">Choose how episodes appear on series pages.</span>
+          </div>
+          <div class="option-control">
+            <div class="settings-segmented-pill">
+              <button type="button" class="settings-pill settings-pill-episode active" data-val="carousel" onclick="App.setEpisodeViewStyle('carousel')">Carrousel</button>
+              <button type="button" class="settings-pill settings-pill-episode" data-val="grid" onclick="App.setEpisodeViewStyle('grid')">Grid</button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Detail View Type</span>
+            <span class="option-desc">Pick between a full page or a compact modal.</span>
+          </div>
+          <div class="option-control">
+            <div class="settings-segmented-pill">
+              <button type="button" class="settings-pill settings-pill-detail active" data-val="page" onclick="App.setDetailViewType('page')">Page</button>
+              <button type="button" class="settings-pill settings-pill-detail" data-val="modal" onclick="App.setDetailViewType('modal')">Modal</button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Use Image Logos</span>
+            <span class="option-desc">Display movie and series titles as image logos.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-image-logos" onchange="App.savePlayerPreference('streamx_image_logos', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Trailers</span>
+            <span class="option-desc">Play trailers automatically on detail pages and hover previews.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-trailers" onchange="App.savePlayerPreference('streamx_trailers', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Spoiler-Free Mode</span>
+            <span class="option-desc">Hide information about episodes.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-spoiler-free" onchange="App.savePlayerPreference('streamx_spoiler_free', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Reduce Motion</span>
+            <span class="option-desc">Reduce effects.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-reduce-motion" onchange="App.savePlayerPreference('streamx_reduce_motion', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. PLAYBACK CARD -->
+    <div class="settings-card-section" id="settings-card-playback" data-section="playback" style="display:none">
+      <div class="settings-glass-card">
+        <div class="settings-card-header">
+          <h2>Playback</h2>
+          <p>Configure video player behavior and defaults.</p>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Auto Play</span>
+            <span class="option-desc">Start playback automatically when opening a title.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-autoplay" onchange="App.savePlayerPreference('streamx_autoplay', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Auto Next Episode</span>
+            <span class="option-desc">Automatically play next episode when current ends.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-auto-next" onchange="App.savePlayerPreference('streamx_auto_next', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Auto Skip Intro</span>
+            <span class="option-desc">Skip intros automatically when available.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-skip-intro" onchange="App.savePlayerPreference('streamx_auto_skip_intro', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Auto Skip Outro</span>
+            <span class="option-desc">Skip credits automatically.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-skip-outro" onchange="App.savePlayerPreference('streamx_auto_skip_outro', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Resume Playback</span>
+            <span class="option-desc">Pick up right where you left off.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-resume" onchange="App.savePlayerPreference('streamx_resume_playback', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Remember Server</span>
+            <span class="option-desc">Keep your preferred streaming mirror active.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-remember-server" onchange="App.savePlayerPreference('streamx_remember_server', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Default Sub/Dub</span>
+            <span class="option-desc">Preferred language track for anime & international series.</span>
+          </div>
+          <div class="option-control">
+            <select id="pref-subdub-selector" class="settings-dropdown" onchange="App.savePlayerPreference('streamx_sub_dub', this.value)">
+              <option value="sub">Subtitled (SUB)</option>
+              <option value="dub">Dubbed (DUB)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. SERVERS CARD -->
+    <div class="settings-card-section" id="settings-card-servers" data-section="servers" style="display:none">
+      <div class="settings-glass-card">
+        <div class="settings-card-header">
+          <h2>Servers</h2>
+          <p>Configure streaming servers and priority.</p>
+        </div>
+        <div id="settings-server-list" class="settings-server-list">
+          <!-- Dynamically populated from STREAM_SERVERS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. SUBTITLES CARD (Screenshot 10) -->
+    <div class="settings-card-section" id="settings-card-subtitles" data-section="subtitles" style="display:none">
+      <div class="settings-glass-card">
+        <div class="settings-card-header">
+          <h2>Subtitles</h2>
+          <p>Improve readability and customization for subtitles.</p>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Font</span>
+            <span class="option-desc">Choose your preferred subtitle font.</span>
+          </div>
+          <div class="option-control">
+            <div class="settings-segmented-pill">
+              <button type="button" class="settings-pill settings-pill-sub-font active" data-val="cinejoy" onclick="App.setSubtitleFont('cinejoy')">Cinejoy</button>
+              <button type="button" class="settings-pill settings-pill-sub-font" data-val="netflix" onclick="App.setSubtitleFont('netflix')">Netflix</button>
+              <button type="button" class="settings-pill settings-pill-sub-font" data-val="montserrat" onclick="App.setSubtitleFont('montserrat')">Montserrat</button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Text Size</span>
+            <span class="option-desc">Adjust subtitle size for your display.</span>
+          </div>
+          <div class="option-control sub-slider-control">
+            <span id="sub-size-text" class="sub-slider-val">100%</span>
+            <input type="range" id="pref-sub-size-slider" min="50" max="200" step="5" value="100" oninput="App.setSubtitleSize(this.value)">
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Text Color</span>
+            <span class="option-desc">Pick a high-contrast subtitle color.</span>
+          </div>
+          <div class="option-control">
+            <div class="sub-color-dots-group">
+              <button type="button" class="sub-color-dot active" data-color="#ffffff" style="background:#ffffff" onclick="App.setSubtitleColor('#ffffff')" aria-label="White"></button>
+              <button type="button" class="sub-color-dot" data-color="#facc15" style="background:#facc15" onclick="App.setSubtitleColor('#facc15')" aria-label="Yellow"></button>
+              <button type="button" class="sub-color-dot" data-color="#38bdf8" style="background:#38bdf8" onclick="App.setSubtitleColor('#38bdf8')" aria-label="Cyan"></button>
+              <button type="button" class="sub-color-dot" data-color="#ec4899" style="background:#ec4899" onclick="App.setSubtitleColor('#ec4899')" aria-label="Magenta"></button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Background Blur</span>
+            <span class="option-desc">Improve legibility with a soft glow.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-sub-blur" onchange="App.savePlayerPreference('streamx_sub_blur', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. ADVERTISEMENTS & FEBBOX CARD (Screenshot 10) -->
+    <div class="settings-card-section" id="settings-card-ads" data-section="ads" style="display:none">
+      <div class="settings-glass-card">
+        <div class="settings-card-header">
+          <h2>Advertisements</h2>
+          <p>Manage how advertisements are displayed on the site.</p>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Enable Advertisements</span>
+            <span class="option-desc">Ads help us keep Cinejoy free for everyone. Consider keeping them enabled to support the site.</span>
+          </div>
+          <div class="option-control">
+            <label class="ios-switch">
+              <input type="checkbox" id="pref-enable-ads" onchange="App.savePlayerPreference('streamx_enable_ads', this.checked)">
+              <span class="ios-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-glass-card" style="margin-top:20px;">
+        <div class="settings-card-header">
+          <h2>Febbox Integration <span class="info-bubble" title="Febbox UI token enables 4K streams with no buffering">ⓘ</span></h2>
+          <p>Import your UI cookie from febbox to get access to 4K Streams with no buffers and multiple audio tracks.</p>
+        </div>
+        <div class="settings-febbox-wrap">
+          <input type="text" id="pref-febbox-cookie" class="settings-text-input" placeholder="Paste febbox UI token / cookie here..." autocomplete="off">
+          <button type="button" class="settings-white-pill-btn" onclick="App.saveFebboxCookie()">Save Token</button>
+        </div>
+      </div>
+
+      <div class="settings-glass-card" style="margin-top:20px;">
+        <div class="settings-card-header">
+          <h2>Data &amp; Offline Management</h2>
+          <p>Install standalone app, review disclaimer, or reset local storage.</p>
+        </div>
+        <div class="settings-btn-grid">
+          <button type="button" class="settings-action-btn" onclick="App.installPWA()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+            <span>Install CineJoy App</span>
+          </button>
+          <button type="button" class="settings-action-btn" onclick="App.openDisclaimerModal('non-hosting')">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>Guidelines &amp; DMCA</span>
+          </button>
+          <button type="button" class="settings-action-btn danger" onclick="App.clearSiteData()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z"/></svg>
+            <span>Reset Local Cache</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -715,9 +1174,10 @@
     <div class="profile-hero-content">
       <div class="profile-avatar-wrap">
         <div class="profile-page-avatar-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
           </svg>
         </div>
       </div>
@@ -727,14 +1187,20 @@
           <span class="profile-member-date">Client-Side Session</span>
         </div>
         <h1 class="profile-name">My Library &amp; Preferences</h1>
-        <p class="profile-bio">Your watch history, saved watchlist titles, and playback settings stored locally in your browser. No cloud account or tracking required.</p>
+        <p class="profile-bio">Your watch history, saved watchlist titles, and playback settings stored locally in your
+          browser. No cloud account or tracking required.</p>
         <div class="profile-action-btns">
           <button class="btn-profile-primary" onclick="App.showPage('settings-page')">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46.22 14.24 0 14 0h-4c-.24 0-.46.22-.49.49l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.27.25.49.49.49h4c.24 0 .46-.22.49-.49l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path
+                d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46.22 14.24 0 14 0h-4c-.24 0-.46.22-.49.49l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.27.25.49.49.49h4c.24 0 .46-.22.49-.49l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z" />
+            </svg>
             Preferences &amp; Settings
           </button>
           <button class="btn-profile-secondary" onclick="App.clearHistoryFromProfile()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12z" />
+            </svg>
             Clear History
           </button>
         </div>
@@ -749,7 +1215,10 @@
   <div class="profile-stats-grid">
     <div class="stat-card">
       <div class="stat-card-icon icon-emerald">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+          <path
+            d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+        </svg>
       </div>
       <div class="stat-card-data">
         <div class="stat-card-number" id="prof-stat-watched-count">0</div>
@@ -758,7 +1227,10 @@
     </div>
     <div class="stat-card">
       <div class="stat-card-icon icon-cyan">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+          <path
+            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+        </svg>
       </div>
       <div class="stat-card-data">
         <div class="stat-card-number" id="prof-stat-anime-count">0</div>
@@ -767,7 +1239,10 @@
     </div>
     <div class="stat-card">
       <div class="stat-card-icon icon-violet">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+          <path
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+        </svg>
       </div>
       <div class="stat-card-data">
         <div class="stat-card-number" id="prof-stat-saved-count">0</div>
@@ -776,7 +1251,10 @@
     </div>
     <div class="stat-card">
       <div class="stat-card-icon icon-amber">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+          <path
+            d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
+        </svg>
       </div>
       <div class="stat-card-data">
         <div class="stat-card-number" id="prof-stat-time-val">0h 0m</div>
@@ -804,28 +1282,36 @@
 <div id="page-404" class="page page-404-wrap" style="display:none" role="main" aria-label="Scene Not Found">
   <div class="not-found-card">
     <div class="clapperboard-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20.2 6 3 11l-.9-2.4 17.2-5z"/>
-        <path d="m6.2 5.3 3.1 4.4"/>
-        <path d="m11.6 3.7 3.1 4.4"/>
-        <path d="m17 2.1 3.1 4.4"/>
-        <path d="M4 11v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9Z"/>
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.2 6 3 11l-.9-2.4 17.2-5z" />
+        <path d="m6.2 5.3 3.1 4.4" />
+        <path d="m11.6 3.7 3.1 4.4" />
+        <path d="m17 2.1 3.1 4.4" />
+        <path d="M4 11v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9Z" />
       </svg>
     </div>
     <div class="hero-404" aria-label="404">404</div>
     <h1>This scene doesn't exist.</h1>
     <p>The page you're looking for may have moved or the link may be incorrect.</p>
-    <form class="search-box not-found-search" role="search" onsubmit="event.preventDefault(); const q = document.getElementById('spa-404-search-input').value.trim(); if(q) { App.showPage('search'); App.doSearch(q); }">
-      <input type="text" id="spa-404-search-input" class="search-input" placeholder="Search movies, series or anime..." aria-label="Search titles">
+    <form class="search-box not-found-search" role="search"
+      onsubmit="event.preventDefault(); const q = document.getElementById('spa-404-search-input').value.trim(); if(q) { App.showPage('search'); App.doSearch(q); }">
+      <input type="text" id="spa-404-search-input" class="search-input" placeholder="Search movies, series or anime..."
+        aria-label="Search titles">
       <button type="submit" class="search-btn">Search</button>
     </form>
     <div class="actions">
       <button type="button" class="btn btn-primary" onclick="App.showPage('home')">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+        </svg>
         Back to Home
       </button>
-      <button type="button" class="btn btn-secondary" onclick="if(history.length > 1) { history.back(); } else { App.showPage('home'); }">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <button type="button" class="btn btn-secondary"
+        onclick="if(history.length > 1) { history.back(); } else { App.showPage('home'); }">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
         Go Back
       </button>
     </div>
@@ -835,142 +1321,137 @@
 <!-- ── PLAYER MODAL ───────────────────────────────── -->
 <div id="player-modal-bg" role="dialog" aria-modal="true" aria-label="Content details"></div>
 
-<!-- ── ADVANCED CINEMA STREAMING FOOTER ─────────────── -->
+<!-- ── FULL-SCREEN PRE-PLAYBACK CINEMATIC LOADER (Image 15) ───────────── -->
+<div id="cinejoy-watch-loader" class="cinejoy-watch-loader" style="display:none;" aria-hidden="true">
+  <div class="watch-loader-backdrop" id="watch-loader-backdrop"></div>
+  <div class="watch-loader-vignette"></div>
+  <button class="watch-loader-back-btn" onclick="Player.cancelWatchLoader()" aria-label="Cancel">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+  </button>
+  <div class="watch-loader-content">
+    <div class="watch-loader-logo-wrap">
+      <svg class="cinejoy-brand-mascot" viewBox="0 0 100 100" width="96" height="96" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="5" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <path d="M22 16 C16 16 12 20 12 26 L12 42 C16 42 19 45 19 50 C19 55 16 58 12 58 L12 74 C12 80 16 84 22 84 L78 84 C84 84 88 80 88 74 L88 58 C84 58 81 55 81 50 C81 45 84 42 88 42 L88 26 C88 20 84 16 78 16 Z" fill="#ffffff" filter="url(#logoGlow)"/>
+        <path d="M26 16 L36 30 M46 16 L56 30 M66 16 L76 30" stroke="#090a10" stroke-width="4" stroke-linecap="round"/>
+        <line x1="16" y1="30" x2="84" y2="30" stroke="#090a10" stroke-width="3"/>
+        <polygon points="36,44 36,58 48,51" fill="#090a10"/>
+        <path d="M58 52 Q66 42 74 52" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M42 66 Q55 76 68 66" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+    <div class="watch-loader-status" id="watch-loader-status">Pinging Solara...</div>
+  </div>
+</div>
+
+<!-- ── FULL-VIEWPORT BIG WATCH PLAYER (Image 16) ───────────── -->
+<div id="cinejoy-big-player" class="cinejoy-big-player" style="display:none;" role="dialog" aria-modal="true" aria-label="Cinema Player">
+  <div class="big-player-top-bar" id="big-player-top-bar">
+    <button class="big-player-back-btn" onclick="Player.exitBigWatch()" aria-label="Exit Player">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+    </button>
+    <div class="big-player-title-wrap">
+      <h2 class="big-player-title" id="big-player-title">Title</h2>
+      <span class="big-player-subtitle" id="big-player-subtitle">Direct Stream</span>
+    </div>
+
+    <!-- Top-Center Floating Server Switcher (7movies.ac style) -->
+    <div class="big-player-server-bar" id="big-player-server-bar">
+      <div class="server-badge-pill" title="Playback Mode">
+        <span>Direct</span>
+        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="server-select-dropdown-wrap" id="server-select-dropdown-wrap">
+        <button type="button" class="server-active-pill" id="server-active-pill" onclick="Player.toggleServerDropdown(event)" aria-haspopup="true" aria-expanded="false">
+          <span id="current-server-label">NXsha</span>
+          <svg class="dropdown-chevron-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="server-dropdown-menu" id="server-dropdown-menu" style="display:none;" role="menu"></div>
+      </div>
+    </div>
+
+    <div class="big-player-actions">
+      <button class="big-player-action-btn" onclick="Player.toggleBigPlayerFullscreen()" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="big-player-toast" id="big-player-toast" style="display:none;"></div>
+  <div class="big-player-frame-wrap" id="big-player-frame-wrap">
+    <video
+      id="big-video-player"
+      class="big-stream-frame"
+      style="display:none; width:100%; height:100%; object-fit:contain; background:#000;"
+      controls
+      playsinline>
+    </video>
+    <iframe
+      id="big-stream-frame"
+      class="big-stream-frame"
+      allow="accelerometer; autoplay *; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen *"
+      allowfullscreen="true"
+      webkitallowfullscreen="true"
+      mozallowfullscreen="true"
+      referrerpolicy="no-referrer-when-downgrade"
+      sandbox="allow-scripts allow-same-origin allow-forms"
+      src="">
+    </iframe>
+  </div>
+</div>
+
+<!-- ── MINIMALIST STREAMING FOOTER (Clean cinejoy.pk Style) ─────────────── -->
 <footer class="cinema-footer">
   <div class="footer-container">
-    <!-- Top Branding & Safe Harbor Notice -->
-    <div class="footer-top">
-      <div class="footer-brand">
-        <div class="footer-logo" onclick="App.showPage('home')" role="link" tabindex="0">
-          <svg class="brand-logo-svg" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
-            <defs>
-              <linearGradient id="cjPrismFoot" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff2a6d"/>
-                <stop offset="50%" stop-color="#9333ea"/>
-                <stop offset="100%" stop-color="#00f2fe"/>
-              </linearGradient>
-              <linearGradient id="cjNineFoot" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#00f2fe"/>
-                <stop offset="100%" stop-color="#ff2a6d"/>
-              </linearGradient>
-            </defs>
-            <rect width="32" height="32" rx="8" fill="#141829" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-            <path d="M14 13.5 C13 15, 11.2 16, 9.5 16 C 7.5 16, 6 14.5, 6 12.5 C 6 10.5, 7.5 9, 9.5 9 C 11.5 9, 13 10.5, 13 12.5 C 13 17, 10.5 22, 7 23.5" fill="none" stroke="url(#cjNineFoot)" stroke-width="2.2" stroke-linecap="round"/>
-            <path d="M15.5 10.5 C15.5 9.5, 16.5 8.8, 17.4 9.4 L23.5 14.2 C24.3 14.8, 24.3 16, 23.5 16.6 L17.4 21.4 C16.5 22, 15.5 21.3, 15.5 20.3 Z" fill="url(#cjPrismFoot)"/>
-            <path d="M8 24.5 C12 27.5, 19 27, 23 23" fill="none" stroke="#00f2fe" stroke-width="1.6" stroke-linecap="round"/>
-            <circle cx="24.5" cy="10" r="1.4" fill="#ff2a6d"/>
-          </svg>
-          <span><span class="brand-num">9</span>Cine<span class="brand-accent">Joy</span></span>
-        </div>
-        <p class="footer-tagline">Next-Generation Cinema &amp; Anime Interface. Streaming with multi-server resilience, zero tracking, and refined visual aesthetics.</p>
-        <div class="footer-status-pill">
-          <span class="status-dot"></span>
-          <span>All 9 Streaming Nodes Operational</span>
-        </div>
-      </div>
-
-      <!-- Prominent Legal Disclaimer & Non-Hosting Glass Notice -->
-      <div class="footer-disclaimer-box">
-        <div class="disclaimer-box-header">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="var(--primary)"><path d="M12 2L1 21h22L12 2zm0 3.45l8.28 14.55H3.72L12 5.45zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
-          <h4>Legal Disclaimer &amp; Non-Hosting Notice</h4>
-        </div>
-        <p class="disclaimer-box-text">
-          <strong>9CineJoy does not host, upload, archive, or transmit any video, audio, or media files on its servers.</strong>
-          9CineJoy provides an interface for discovering and accessing media content and may rely on external sources and services. 9CineJoy exercises no control over third-party content and does not guarantee the availability, accuracy, or integrity of externally supplied media. All trademarks, service marks, and copyrighted materials belong to their respective owners. Users are responsible for complying with all applicable local copyright laws and regulations.
-        </p>
-        <div class="disclaimer-box-actions">
-          <button class="footer-action-btn" onclick="App.openDisclaimerModal('non-hosting')">
-            <span>Non-Hosting Policy</span>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-          </button>
-          <button class="footer-action-btn" onclick="App.openDisclaimerModal('guidelines')">
-            <span>Important Guidelines</span>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-          </button>
-          <button class="footer-action-btn" onclick="App.openDisclaimerModal('dmca')">
-            <span>DMCA Notice</span>
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-          </button>
-        </div>
-      </div>
+    <div class="footer-brand" onclick="App.showPage('home')" role="link" tabindex="0">
+      <svg class="brand-logo-svg" viewBox="0 0 100 100" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M22 16 C16 16 12 20 12 26 L12 42 C16 42 19 45 19 50 C19 55 16 58 12 58 L12 74 C12 80 16 84 22 84 L78 84 C84 84 88 80 88 74 L88 58 C84 58 81 55 81 50 C81 45 84 42 88 42 L88 26 C88 20 84 16 78 16 Z" fill="#ffffff"/>
+        <path d="M26 16 L36 30 M46 16 L56 30 M66 16 L76 30" stroke="#090a10" stroke-width="4" stroke-linecap="round"/>
+        <line x1="16" y1="30" x2="84" y2="30" stroke="#090a10" stroke-width="3"/>
+        <polygon points="36,44 36,58 48,51" fill="#090a10"/>
+        <path d="M58 52 Q66 42 74 52" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M42 66 Q55 76 68 66" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+      </svg>
+      <span>Cine<span class="brand-accent">Joy</span></span>
     </div>
 
-    <!-- Navigation & Quick Columns -->
-    <div class="footer-grid">
-      <div class="footer-col">
-        <h5 class="footer-heading">Entertainment Hub</h5>
-        <ul class="footer-links">
-          <li><a href="#/" onclick="App.showPage('home')">Home &amp; Featured</a></li>
-          <li><a href="#/movies" onclick="App.openBrowse('trending_movies')">Movies (Hollywood)</a></li>
-          <li><a href="#/series" onclick="App.openBrowse('trending_tv')">TV Series</a></li>
-          <li><a href="#/dramas" onclick="App.openBrowse('kdrama')">K-Drama &amp; Asian Dramas</a></li>
-          <li><a href="#/anime" onclick="App.showPage('anime')">Anime &amp; Donghua</a></li>
-          <li><a href="#/browse/top_movies" onclick="App.openBrowse('top_movies')">Top Rated Cinema</a></li>
-        </ul>
-      </div>
+    <nav class="footer-nav-simple" aria-label="Footer Navigation">
+      <a href="#/" onclick="App.showPage('home')">Home</a>
+      <a href="#/movies" onclick="App.handleNavItemClick('movies', 'browse', 'trending_movies')">Movies</a>
+      <a href="#/series" onclick="App.handleNavItemClick('series', 'browse', 'trending_tv')">Shows</a>
+      <a href="#/anime" onclick="App.showPage('anime')">Anime</a>
+      <a href="#/livetv" onclick="App.showPage('livetv')">Live TV</a>
+      <a href="#/watchlist" onclick="App.showPage('watchlist')">My List</a>
+      <a href="javascript:void(0)" onclick="App.openDisclaimerModal('non-hosting')">Disclaimer</a>
+      <a href="javascript:void(0)" onclick="App.openDisclaimerModal('dmca')">DMCA</a>
+    </nav>
 
-      <div class="footer-col">
-        <h5 class="footer-heading">My Library &amp; Account</h5>
-        <ul class="footer-links">
-          <li><a href="#/watchlist" onclick="App.showPage('watchlist')">My Watchlist</a></li>
-          <li><a href="#/continue" onclick="App.showPage('continue-page')">Continue Watching</a></li>
-          <li><a href="#/history" onclick="App.showPage('history-page')">Viewing History</a></li>
-          <li><a href="#/profile" onclick="App.showPage('profile')">Profile &amp; VIP Stats</a></li>
-          <li><a href="#/settings" onclick="App.showPage('settings-page')">Playback Settings</a></li>
-        </ul>
-      </div>
+    <p class="footer-tagline-simple">
+      CineJoy does not host or store any media files on its servers. All streams and metadata are provided by independent third-party sources.
+    </p>
 
-      <div class="footer-col">
-        <h5 class="footer-heading">Compliance &amp; Legal</h5>
-        <ul class="footer-links">
-          <li><a href="javascript:void(0)" onclick="App.openDisclaimerModal('non-hosting')">Non-Hosting Disclaimer</a></li>
-          <li><a href="javascript:void(0)" onclick="App.openDisclaimerModal('guidelines')">Important Guidelines</a></li>
-          <li><a href="javascript:void(0)" onclick="App.openDisclaimerModal('dmca')">DMCA &amp; Copyright Policy</a></li>
-          <li><a href="javascript:void(0)" onclick="App.openDisclaimerModal('privacy')">Zero-Tracking Privacy</a></li>
-          <li><a href="javascript:void(0)" onclick="App.openDisclaimerModal('terms')">Terms of Service</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-col">
-        <h5 class="footer-heading">Important Notes &amp; Tips</h5>
-        <div class="footer-tips-card">
-          <div class="tip-item">
-            <span class="tip-icon">🛡️</span>
-            <div><strong>Ad-Blocker Recommended:</strong> Use uBlock Origin or Brave browser to block third-party iframe popups.</div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-icon">⚡</span>
-            <div><strong>Instant Server Switching:</strong> If Server 1 encounters latency, switch to Server 2–9 with one tap.</div>
-          </div>
-          <div class="tip-item">
-            <span class="tip-icon">🔒</span>
-            <div><strong>100% Private:</strong> All watchlist items and timestamps live safely in your local browser storage.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Copyright Bar -->
-    <div class="footer-bottom">
-      <div class="footer-copy">
-        &copy; 2026 9CineJoy Cinema. All streams &amp; downloads originate from independent third-party hosts. Personal, non-commercial use only.
-      </div>
-      <div class="footer-bottom-links">
-        <a href="javascript:void(0)" onclick="App.openDisclaimerModal('non-hosting')">Non-Hosting Notice</a>
-        <span>•</span>
-        <a href="javascript:void(0)" onclick="App.openDisclaimerModal('guidelines')">Guidelines</a>
-        <span>•</span>
-        <a href="javascript:void(0)" onclick="App.openDisclaimerModal('dmca')">DMCA</a>
-        <span>•</span>
-        <a href="javascript:void(0)" onclick="App.openDisclaimerModal('privacy')">Privacy</a>
-      </div>
+    <div class="footer-copy-simple">
+      &copy; 2026 CineJoy &bull; Stream Movies, Shows &amp; Anime
     </div>
   </div>
 </footer>
 
 <!-- ── LEGAL DISCLAIMER & IMPORTANT GUIDELINES MODAL ── -->
-<div id="disclaimer-modal-bg" class="profile-modal-backdrop" style="display:none" role="dialog" aria-modal="true" aria-label="Legal Disclaimer and Guidelines">
+<div id="disclaimer-modal-bg" class="profile-modal-backdrop" style="display:none" role="dialog" aria-modal="true"
+  aria-label="Legal Disclaimer and Guidelines">
   <div class="disclaimer-modal-card">
     <div class="profile-modal-header">
       <div style="display:flex; align-items:center; gap:10px;">
@@ -978,26 +1459,39 @@
         <h3 style="font-size:18px; font-weight:700; color:#fff;">Disclaimer &amp; Important Guidelines</h3>
       </div>
       <button class="modal-close-btn" onclick="App.closeDisclaimerModal()" aria-label="Close modal">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path
+            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+        </svg>
       </button>
     </div>
 
     <!-- Modal Tabs Navigation -->
     <div class="disclaimer-modal-nav">
       <button class="disclaimer-tab-btn active" data-tab="non-hosting" onclick="App.switchDisclaimerTab('non-hosting')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 2L1 21h22L12 2zm0 3.45l8.28 14.55H3.72L12 5.45zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+          <path d="M12 2L1 21h22L12 2zm0 3.45l8.28 14.55H3.72L12 5.45zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z" />
+        </svg>
         <span>Non-Hosting Policy</span>
       </button>
       <button class="disclaimer-tab-btn" data-tab="guidelines" onclick="App.switchDisclaimerTab('guidelines')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+        </svg>
         <span>Important Guidelines</span>
       </button>
       <button class="disclaimer-tab-btn" data-tab="dmca" onclick="App.switchDisclaimerTab('dmca')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+          <path
+            d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+        </svg>
         <span>DMCA &amp; Copyright</span>
       </button>
       <button class="disclaimer-tab-btn" data-tab="privacy" onclick="App.switchDisclaimerTab('privacy')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+          <path
+            d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+        </svg>
         <span>Privacy &amp; Local Storage</span>
       </button>
     </div>
@@ -1009,95 +1503,128 @@
         <div class="disclaimer-callout-warning">
           <div class="callout-icon">🛡️</div>
           <div>
-            <strong>Essential Notice: 9CineJoy does NOT host or store any media.</strong>
-            <p>Every video stream, iframe embed, audio file, subtitle, and download link accessible through 9CineJoy is hosted on third-party servers not owned, maintained, or controlled by 9CineJoy.</p>
+            <strong>Essential Notice: CineJoy does NOT host or store any media.</strong>
+            <p>Every video stream, iframe embed, audio file, subtitle, and download link accessible through CineJoy is
+              hosted on third-party servers not owned, maintained, or controlled by CineJoy.</p>
           </div>
         </div>
 
         <h4 class="disclaimer-section-title">1. Automated Content Indexing</h4>
-        <p class="disclaimer-p">9CineJoy is an automated client-side web application designed to organize and index publicly accessible metadata from public databases. When media playback is initiated, the application connects to external third-party services and content delivery networks to present streams. 9CineJoy does not host, manage, or control these external services.</p>
+        <p class="disclaimer-p">CineJoy is an automated client-side web application designed to organize and index
+          publicly accessible metadata from public databases. When media playback is initiated, the application connects
+          to external third-party services and content delivery networks to present streams. CineJoy does not host,
+          manage, or control these external services.</p>
 
         <h4 class="disclaimer-section-title">2. Zero Server-Side Media Storage</h4>
-        <p class="disclaimer-p">9CineJoy operates <strong>without any local or remote file storage, video transcoding servers, or media upload pipelines</strong>. 9CineJoy servers do not hold, upload, copy, or distribute copyrighted video files. No proprietary video files exist on any server operated by 9CineJoy.</p>
+        <p class="disclaimer-p">CineJoy operates <strong>without any local or remote file storage, video transcoding
+            servers, or media upload pipelines</strong>. CineJoy servers do not hold, upload, copy, or distribute
+          copyrighted video files. No proprietary video files exist on any server operated by CineJoy.</p>
 
         <h4 class="disclaimer-section-title">3. Third-Party Content &amp; Links</h4>
-        <p class="disclaimer-p">Any stream playback, advertisements displayed within external player frames, or external download mirrors are strictly the responsibility of the respective third-party providers. 9CineJoy disclaims all liability regarding the availability, legality, performance, or content provided by external sources.</p>
+        <p class="disclaimer-p">Any stream playback, advertisements displayed within external player frames, or external
+          download mirrors are strictly the responsibility of the respective third-party providers. CineJoy disclaims
+          all liability regarding the availability, legality, performance, or content provided by external sources.</p>
       </div>
 
       <!-- 2. Important User Guidelines -->
       <div id="disclaimer-tab-guidelines" class="disclaimer-tab-content" style="display:none;">
-        <h4 class="disclaimer-section-title">9CineJoy User Guidelines &amp; Recommendations</h4>
-        
+        <h4 class="disclaimer-section-title">CineJoy User Guidelines &amp; Recommendations</h4>
+
         <div class="guideline-card-grid">
           <div class="guideline-card">
             <div class="guideline-icon">🛡️</div>
             <div class="guideline-title">Use Ad &amp; Popup Blockers</div>
-            <p class="guideline-text">External embed servers may display popups or third-party ads. We strongly recommend using <strong>uBlock Origin</strong> or the <strong>Brave Browser</strong> for a clean, uninterrupted cinema experience.</p>
+            <p class="guideline-text">External embed servers may display popups or third-party ads. We strongly
+              recommend using <strong>uBlock Origin</strong> or the <strong>Brave Browser</strong> for a clean,
+              uninterrupted cinema experience.</p>
           </div>
 
           <div class="guideline-card">
             <div class="guideline-icon">⚡</div>
             <div class="guideline-title">Multi-Server Switching</div>
-            <p class="guideline-text">If you experience slow loading, buffering, or an unavailable stream on Server 1, immediately switch to <strong>Server 2 through Server 9</strong> using the server buttons beneath the player.</p>
+            <p class="guideline-text">If you experience slow loading, buffering, or an unavailable stream on Server 1,
+              immediately switch to <strong>Server 2 through Server 9</strong> using the server buttons beneath the
+              player.</p>
           </div>
 
           <div class="guideline-card">
             <div class="guideline-icon">🌐</div>
             <div class="guideline-title">DNS &amp; Connection Optimization</div>
-            <p class="guideline-text">For optimal streaming speed and to bypass ISP throttling, consider using privacy-focused DNS services such as <strong>Cloudflare 1.1.1.1</strong> or <strong>Google Public DNS (8.8.8.8)</strong>.</p>
+            <p class="guideline-text">For optimal streaming speed and to bypass ISP throttling, consider using
+              privacy-focused DNS services such as <strong>Cloudflare 1.1.1.1</strong> or <strong>Google Public DNS
+                (8.8.8.8)</strong>.</p>
           </div>
 
           <div class="guideline-card">
             <div class="guideline-icon">📺</div>
             <div class="guideline-title">Personal Non-Commercial Use</div>
-            <p class="guideline-text">9CineJoy is developed exclusively for personal, private, and educational media exploration. Redistribution, commercial exploitation, or re-broadcasting is strictly prohibited.</p>
+            <p class="guideline-text">CineJoy is developed exclusively for personal, private, and educational media
+              exploration. Redistribution, commercial exploitation, or re-broadcasting is strictly prohibited.</p>
           </div>
         </div>
 
         <h4 class="disclaimer-section-title" style="margin-top:20px;">Playback Quality &amp; Audio Modes</h4>
-        <p class="disclaimer-p">Most anime and movie servers support both Subtitled (SUB) and English Dubbed (DUB) audio. Use the Audio Toggle pills in the player control bar to toggle your preferred audio language instantly.</p>
+        <p class="disclaimer-p">Most anime and movie servers support both Subtitled (SUB) and English Dubbed (DUB)
+          audio. Use the Audio Toggle pills in the player control bar to toggle your preferred audio language instantly.
+        </p>
       </div>
 
       <!-- 3. DMCA & Copyright Policy -->
       <div id="disclaimer-tab-dmca" class="disclaimer-tab-content" style="display:none;">
         <h4 class="disclaimer-section-title">DMCA Notice &amp; Copyright Compliance</h4>
-        <p class="disclaimer-p">9CineJoy respects the intellectual property rights of others and adheres to the Digital Millennium Copyright Act (DMCA) and international copyright legislation. Because 9CineJoy does not host or upload any video files, we cannot delete content from the web.</p>
-        
+        <p class="disclaimer-p">CineJoy respects the intellectual property rights of others and adheres to the Digital
+          Millennium Copyright Act (DMCA) and international copyright legislation. Because CineJoy does not host or
+          upload any video files, we cannot delete content from the web.</p>
+
         <div class="dmca-steps-box">
           <h5>How to Takedown Content at the Source:</h5>
           <ol>
             <li>Identify the specific external host or service delivering the content.</li>
-            <li>Submit a formal DMCA takedown request directly to the responsible host provider. Once removed by the file host, the media will immediately become unplayable across the entire internet, including on 9CineJoy.</li>
-            <li>If you wish to request the removal of specific search metadata or indexing links on 9CineJoy, please send a detailed notice including the exact TMDB / AniList ID and title to our compliance team.</li>
+            <li>Submit a formal DMCA takedown request directly to the responsible host provider. Once removed by the
+              file host, the media will immediately become unplayable across the entire internet, including on CineJoy.
+            </li>
+            <li>If you wish to request the removal of specific search metadata or indexing links on CineJoy, please
+              send a detailed notice including the exact TMDB / AniList ID and title to our compliance team.</li>
           </ol>
         </div>
 
-        <p class="disclaimer-p" style="margin-top:14px;">In accordance with 17 U.S.C. 512(c)(3), any infringement notification must include identification of the copyrighted work, proof of ownership or authorization, and your contact information.</p>
+        <p class="disclaimer-p" style="margin-top:14px;">In accordance with 17 U.S.C. 512(c)(3), any infringement
+          notification must include identification of the copyrighted work, proof of ownership or authorization, and
+          your contact information.</p>
       </div>
 
       <!-- 4. Privacy & Local Storage -->
       <div id="disclaimer-tab-privacy" class="disclaimer-tab-content" style="display:none;">
         <h4 class="disclaimer-section-title">Zero-Tracking &amp; Complete Privacy</h4>
-        <p class="disclaimer-p">9CineJoy is built on a privacy-first, zero-knowledge architecture:</p>
-        
+        <p class="disclaimer-p">CineJoy is built on a privacy-first, zero-knowledge architecture:</p>
+
         <ul class="privacy-checklist">
-          <li><strong>No User Accounts Required:</strong> 9CineJoy never asks for your email address, phone number, passwords, or personal credentials.</li>
-          <li><strong>100% Client-Side Storage:</strong> Your Watchlist, Continue Watching queue, watch history, and volume/playback preferences are stored exclusively on your own device using browser <code>localStorage</code>.</li>
-          <li><strong>Zero Tracking or Selling:</strong> We do not log IP addresses, sell analytics to third-party ad brokers, or track individual user behavior across the web.</li>
-          <li><strong>Complete Data Control:</strong> You can purge all your stored data, watch history, and bookmarks at any moment by clicking "Clear All Storage" in Settings.</li>
+          <li><strong>No User Accounts Required:</strong> CineJoy never asks for your email address, phone number,
+            passwords, or personal credentials.</li>
+          <li><strong>100% Client-Side Storage:</strong> Your Watchlist, Continue Watching queue, watch history, and
+            volume/playback preferences are stored exclusively on your own device using browser
+            <code>localStorage</code>.</li>
+          <li><strong>Zero Tracking or Selling:</strong> We do not log IP addresses, sell analytics to third-party ad
+            brokers, or track individual user behavior across the web.</li>
+          <li><strong>Complete Data Control:</strong> You can purge all your stored data, watch history, and bookmarks
+            at any moment by clicking "Clear All Storage" in Settings.</li>
         </ul>
       </div>
 
       <!-- 5. Terms of Service -->
       <div id="disclaimer-tab-terms" class="disclaimer-tab-content" style="display:none;">
         <h4 class="disclaimer-section-title">Terms of Service &amp; Conditions</h4>
-        <p class="disclaimer-p">By accessing or using 9CineJoy, you acknowledge and agree that 9CineJoy is provided strictly on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind.</p>
-        <p class="disclaimer-p">Users agree not to utilize automated scraping tools against 9CineJoy, and agree that any interaction with third-party embedded players occurs under the terms and conditions established by those respective third parties.</p>
+        <p class="disclaimer-p">By accessing or using CineJoy, you acknowledge and agree that CineJoy is provided
+          strictly on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind.</p>
+        <p class="disclaimer-p">Users agree not to utilize automated scraping tools against CineJoy, and agree that any
+          interaction with third-party embedded players occurs under the terms and conditions established by those
+          respective third parties.</p>
       </div>
     </div>
 
     <div class="profile-modal-footer">
-      <button class="btn-primary" onclick="App.closeDisclaimerModal()" style="width:100%;">I Understand &amp; Agree</button>
+      <button class="btn-primary" onclick="App.closeDisclaimerModal()" style="width:100%;">I Understand &amp;
+        Agree</button>
     </div>
   </div>
 </div>
@@ -1107,59 +1634,84 @@
 <div id="mobile-nav-drawer" class="mobile-nav-drawer">
   <div class="drawer-header">
     <div class="drawer-logo" onclick="App.handleNavItemClick('home', 'page', 'home')">
-      <svg class="brand-logo-svg" viewBox="0 0 64 64" width="26" height="26" aria-hidden="true">
-        <defs>
-          <linearGradient id="cjDrawGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ff3b65"/>
-            <stop offset="60%" stop-color="#e50914"/>
-            <stop offset="100%" stop-color="#990011"/>
-          </linearGradient>
-        </defs>
-        <path d="M32 8 C18.7 8 8 18.7 8 32 C8 45.3 18.7 56 32 56 C43.2 56 52.4 48.3 55.1 37.8 C55.8 35.3 53.9 33 51.4 33 C49.5 33 47.8 34.4 47.3 36.3 C45.2 43.6 39.1 48.8 32 48.8 C22.7 48.8 15.2 41.3 15.2 32 C15.2 22.7 22.7 15.2 32 15.2 C39.1 15.2 45.2 20.4 47.3 27.7 C47.8 29.6 49.5 31 51.4 31 C53.9 31 55.8 28.7 55.1 26.2 C52.4 15.7 43.2 8 32 8 Z" fill="url(#cjDrawGrad)"/>
-        <path d="M28 22.5 C28 21.6 29 21 29.8 21.5 L42.8 29 C43.5 29.4 43.5 30.6 42.8 31 L29.8 38.5 C29 39 28 38.4 28 37.5 Z" fill="#ffffff"/>
+      <svg class="brand-logo-svg" viewBox="0 0 100 100" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M22 16 C16 16 12 20 12 26 L12 42 C16 42 19 45 19 50 C19 55 16 58 12 58 L12 74 C12 80 16 84 22 84 L78 84 C84 84 88 80 88 74 L88 58 C84 58 81 55 81 50 C81 45 84 42 88 42 L88 26 C88 20 84 16 78 16 Z" fill="#ffffff"/>
+        <path d="M26 16 L36 30 M46 16 L56 30 M66 16 L76 30" stroke="#090a10" stroke-width="4" stroke-linecap="round"/>
+        <line x1="16" y1="30" x2="84" y2="30" stroke="#090a10" stroke-width="3"/>
+        <polygon points="36,44 36,58 48,51" fill="#090a10"/>
+        <path d="M58 52 Q66 42 74 52" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M42 66 Q55 76 68 66" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
       </svg>
       <span>Cine<span class="brand-accent">Joy</span></span>
     </div>
     <button class="drawer-close" onclick="App.toggleMobileDrawer()" aria-label="Close navigation drawer">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+        <path
+          d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+      </svg>
     </button>
   </div>
   <div class="drawer-links" id="drawer-links"></div>
 </div>
 
 <!-- ── Floating Mobile Bottom Navigation Bar (Mobile Controls) ── -->
-<nav class="mobile-bottom-nav" id="mobile-bottom-nav" style="top: auto !important; bottom: 0 !important;" aria-label="Mobile Navigation Controls">
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav" style="top: auto !important; bottom: 0 !important;"
+  aria-label="Mobile Navigation Controls">
   <button class="mobile-bottom-nav-item active" id="mob-nav-home" onclick="App.showPage('home')" aria-label="Home">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+    </svg>
     <span>Home</span>
   </button>
-  <button class="mobile-bottom-nav-item" id="mob-nav-movies" onclick="App.handleNavItemClick('movies', 'browse', 'trending_movies')" aria-label="Movies">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+  <button class="mobile-bottom-nav-item" id="mob-nav-movies"
+    onclick="App.handleNavItemClick('movies', 'browse', 'trending_movies')" aria-label="Movies">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <path
+        d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+    </svg>
     <span>Movies</span>
   </button>
-  <button class="mobile-bottom-nav-item" id="mob-nav-tv" onclick="App.handleNavItemClick('series', 'browse', 'trending_tv')" aria-label="TV Shows">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+  <button class="mobile-bottom-nav-item" id="mob-nav-tv"
+    onclick="App.handleNavItemClick('series', 'browse', 'trending_tv')" aria-label="TV Shows">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z" />
+    </svg>
     <span>TV Shows</span>
   </button>
   <button class="mobile-bottom-nav-item" id="mob-nav-anime" onclick="App.showPage('anime')" aria-label="Anime">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.1-4.5h7.6z"/></svg>
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <path d="M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.3-6.2-4.5-6.2 4.5 2.3-7.3-6.1-4.5h7.6z" />
+    </svg>
     <span>Anime</span>
   </button>
   <button class="mobile-bottom-nav-item" id="mob-nav-livetv" onclick="App.showPage('livetv')" aria-label="Live TV">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M21 6h-7.59l3.29-3.3a1 1 0 10-1.41-1.41L12 4.59 8.71 1.29A1 1 0 007.29 2.7L10.59 6H3a2 2 0 00-2 2v12a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2zm0 14H3V8h18v12zM9 10v8l7-4-7-4z"/></svg>
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <path
+        d="M21 6h-7.59l3.29-3.3a1 1 0 10-1.41-1.41L12 4.59 8.71 1.29A1 1 0 007.29 2.7L10.59 6H3a2 2 0 00-2 2v12a2 2 0 002 2h18a2 2 0 002-2V8a2 2 0 00-2-2zm0 14H3V8h18v12zM9 10v8l7-4-7-4z" />
+    </svg>
     <span>Live TV</span>
   </button>
 </nav>
 
+<!-- ── Floating Scroll-To-Top Button (cinejoy.pk style) ────── -->
+<button id="scroll-to-top-btn" class="scroll-to-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" aria-label="Scroll to top" style="display:none">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="19" x2="12" y2="5"></line>
+    <polyline points="5 12 12 5 19 12"></polyline>
+  </svg>
+</button>
+
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=15.0"></script>   <!-- TMDB key, servers, genre maps, HOME_ROWS -->
-<script src="js/tmdb.js?v=15.0"></script>      <!-- TMDB API layer -->
-<script src="js/anilist.js?v=15.0"></script>   <!-- AniList API layer -->
-<script src="js/watchlist.js?v=15.0"></script> <!-- localStorage watchlist -->
-<script src="js/history.js?v=15.0"></script>   <!-- continue watching / recently viewed -->
-<script src="js/player.js?v=15.0"></script>    <!-- detail modal + server picker -->
-<script src="js/livetv.js?v=15.0"></script>    <!-- Live TV & broadcast streaming engine -->
-<script src="js/app.js?v=16.0"></script>       <!-- main app controller, boots on DOMContentLoaded -->
+<script src="js/config.js?v=20.0"></script>
+<script src="js/tmdb.js?v=20.0"></script>
+<script src="js/anilist.js?v=20.0"></script>
+<script src="js/watchlist.js?v=20.0"></script>
+<script src="js/history.js?v=20.0"></script>
+<script src="js/universalPlayer.js?v=1.9"></script>
+<script src="js/player.js?v=20.0"></script>
+<script src="js/livetv.js?v=20.0"></script>
+<script src="js/app.js?v=20.0"></script>
 
 </body>
+
 </html>

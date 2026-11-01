@@ -103,14 +103,19 @@ const App = (() => {
       sidebar?.classList.add("collapsed");
     }
 
-    // Scroll listener for header transparent-to-obsidian transition
+    // Scroll listener for header transparent-to-obsidian transition & Scroll-to-Top button
     const updateHeaderScroll = () => {
       const topHeader = document.getElementById("top-header");
-      if (!topHeader) return;
-      if (window.scrollY > 24) {
-        topHeader.classList.add("is-scrolled");
-      } else {
-        topHeader.classList.remove("is-scrolled");
+      if (topHeader) {
+        if (window.scrollY > 24) {
+          topHeader.classList.add("is-scrolled");
+        } else {
+          topHeader.classList.remove("is-scrolled");
+        }
+      }
+      const topBtn = document.getElementById("scroll-to-top-btn");
+      if (topBtn) {
+        topBtn.style.display = window.scrollY > 350 ? "inline-flex" : "none";
       }
     };
     window.addEventListener("scroll", updateHeaderScroll, { passive: true });
@@ -182,6 +187,16 @@ const App = (() => {
       }
 
       if (e.key === "Escape") {
+        const sModal = document.getElementById("search-modal-backdrop");
+        if (sModal && sModal.style.display !== "none") {
+          toggleSearchModal(false);
+          return;
+        }
+        const bigPlayer = document.getElementById("cinejoy-big-player");
+        if (bigPlayer && bigPlayer.style.display !== "none") {
+          Player.exitBigWatch();
+          return;
+        }
         if (document.getElementById("top-header")?.classList.contains("mobile-search-open")) {
           toggleMobileSearch(false);
           return;
@@ -455,7 +470,7 @@ const App = (() => {
 
     window.addEventListener("appinstalled", () => {
       _deferredPrompt = null;
-      _showToast("🎉 9CineJoy installed successfully!");
+      _showToast("🎉 CineJoy installed successfully!");
     });
   }
 
@@ -1009,60 +1024,32 @@ const App = (() => {
       <div class="hero-video-layer" id="hero-video-layer"></div>
       <div class="hero-cinematic-vignette"></div>
 
-      <div class="hero-top-controls hero-sound-controls">
-        <button class="hero-sound-btn" id="hero-sound-btn" onclick="App.toggleHeroSound('general')" aria-label="Toggle trailer sound" title="Toggle trailer sound" style="display:none">
-          <span class="hero-sound-icon">${_VOLUME_X_SVG}</span>
-          <span class="hero-sound-text">Muted</span>
-        </button>
-      </div>
-
       <div class="hero-content">
         <h1 class="hero-title">${_esc(item.title)}</h1>
         <div class="hero-meta-bar">
-          ${ratingVal ? `
-          <span class="hero-meta-item hero-meta-rating">
-            <svg class="star-icon" viewBox="0 0 24 24" width="14" height="14" fill="#f59e0b"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-            <span>${ratingVal}</span>
-          </span>
-          <span class="hero-meta-sep"></span>` : ""}
-          ${item.year ? `<span class="hero-meta-item hero-meta-year">${item.year}</span><span class="hero-meta-sep"></span>` : ""}
-          <span class="hero-meta-item hero-meta-type">${item.media === "movie" ? "Movie" : "TV Show"}</span>
-          ${genreNames ? `<span class="hero-meta-sep"></span><span class="hero-meta-item hero-meta-genre">${_esc(genreNames)}</span>` : ""}
+          ${ratingVal ? `<span class="hero-meta-item hero-meta-rating">★ ${ratingVal}/10</span>` : ""}
+          ${item.year ? `<span class="hero-meta-item hero-meta-year">📅 ${item.year}</span>` : ""}
+          <span class="hero-meta-item hero-meta-genre">🔍 ${_esc(genreNames || (item.media === "movie" ? "Movie" : "Series"))}</span>
         </div>
         <p class="hero-overview">${_esc(item.overview.slice(0, 300))}${item.overview.length > 300 ? "…" : ""}</p>
         <div class="hero-btns">
-          <button class="btn-primary hero-btn-watch" onclick="App.openItem(${_jsonAttr(item)})">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-            <span>Watch Now</span>
+          <button class="theme-btn-primary hero-play-btn" onclick="App.openItem(${_jsonAttr(item)})">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            <span>Play</span>
           </button>
-          <button class="btn-secondary hero-btn-add" onclick="App.toggleWL(${_jsonAttr(item)}); App._renderHero();">
+          <button class="theme-btn-secondary hero-circle-btn" onclick="App.toggleWL(${_jsonAttr(item)}); App._renderHero();" aria-label="${isWl ? 'Remove from List' : 'Add to List'}" title="${isWl ? 'In Watchlist' : 'Add to List'}">
             ${isWl ? _CHECK_SVG : _PLUS_SVG}
-            <span>${isWl ? "In Watchlist" : "Add to List"}</span>
           </button>
-          <button class="btn-secondary hero-btn-info" onclick="App.openItem(${_jsonAttr(item)})">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-            <span>More Info</span>
-          </button>
-          <button class="btn-secondary hero-btn-sound" id="hero-action-sound-btn" onclick="App.toggleHeroSound('general')" aria-label="Toggle trailer sound" title="Toggle trailer sound" style="display:none">
-            <span class="hero-sound-icon">${_VOLUME_X_SVG}</span>
-            <span class="hero-sound-text">Muted</span>
+          <button class="theme-btn-secondary hero-circle-btn" onclick="App.openItem(${_jsonAttr(item)})" aria-label="More Info" title="More Info">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
           </button>
         </div>
       </div>
-      <button class="hero-arrow hero-prev" onclick="App.prevHero()" aria-label="Previous featured title">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 18L9 12L15 6"/>
-        </svg>
-      </button>
-      <button class="hero-arrow hero-next" onclick="App.nextHero()" aria-label="Next featured title">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 18L15 12L9 6"/>
-        </svg>
-      </button>
       <div class="hero-dots">
         ${_heroItems.map((_, i) =>
           `<button class="hero-dot${i === _heroIdx ? " active" : ""}"
-            onclick="App.goHero(${i})" aria-label="Go to slide ${i + 1}"></button>`).join("")}
+            onclick="App.goHero(${i})" aria-label="Go to slide ${i + 1}">
+          </button>`).join("")}
       </div>`;
 
     _setupHeroTouch(hero, prevHero, nextHero);
@@ -1087,6 +1074,26 @@ const App = (() => {
         }
       }
     }, { passive: true });
+  }
+
+  function toggleSearchModal(forceState) {
+    const modal = document.getElementById("search-modal-backdrop");
+    const inp = document.getElementById("search-input");
+    if (!modal) return;
+    const isNowOpen = typeof forceState === "boolean" ? forceState : (modal.style.display === "none");
+    modal.style.display = isNowOpen ? "flex" : "none";
+    if (isNowOpen) {
+      if (inp) {
+        inp.focus();
+        requestAnimationFrame(() => inp.focus());
+      }
+    } else {
+      if (inp) inp.blur();
+      const historyEl = document.getElementById("search-history");
+      if (historyEl) historyEl.classList.remove("show");
+      const liveEl = document.getElementById("search-modal-live-results");
+      if (liveEl) liveEl.style.display = "none";
+    }
   }
 
   function toggleMobileSearch(forceState) {
@@ -1114,6 +1121,8 @@ const App = (() => {
       if (inp) inp.blur();
       const historyEl = document.getElementById("search-history");
       if (historyEl) historyEl.classList.remove("show");
+      const liveEl = document.getElementById("search-modal-live-results");
+      if (liveEl) liveEl.style.display = "none";
     }
   }
 
@@ -1189,57 +1198,33 @@ const App = (() => {
       <div class="hero-video-layer" id="anime-hero-video-layer"></div>
       <div class="hero-cinematic-vignette anime-hero-overlay"></div>
 
-      <div class="hero-top-controls">
-        <button class="hero-sound-btn" id="anime-hero-sound-btn" onclick="App.toggleHeroSound('anime')" aria-label="Unmute trailer" title="Unmute trailer" style="display:none">
-          <span class="hero-sound-icon">${_VOLUME_X_SVG}</span>
-          <span class="hero-sound-text">Muted</span>
-        </button>
-      </div>
-
       <div class="hero-content anime-hero-content">
         <h1 class="hero-title">${_esc(item.title)}</h1>
         <div class="hero-meta-bar">
-          ${ratingVal ? `
-          <span class="hero-meta-item hero-meta-rating">
-            <svg class="star-icon" viewBox="0 0 24 24" width="14" height="14" fill="#f59e0b"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-            <span>${ratingVal}</span>
-          </span>
-          <span class="hero-meta-sep"></span>` : ""}
-          ${item.year ? `<span class="hero-meta-item hero-meta-year">${item.year}</span><span class="hero-meta-sep"></span>` : ""}
-          <span class="hero-meta-item hero-meta-type">${badgeLabel}</span>
-          ${item.episodes ? `<span class="hero-meta-sep"></span><span class="hero-meta-item hero-meta-ep">${item.episodes} EPS</span>` : ""}
-          ${genreNames ? `<span class="hero-meta-sep"></span><span class="hero-meta-item hero-meta-genre">${_esc(genreNames)}</span>` : ""}
+          ${ratingVal ? `<span class="hero-meta-item hero-meta-rating">★ ${ratingVal}/10</span>` : ""}
+          ${item.year ? `<span class="hero-meta-item hero-meta-year">📅 ${item.year}</span>` : ""}
+          <span class="hero-meta-item hero-meta-genre">🔍 ${_esc(genreNames || badgeLabel)}</span>
+          ${item.episodes ? `<span class="hero-meta-item hero-meta-ep">${item.episodes} EPS</span>` : ""}
         </div>
         <p class="hero-overview">${_esc(item.overview.slice(0, 300))}${item.overview.length > 300 ? "…" : ""}</p>
         <div class="hero-btns">
-          <button class="btn-primary hero-btn-watch anime-btn-primary" onclick="App.openItem(${_jsonAttr(item)})">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-            <span>Watch Anime</span>
+          <button class="theme-btn-primary hero-play-btn" onclick="App.openItem(${_jsonAttr(item)})">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            <span>Play</span>
           </button>
-          <button class="btn-secondary hero-btn-add" onclick="App.toggleWL(${_jsonAttr(item)}); App._renderAnimeHero();">
+          <button class="theme-btn-secondary hero-circle-btn" onclick="App.toggleWL(${_jsonAttr(item)}); App._renderAnimeHero();" aria-label="${isWl ? 'Remove from List' : 'Add to List'}" title="${isWl ? 'In Watchlist' : 'Add to List'}">
             ${isWl ? _CHECK_SVG : _PLUS_SVG}
-            <span>${isWl ? "In Watchlist" : "Add to List"}</span>
           </button>
-          <button class="btn-secondary hero-btn-info" onclick="App.openItem(${_jsonAttr(item)})">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-            <span>Details</span>
+          <button class="theme-btn-secondary hero-circle-btn" onclick="App.openItem(${_jsonAttr(item)})" aria-label="More Info" title="More Info">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
           </button>
         </div>
       </div>
-      <button class="hero-arrow hero-prev" onclick="App.prevAnimeHero()" aria-label="Previous featured anime">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 18L9 12L15 6"/>
-        </svg>
-      </button>
-      <button class="hero-arrow hero-next" onclick="App.nextAnimeHero()" aria-label="Next featured anime">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 18L15 12L9 6"/>
-        </svg>
-      </button>
       <div class="hero-dots">
         ${_animeHeroItems.map((_, i) =>
           `<button class="hero-dot${i === _animeHeroIdx ? " active" : ""}"
-            onclick="App.goAnimeHero(${i})" aria-label="Go to anime slide ${i + 1}"></button>`).join("")}
+            onclick="App.goAnimeHero(${i})" aria-label="Go to anime slide ${i + 1}">
+          </button>`).join("")}
       </div>`;
 
     _setupHeroTouch(hero, prevAnimeHero, nextAnimeHero);
@@ -1361,6 +1346,7 @@ const App = (() => {
     _generalHomeLoaded = true;
     await Promise.all([
       _loadHero(),
+      _renderBrowseProvidersRow(),
       _renderHomeRows(),
       _renderStreamingPlatformSection()
     ]);
@@ -1484,6 +1470,66 @@ const App = (() => {
       }
     } else {
       return await TMDB.fetchRow(row, page);
+    }
+  }
+
+  // ── Browse by Provider Row (Matches cinejoy.pk Pill Layout) ───────────
+  const _BROWSE_PROVIDERS = [
+    { platformId: "netflix", name: "Netflix", color: "#e50914", icon: "NETFLIX" },
+    { platformId: "apple", name: "Apple TV+", color: "#ffffff", icon: "tv+" },
+    { platformId: "hulu", name: "Hulu", color: "#1ce783", icon: "hulu" },
+    { platformId: "max", name: "HBO Max", color: "#a855f7", icon: "HBO max" },
+    { platformId: "paramount", name: "Paramount+", color: "#38bdf8", icon: "Paramount+" },
+    { platformId: "peacock", name: "Peacock", color: "#eab308", icon: "peacock" },
+    { platformId: "prime", name: "Prime Video", color: "#00a8e1", icon: "prime video" },
+    { platformId: "disney", name: "Disney+", color: "#3b82f6", icon: "Disney+" },
+    { platformId: "crunchyroll", name: "Crunchyroll", color: "#f97316", icon: "CR" },
+    { platformId: "starz", name: "Starz", color: "#06b6d4", icon: "STARZ" },
+    { platformId: "amc", name: "AMC+", color: "#14b8a6", icon: "amc+" },
+    { platformId: "mgm", name: "MGM+", color: "#fbbf24", icon: "MGM+" },
+    { platformId: "tubi", name: "Tubi TV", color: "#ec4899", icon: "tubi" },
+    { platformId: "pluto", name: "Pluto TV", color: "#ffea00", icon: "pluto tv" }
+  ];
+
+  function _renderBrowseProvidersRow() {
+    const container = document.getElementById("browse-providers-container");
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="browse-providers-header">
+        <h3 class="browse-providers-title">Browse by Provider</h3>
+      </div>
+      <div class="browse-providers-rail" id="browse-providers-rail">
+        ${_BROWSE_PROVIDERS.map(p => `
+          <button type="button" class="provider-pill-card ${p.platformId === _activePlatformId ? 'active' : ''}"
+                  data-platform="${p.platformId}"
+                  title="${_esc(p.name)}"
+                  aria-label="${_esc(p.name)}"
+                  style="--p-color: ${p.color};"
+                  onclick="App.filterByProvider('${p.platformId}', '${_esc(p.name)}')">
+            <span class="provider-pill-badge" style="color:${p.color};">
+              ${_esc(p.icon)}
+            </span>
+          </button>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function filterByProvider(platformId, providerName) {
+    if (_currentPage !== "home") {
+      _showPage("home");
+    }
+    // Update active highlight in the Browse by Provider rail
+    document.querySelectorAll(".provider-pill-card").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-platform") === platformId);
+    });
+    if (typeof selectPlatform === "function") {
+      selectPlatform(platformId);
+      const section = document.getElementById("streaming-platform-section");
+      if (section) {
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
   }
 
@@ -1948,26 +1994,43 @@ const App = (() => {
       </div>`;
   }
 
-  // ── History rows (Continue Watching / Recently Viewed) ─────────────────
+  // ── History rows (Unified Watch History) ─────────────────
   function _renderHistoryRows() {
     const container = document.getElementById("history-rows");
     if (!container) return;
     container.innerHTML = "";
 
-    const watched = StreamXHistory.getWatchHistory();
-    const recent = StreamXHistory.getRecentlyViewed();
+    const watched = (typeof StreamXHistory !== "undefined" && StreamXHistory.getWatchHistory) ? StreamXHistory.getWatchHistory() : [];
+    const recent = (typeof StreamXHistory !== "undefined" && StreamXHistory.getRecentlyViewed) ? StreamXHistory.getRecentlyViewed() : [];
 
-    if (watched.length) {
-      const sec = _buildStaticRow("Continue Watching", watched, true);
+    // Deduplicate combined watch history
+    const seen = new Set();
+    const combined = [];
+    for (const item of watched) {
+      if (!item || !item.id) continue;
+      const key = `${item.media || "movie"}_${item.id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push(item);
+      }
+    }
+    for (const item of recent) {
+      if (!item || !item.id) continue;
+      const key = `${item.media || "movie"}_${item.id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push(item);
+      }
+    }
+
+    if (combined.length) {
+      const sec = _buildStaticRow("Continue Watching", combined, true);
+      if (_isHistoryEditing) {
+        sec.classList.add("is-editing");
+      }
       container.appendChild(sec);
       const scroll = sec.querySelector("#row-scroll-continue-watching");
       if (scroll) _initRowAutoScroll(scroll, "continue-watching", 0);
-    }
-    if (recent.length) {
-      const sec = _buildStaticRow("Recently Viewed", recent, false);
-      container.appendChild(sec);
-      const scroll = sec.querySelector("#row-scroll-recently-viewed");
-      if (scroll) _initRowAutoScroll(scroll, "recently-viewed", 1);
     }
   }
 
@@ -1978,8 +2041,20 @@ const App = (() => {
     section.id = `row-${rowId}`;
     section.innerHTML = `
       <div class="row-header">
-        <h2 class="row-title">${label}</h2>
-        ${label === "Continue Watching" ? `<button class="row-see-all" onclick="StreamXHistory.clearWatchHistory();App._renderHistoryRows()">Clear All</button>` : ""}
+        <div class="row-header-title-group" style="display:flex; align-items:center; gap:10px;">
+          <h2 class="row-title">${label}</h2>
+          ${(label === "Watch History" || label === "Continue Watching") ? `
+            <button class="row-edit-pencil-btn" onclick="App.toggleContinueWatchingEdit()" title="Manage Watch History" aria-label="Manage Watch History">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+            </button>` : ""}
+        </div>
+        ${(label === "Watch History" || label === "Continue Watching") ? `
+          <button type="button" class="row-clear-all-btn" onclick="App.clearAllWatchHistory()" title="Clear Watch History">
+            Clear All
+          </button>` : ""}
       </div>
       <div class="row-rail-wrap">
         <button class="row-arrow row-arrow-prev" onclick="App.scrollRow('row-scroll-${rowId}', -1)" aria-label="Scroll left">
@@ -2019,6 +2094,9 @@ const App = (() => {
       timeHint = "In progress";
     }
 
+    const safeId = String(item.id || "").replace(/'/g, "\\'");
+    const safeMedia = String(item.media || "movie").replace(/'/g, "\\'");
+
     return `
       <div class="card history-card" onclick="App.openItem(${_jsonAttr(item)})" role="button" tabindex="0" aria-label="Resume ${_esc(item.title)}">
         <div class="card-poster history-poster">
@@ -2028,7 +2106,7 @@ const App = (() => {
             <div class="card-play-btn" aria-hidden="true">${_PLAY_SVG}</div>
           </div>
           ${epLabel ? `<div class="history-ep">${epLabel}</div>` : ""}
-          <button class="history-remove-btn" onclick="event.stopPropagation();App.removeFromHistory(${_jsonAttr(item.id)}, '${item.media}')" aria-label="Remove from Continue Watching" title="Remove">
+          <button type="button" class="history-remove-btn" onclick="event.stopPropagation(); event.preventDefault(); App.removeFromHistory('${safeId}', '${safeMedia}')" ontouchstart="event.stopPropagation();" aria-label="Remove from Watch History" title="Remove from Watch History">
             ${_CLOSE_SVG}
           </button>
           <div class="history-progress-track">
@@ -2053,9 +2131,43 @@ const App = (() => {
       if (typeof StreamXHistory.removeFromRecent === "function") {
         StreamXHistory.removeFromRecent(id, media);
       }
-      _renderHistoryRows();
-      _showToast("Removed successfully");
     }
+    _renderHistoryRows();
+    if (_currentPage === "history-page") {
+      _renderHistoryPage();
+    }
+    if (_currentPage === "continue-page") {
+      _renderContinuePage();
+    }
+    if (_currentPage === "profile-page") {
+      _renderProfilePage();
+    }
+    _showToast("Removed from history");
+  }
+
+  function clearAllWatchHistory() {
+    if (window.StreamXHistory && typeof StreamXHistory.clearHistory === "function") {
+      StreamXHistory.clearHistory();
+    } else if (window.StreamXHistory) {
+      StreamXHistory.clearWatchHistory?.();
+      StreamXHistory.clearRecentlyViewed?.();
+    }
+    try {
+      localStorage.removeItem("streamx_v2_watch_history");
+      localStorage.removeItem("streamx_v2_recent");
+      localStorage.removeItem("streamx_manga_history");
+    } catch (_) {}
+    _renderHistoryRows();
+    if (_currentPage === "history-page") {
+      _renderHistoryPage();
+    }
+    if (_currentPage === "continue-page") {
+      _renderContinuePage();
+    }
+    if (_currentPage === "profile-page") {
+      _renderProfilePage();
+    }
+    _showToast("Watch history cleared");
   }
 
   // ── Home Page Section Continuous Auto-Horizontal Scroll Manager ──────────
@@ -2282,30 +2394,102 @@ const App = (() => {
     }
   }
 
-  // ── Context-Aware Search & Filter System ──────────────────────────────
+  // ── Context-Aware Search & Filter System (Instant Live Preview + Full View All) ──
+  let _liveSearchTimer = null;
+  let _liveSearchToken = 0;
+
   function onSearchInput(val) {
     clearTimeout(_searchTimer);
+    clearTimeout(_liveSearchTimer);
 
-    // Show search history dropdown if input is active
+    const query = (val || "").trim();
     const dropdown = document.getElementById("search-history");
-    if (dropdown) {
-      if (val.trim()) {
-        const matches = _searchHistory.filter(h => h.toLowerCase().includes(val.toLowerCase()));
-        _renderSearchHistoryDropdown(matches);
-      } else {
-        _renderSearchHistoryDropdown(_searchHistory);
+    const liveContainer = document.getElementById("search-modal-live-results");
+
+    if (!query) {
+      if (liveContainer) {
+        liveContainer.style.display = "none";
+        liveContainer.innerHTML = "";
       }
-      dropdown.classList.add("show");
+      if (dropdown) {
+        _renderSearchHistoryDropdown(_searchHistory);
+        dropdown.classList.add("show");
+      }
+      return;
     }
 
-    _searchTimer = setTimeout(() => _doSearch(val), APP_CONFIG.search_debounce);
+    if (dropdown) dropdown.classList.remove("show");
+
+    if (query.length < 2) {
+      if (liveContainer) {
+        liveContainer.style.display = "none";
+        liveContainer.innerHTML = "";
+      }
+      return;
+    }
+
+    // Debounced live instant suggestions directly inside the search modal
+    const currentToken = ++_liveSearchToken;
+    _liveSearchTimer = setTimeout(async () => {
+      try {
+        if (!liveContainer) return;
+        const res = await TMDB.search(query, 1);
+        if (currentToken !== _liveSearchToken) return;
+
+        const items = (res && res.results) ? res.results.slice(0, 5) : [];
+        if (!items.length) {
+          liveContainer.style.display = "flex";
+          liveContainer.innerHTML = `
+            <div style="padding:16px 20px; font-size:13.5px; color:rgba(255,255,255,0.5); text-align:center;">
+              No instant matches found for "${_esc(query)}"
+            </div>
+            <button type="button" class="search-live-view-all" onclick="App.triggerSearch()">
+              <span>Search full catalog &rarr;</span>
+            </button>
+          `;
+          return;
+        }
+
+        liveContainer.style.display = "flex";
+        liveContainer.innerHTML = `
+          ${items.map(item => `
+            <div class="search-live-item" onclick="App.toggleSearchModal(false); App.openItem(${_jsonAttr(item)})" role="button" tabindex="0">
+              <img class="search-live-poster" src="${item.poster || ''}" alt="${_esc(item.title)}" onerror="this.style.display='none'" />
+              <div class="search-live-info">
+                <div class="search-live-title">${_esc(item.title)}</div>
+                <div class="search-live-meta">
+                  <span class="search-live-badge">${item.media === 'tv' ? 'TV Series' : (item.media === 'anime' ? 'Anime' : 'Movie')}</span>
+                  ${item.year ? `<span>${item.year}</span>` : ''}
+                  ${item.rating ? `<span class="search-live-rating">★ ${item.rating.toFixed(1)}</span>` : ''}
+                </div>
+              </div>
+            </div>
+          `).join("")}
+          <button type="button" class="search-live-view-all" onclick="App.triggerSearch()">
+            <span>View all results for &ldquo;${_esc(query)}&rdquo;</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </button>
+        `;
+      } catch (err) {
+        if (currentToken === _liveSearchToken) {
+          console.warn("[Search] Live instant search preview failed:", err);
+        }
+      }
+    }, 200);
   }
 
   function triggerSearch() {
     clearTimeout(_searchTimer);
+    clearTimeout(_liveSearchTimer);
     const input = document.getElementById("search-input");
     const val = input ? input.value : "";
     document.getElementById("search-history")?.classList.remove("show");
+    const liveContainer = document.getElementById("search-modal-live-results");
+    if (liveContainer) {
+      liveContainer.style.display = "none";
+      liveContainer.innerHTML = "";
+    }
+    toggleSearchModal(false);
     if (input) input.blur();
     _doSearch(val);
   }
@@ -2349,6 +2533,7 @@ const App = (() => {
   }
 
   function setSearchContext(ctx) {
+    if (ctx === "all") ctx = "global";
     _searchContext = ctx;
     _searchFilters = {};
     if (_searchQuery) {
@@ -2390,7 +2575,7 @@ const App = (() => {
     const grid = document.getElementById("search-grid");
     if (!grid) return;
     _renderFilterPanel();
-    document.getElementById("search-label").textContent = "Search 9CineJoy";
+    document.getElementById("search-label").textContent = "Search CineJoy";
     grid.style.display = "block";
     grid.innerHTML = renderEmptyState({
       icon: "search",
@@ -2460,6 +2645,20 @@ const App = (() => {
 
     const activeQueryAtLaunch = query;
 
+    // Streaming Provider Alias Discovery (e.g. searching "Paramount Plus", "Netflix", "Hulu")
+    const providerAliases = {
+      "paramount": "paramount", "paramount plus": "paramount", "paramount+": "paramount",
+      "netflix": "netflix", "hulu": "hulu", "disney": "disney", "disney+": "disney", "disney plus": "disney",
+      "apple": "apple", "apple tv": "apple", "apple tv+": "apple", "appletv": "apple",
+      "max": "max", "hbo": "max", "hbo max": "max", "hbomax": "max",
+      "peacock": "peacock", "crunchyroll": "crunchyroll", "starz": "starz",
+      "amc": "amc", "amc+": "amc", "amc plus": "amc", "mgm": "mgm", "mgm+": "mgm", "mgm plus": "mgm",
+      "prime": "prime", "prime video": "prime", "amazon prime": "prime",
+      "tubi": "tubi", "tubi tv": "tubi", "pluto": "pluto", "pluto tv": "pluto"
+    };
+    const pKey = query.toLowerCase().replace(/[\s\-_+]+/g, " ").trim();
+    const matchedPlatformId = providerAliases[pKey] || providerAliases[pKey.replace(/\s+/g, "")];
+
     try {
       if (_searchContext === "global") {
         // Parallel queries to TMDB and AniList Anime
@@ -2503,6 +2702,21 @@ const App = (() => {
           });
         }
 
+        if (matchedPlatformId && typeof STREAMING_PLATFORMS !== "undefined") {
+          const platform = STREAMING_PLATFORMS.find(p => p.id === matchedPlatformId);
+          if (platform && typeof TMDB.getPlatformTitles === "function") {
+            try {
+              const pData = await TMDB.getPlatformTitles(platform.providerId, { mediaType: "all", page: 1 });
+              (pData.movies || []).forEach(m => {
+                if (!movies.some(existing => existing.id === m.id)) movies.push(m);
+              });
+              (pData.tv || []).forEach(t => {
+                if (!tvshows.some(existing => existing.id === t.id)) tvshows.push(t);
+              });
+            } catch (_) {}
+          }
+        }
+
         _renderGlobalSearchResults(movies, tvshows, dramas, anime, donghua);
       } else {
         // Context-aware search
@@ -2510,6 +2724,15 @@ const App = (() => {
         if (_searchContext === "movie") {
           const res = await TMDB.search(query, 1);
           results = (res.results || []).filter(r => r.media === "movie");
+          if (!results.length && matchedPlatformId && typeof STREAMING_PLATFORMS !== "undefined") {
+            const platform = STREAMING_PLATFORMS.find(p => p.id === matchedPlatformId);
+            if (platform && typeof TMDB.getPlatformTitles === "function") {
+              try {
+                const pData = await TMDB.getPlatformTitles(platform.providerId, { mediaType: "movie", page: 1 });
+                results = pData.results || pData.movies || [];
+              } catch (_) {}
+            }
+          }
           _searchTotal = res.total_pages || 1;
         } else if (_searchContext === "tv") {
           const res = await TMDB.search(query, 1);
@@ -2520,6 +2743,15 @@ const App = (() => {
             const isDrama = origin.includes("KR") || origin.includes("CN") || origin.includes("TW") || lang === "ko" || lang === "zh";
             return !isDrama;
           });
+          if (!results.length && matchedPlatformId && typeof STREAMING_PLATFORMS !== "undefined") {
+            const platform = STREAMING_PLATFORMS.find(p => p.id === matchedPlatformId);
+            if (platform && typeof TMDB.getPlatformTitles === "function") {
+              try {
+                const pData = await TMDB.getPlatformTitles(platform.providerId, { mediaType: "tv", page: 1 });
+                results = pData.results || pData.tv || [];
+              } catch (_) {}
+            }
+          }
           _searchTotal = res.total_pages || 1;
         } else if (_searchContext === "drama") {
           const res = await TMDB.search(query, 1);
@@ -2688,10 +2920,10 @@ const App = (() => {
               <h3 style="font-size:16px; font-weight:700; border-left:4px solid var(--primary); padding-left:10px; color:#fff;">
                 ${sec.label} <span style="font-size:13px; font-weight:400; color:var(--text3); margin-left:6px;">(${sec.list.length})</span>
               </h3>
-              ${sec.list.length > 6 ? `<button class="row-see-all" onclick="App.setSearchContext('${sec.type}')">View All ${sec.label} →</button>` : ""}
+              ${sec.list.length > 12 ? `<button class="row-see-all" onclick="App.setSearchContext('${sec.type}')">View All ${sec.label} (${sec.list.length}) →</button>` : ""}
             </div>
             <div class="browse-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:16px">
-              ${sec.list.slice(0, 6).map(item => _cardHTML(item)).join("")}
+              ${sec.list.slice(0, 18).map(item => _cardHTML(item)).join("")}
             </div>
           </div>
         `;
@@ -2732,7 +2964,7 @@ const App = (() => {
         title: `No Matches in ${_searchContext.toUpperCase()}`,
         message: `No ${_searchContext} matched "${_searchQuery}". Try changing or resetting filters.`,
         actionLabel: "Show All Results",
-        actionOnClick: "App.setSearchContext('all');",
+        actionOnClick: "App.setSearchContext('global');",
         secondaryLabel: "Clear Search",
         secondaryOnClick: "document.getElementById('search-input').value = ''; App.showPage('search'); App.renderSearchEmptyState();"
       });
@@ -2964,6 +3196,18 @@ const App = (() => {
     if (titleEl) titleEl.textContent = pageTitle;
     _updateActiveNavLinks("browse", targetRowId);
 
+    const isMoviesSection = rowId === "movies" || targetRowId === "trending_movies" || targetRowId === "popular_movies";
+    const upSection = document.getElementById("browse-upcoming-section");
+    if (upSection) {
+      if (isMoviesSection) {
+        upSection.style.display = "block";
+        _loadUpcomingMoviesSection();
+      } else {
+        upSection.style.display = "none";
+      }
+    }
+    _initBrowseFilterOptions(isMoviesSection ? "movie" : "tv");
+
     document.getElementById("browse-grid").innerHTML =
       Array(12).fill('<div class="card card-skeleton"></div>').join("");
 
@@ -3023,7 +3267,133 @@ const App = (() => {
       }
     }
   }
-  // ── Load Indian row (for Bollywood, Tollywood, etc.) ─────────────────
+
+  // ── Upcoming Movies Section (cinejoy.pk Parity) ───────────────────────
+  let _hasLoadedUpcoming = false;
+  async function _loadUpcomingMoviesSection() {
+    const upScroll = document.getElementById("browse-upcoming-scroll");
+    if (!upScroll) return;
+    if (_hasLoadedUpcoming && upScroll.children.length) return;
+    try {
+      const data = await TMDB.getList("movie", "upcoming", 1);
+      if (data && data.results && data.results.length) {
+        upScroll.innerHTML = data.results.filter(i => i.backdrop || i.poster).slice(0, 10).map(item => `
+          <div class="upcoming-card" onclick="App.openItem(${_jsonAttr(item)})" role="button" tabindex="0">
+            <div class="upcoming-thumb" style="background-image:url('${item.backdrop || item.poster || ""}')">
+              <span class="coming-soon-badge">Coming Soon</span>
+            </div>
+            <div class="upcoming-info">
+              <div class="upcoming-title">${_esc(item.title)}</div>
+              <div class="upcoming-date">${item.release_date ? _formatShortDate(item.release_date) : (item.year || "")}</div>
+            </div>
+          </div>
+        `).join("");
+        _hasLoadedUpcoming = true;
+      }
+    } catch (e) {
+      console.warn("Could not load upcoming movies:", e);
+    }
+  }
+
+  // ── Browse Filter Bar Helpers (cinejoy.pk Parity) ─────────────────────
+  function _initBrowseFilterOptions(mediaType = "movie") {
+    const genreSelect = document.getElementById("browse-filter-genre");
+    if (genreSelect && genreSelect.options.length <= 1) {
+      const genres = GENRE_MAP[mediaType] || GENRE_MAP.movie || {};
+      Object.entries(genres).forEach(([id, name]) => {
+        const opt = document.createElement("option");
+        opt.value = id;
+        opt.textContent = name;
+        genreSelect.appendChild(opt);
+      });
+    }
+
+    const yearSelect = document.getElementById("browse-filter-year");
+    if (yearSelect && yearSelect.options.length <= 1) {
+      const currentYear = new Date().getFullYear();
+      for (let y = currentYear; y >= 1980; y--) {
+        const opt = document.createElement("option");
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      }
+    }
+  }
+
+  let _activeBrowseFilters = { genre: "", year: "", sort: "popularity.desc", provider: "", country: "" };
+
+  async function onBrowseFilterChange(filterKey, value) {
+    _activeBrowseFilters[filterKey] = value;
+    const grid = document.getElementById("browse-grid");
+    if (!grid) return;
+    grid.innerHTML = Array(12).fill('<div class="card card-skeleton"></div>').join("");
+
+    const isTv = _activeRowId && (_activeRowId.includes("tv") || _activeRowId.includes("series"));
+    const mediaType = isTv ? "tv" : "movie";
+
+    const params = {
+      page: 1,
+      sort_by: _activeBrowseFilters.sort || "popularity.desc"
+    };
+    if (_activeBrowseFilters.genre) params.with_genres = _activeBrowseFilters.genre;
+    if (_activeBrowseFilters.year) {
+      if (mediaType === "movie") params.primary_release_year = _activeBrowseFilters.year;
+      else params.first_air_date_year = _activeBrowseFilters.year;
+    }
+    if (_activeBrowseFilters.provider) {
+      params.with_watch_providers = _activeBrowseFilters.provider;
+      params.watch_region = "US";
+    }
+    if (_activeBrowseFilters.country) {
+      params.with_origin_country = _activeBrowseFilters.country;
+    }
+
+    try {
+      const data = await TMDB.discover(mediaType, params);
+      if (!data.results || !data.results.length) {
+        grid.innerHTML = renderEmptyState({
+          icon: "filter",
+          title: "No Matching Titles Found",
+          message: "Try clearing some filters to explore more movies and shows.",
+          actionLabel: "Reset Filters",
+          actionOnClick: "App.resetBrowseFilters()"
+        });
+      } else {
+        grid.innerHTML = data.results.filter(i => i.poster).map(i => _cardHTML(i)).join("");
+        grid.querySelectorAll("img[data-src]").forEach(img => _observeImg(img));
+      }
+    } catch (err) {
+      grid.innerHTML = `<p class="search-error">Failed to filter: ${_esc(err.message)}</p>`;
+    }
+  }
+
+  function resetBrowseFilters() {
+    _activeBrowseFilters = { genre: "", year: "", sort: "popularity.desc", provider: "", country: "" };
+    ["browse-filter-genre", "browse-filter-year", "browse-filter-provider", "browse-filter-country"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    const sortEl = document.getElementById("browse-filter-sort");
+    if (sortEl) sortEl.value = "popularity.desc";
+    if (_activeRowId) openBrowse(_activeRowId, true);
+  }
+
+  function goBack() {
+    if (window.history.length > 1 && window.location.hash !== "#/" && window.location.hash !== "") {
+      window.history.back();
+    } else {
+      showPage("home");
+    }
+  }
+
+  let _isHistoryEditing = false;
+  function toggleContinueWatchingEdit() {
+    _isHistoryEditing = !_isHistoryEditing;
+    const row = document.getElementById("row-watch-history") || document.getElementById("row-continue-watching");
+    if (row) {
+      row.classList.toggle("is-editing", _isHistoryEditing);
+    }
+  }
   async function loadIndianRow(rowId, containerId) {
     const row = HOME_ROWS.find(r => r.id === rowId);
     if (!row) return;
@@ -3077,6 +3447,7 @@ const App = (() => {
     const items = Watchlist.getAll();
     const countEl = document.getElementById("wl-count");
     if (countEl) countEl.textContent = `(${items.length} title${items.length !== 1 ? "s" : ""})`;
+    container.classList.toggle("is-empty", !items.length);
     if (!items.length) {
       container.innerHTML = renderEmptyState({
         icon: "watchlist",
@@ -3099,9 +3470,19 @@ const App = (() => {
     const hash = window.location.hash || "";
     const path = hash.startsWith("#") ? hash.slice(1) : hash;
 
-    // FIX 3 & FIX 12: If navigating away from a player modal via browser Back or route change, cleanly close player and restore scroll
-    const isPlayerRoute = /^\/(movie|tv|drama|anime|donghua)\//.test(path);
-    if (!isPlayerRoute) {
+    // Handle Big Watch player vs Modal/Page transitions cleanly
+    const isWatchRoute = path.startsWith("/watch/");
+    if (!isWatchRoute) {
+      const bigPlayer = document.getElementById("cinejoy-big-player");
+      if (bigPlayer && bigPlayer.style.display !== "none") {
+        if (window.Player && typeof Player.exitBigWatch === "function") {
+          Player.exitBigWatch(true);
+        }
+      }
+    }
+
+    const isDetailRoute = /^\/(movie|tv|drama|anime|donghua)\//.test(path);
+    if (!isDetailRoute && !isWatchRoute) {
       const bg = document.getElementById("player-modal-bg");
       if (bg && bg.classList.contains("open")) {
         if (window.Player && typeof Player.close === "function") Player.close(true);
@@ -3175,6 +3556,25 @@ const App = (() => {
       window.location.hash = "#/";
       _showPage("home", true);
       return true;
+    }
+
+    // Dedicated Big Watch routes: #/watch/movie/:id or #/watch/tv/:id/:season/:episode
+    const watchMatch = path.match(/^\/watch\/(movie|tv|drama|anime)\/(\d+)(?:\/(\d+)\/(\d+))?$/);
+    if (watchMatch) {
+      const media = watchMatch[1] === "drama" ? "tv" : watchMatch[1];
+      const id = parseInt(watchMatch[2], 10);
+      const s = watchMatch[3] ? parseInt(watchMatch[3], 10) : 1;
+      const e = watchMatch[4] ? parseInt(watchMatch[4], 10) : 1;
+      if (id && !isNaN(id) && id > 0) {
+        const item = { id, media, title: "Loading…", poster: "", backdrop: "" };
+        Player.open(item, true).then(() => {
+          Player.watchNow(s, e);
+        });
+        if (!document.getElementById("home-rows")?.children.length) {
+          _loadGeneralHomeContent().catch(() => {});
+        }
+        return true;
+      }
     }
 
     // Anime/Donghua detail: #/anime/:id or #/donghua/:id
@@ -3269,6 +3669,11 @@ const App = (() => {
   function _showPage(page, skipHashPush = false) {
     _currentPage = page;
 
+    // Cleanly dismiss search modal overlay if active
+    if (typeof toggleSearchModal === "function") {
+      toggleSearchModal(false);
+    }
+
     // FIX 2 & FIX 3: Always restore body scroll on page navigation
     document.body.style.overflow = "";
 
@@ -3292,7 +3697,7 @@ const App = (() => {
     }
 
     const pages = [
-      "home", "anime", "livetv", "search", "browse", "watchlist",
+      "home", "anime", "livetv", "extensions", "search", "browse", "watchlist",
       "history-page", "continue-page", "settings-page", "profile", "404"
     ];
 
@@ -3310,17 +3715,17 @@ const App = (() => {
 
     // Set page titles
     const titleMap = {
-      home: "9CineJoy — Cinema & Live TV",
-      anime: "Anime & Donghua — 9CineJoy",
-      livetv: "Live TV & Sports — 9CineJoy",
-      search: "Search — 9CineJoy",
-      browse: "Browse — 9CineJoy",
-      watchlist: "Watchlist — 9CineJoy",
-      "history-page": "History — 9CineJoy",
-      "continue-page": "Continue Watching — 9CineJoy",
-      "settings-page": "Settings — 9CineJoy",
-      profile: "Profile — 9CineJoy",
-      "404": "Scene Not Found (404) — 9CineJoy"
+      home: "CineJoy — Cinema & Live TV",
+      anime: "Anime & Donghua — CineJoy",
+      livetv: "Live TV & Sports — CineJoy",
+      search: "Search — CineJoy",
+      browse: "Browse — CineJoy",
+      watchlist: "Watchlist — CineJoy",
+      "history-page": "History — CineJoy",
+      "continue-page": "Continue Watching — CineJoy",
+      "settings-page": "Settings — CineJoy",
+      profile: "Profile — CineJoy",
+      "404": "Scene Not Found (404) — CineJoy"
     };
     if (titleMap[page]) {
       document.title = titleMap[page];
@@ -3374,6 +3779,7 @@ const App = (() => {
         home: "#/",
         anime: "#/anime",
         livetv: "#/livetv",
+        extensions: "#/extensions",
         profile: "#/profile",
         search: _searchQuery ? `#/search?q=${encodeURIComponent(_searchQuery)}` : "#/search",
         browse: _activeRowId ? `#/browse/${_activeRowId}` : "#/browse",
@@ -4336,6 +4742,12 @@ const App = (() => {
   }
 
   function _updateActiveNavLinks(page, rowId = null) {
+    // Subpage back button (cinejoy.pk style)
+    const backBtn = document.getElementById("header-back-btn");
+    if (backBtn) {
+      backBtn.style.display = (page === "home" || !page) ? "none" : "inline-flex";
+    }
+
     // 0. Floating Glass Navbar & Mobile Bottom Nav items (Reference Design)
     document.querySelectorAll(".glass-nav-item, .mobile-bottom-nav-item").forEach(item => {
       item.classList.remove("active");
@@ -4349,14 +4761,17 @@ const App = (() => {
     } else if (page === "livetv") {
       document.getElementById("nav-link-livetv")?.classList.add("active");
       document.getElementById("mob-nav-livetv")?.classList.add("active");
-    } else if (page === "browse" && rowId) {
-      if (rowId.includes("movie")) {
-        document.getElementById("nav-link-movies")?.classList.add("active");
-        document.getElementById("mob-nav-movies")?.classList.add("active");
-      } else if (rowId.includes("tv") || rowId.includes("series")) {
-        document.getElementById("nav-link-tv")?.classList.add("active");
-        document.getElementById("mob-nav-tv")?.classList.add("active");
-      }
+    } else if (page === "extensions") {
+      document.getElementById("nav-link-extensions")?.classList.add("active");
+      document.getElementById("mob-nav-extensions")?.classList.add("active");
+    } else if (page === "watchlist") {
+      document.getElementById("nav-link-watchlist")?.classList.add("active");
+    } else if (page === "movies" || (page === "browse" && rowId && rowId.includes("movie"))) {
+      document.getElementById("nav-link-movies")?.classList.add("active");
+      document.getElementById("mob-nav-movies")?.classList.add("active");
+    } else if (page === "series" || page === "tv" || (page === "browse" && rowId && (rowId.includes("tv") || rowId.includes("series")))) {
+      document.getElementById("nav-link-tv")?.classList.add("active");
+      document.getElementById("mob-nav-tv")?.classList.add("active");
     }
 
     // 1. Sidebar Links Highlight
@@ -6160,13 +6575,122 @@ const App = (() => {
     }
   }
 
-  // ── Premium Settings & Themes ──────────────────────────────────────────
+  // ── Premium Settings & Themes (cinejoy.pk Redesign) ──────────────────
+  let _activeSettingsTab = "account";
+
+  function switchSettingsTab(tabKey) {
+    _activeSettingsTab = tabKey;
+    document.querySelectorAll(".settings-tab-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-tab") === tabKey);
+    });
+    // Ensure all sections are visible stacked in flowing vertical layout matching cinejoy.pk
+    document.querySelectorAll(".settings-card-section").forEach(sec => {
+      sec.style.display = "block";
+    });
+    const target = document.querySelector(`.settings-card-section[data-section="${tabKey}"]`) || document.getElementById(`settings-card-${tabKey}`);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  function setEpisodeViewStyle(style) {
+    localStorage.setItem("streamx_episode_view_style", style);
+    document.querySelectorAll(".settings-pill-episode").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-val") === style);
+    });
+    _showToast(`Episode view set to ${style}`);
+  }
+
+  function setDetailViewType(type) {
+    localStorage.setItem("streamx_detail_view_type", type);
+    document.querySelectorAll(".settings-pill-detail").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-val") === type);
+    });
+    _showToast(`Detail view set to ${type}`);
+  }
+
+  function setSubtitleFont(font) {
+    localStorage.setItem("streamx_subtitle_font", font);
+    document.querySelectorAll(".settings-pill-sub-font").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-val") === font);
+    });
+    _showToast(`Subtitle font set to ${font}`);
+  }
+
+  function setSubtitleSize(pct) {
+    localStorage.setItem("streamx_subtitle_size", pct);
+    const label = document.getElementById("sub-size-text");
+    if (label) label.textContent = `${pct}%`;
+  }
+
+  function setSubtitleColor(color) {
+    localStorage.setItem("streamx_subtitle_color", color);
+    document.querySelectorAll(".sub-color-dot").forEach(dot => {
+      dot.classList.toggle("active", dot.getAttribute("data-color") === color);
+    });
+    _showToast(`Subtitle color updated`);
+  }
+
+  function setDefaultServer(key) {
+    localStorage.setItem("streamx_default_server", key);
+    document.querySelectorAll(".settings-server-row").forEach(row => {
+      const isCur = row.getAttribute("data-server-key") === key;
+      row.classList.toggle("active", isCur);
+      const badge = row.querySelector(".server-default-badge");
+      if (badge) badge.style.display = isCur ? "inline-block" : "none";
+      const btn = row.querySelector(".server-select-btn");
+      if (btn) btn.textContent = isCur ? "Active" : "Select";
+    });
+    _showToast(`Default server set to ${key}`);
+  }
+
+  function saveFebboxCookie() {
+    const input = document.getElementById("pref-febbox-cookie");
+    if (input) {
+      localStorage.setItem("streamx_febbox_cookie", input.value.trim());
+      _showToast("Febbox cookie saved!");
+    }
+  }
+
+  function clearSiteData() {
+    if (confirm("Are you sure you want to clear your local cache, watchlist and watch history?")) {
+      localStorage.clear();
+      _showToast("Site data reset");
+      setTimeout(() => window.location.reload(), 600);
+    }
+  }
+
   function _initSettingsPage() {
+    // 1. Theme selector
     const selector = document.getElementById("theme-selector");
     if (selector) {
       selector.value = localStorage.getItem("streamx_theme_preset") || "default";
     }
 
+    // 2. Appearance pills & toggles
+    const epStyle = localStorage.getItem("streamx_episode_view_style") || "carousel";
+    document.querySelectorAll(".settings-pill-episode").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-val") === epStyle);
+    });
+
+    const detType = localStorage.getItem("streamx_detail_view_type") || "page";
+    document.querySelectorAll(".settings-pill-detail").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-val") === detType);
+    });
+
+    const imgLogos = document.getElementById("pref-image-logos");
+    if (imgLogos) imgLogos.checked = localStorage.getItem("streamx_image_logos") !== "false";
+
+    const trailers = document.getElementById("pref-trailers");
+    if (trailers) trailers.checked = localStorage.getItem("streamx_trailers") !== "false";
+
+    const spoilerFree = document.getElementById("pref-spoiler-free");
+    if (spoilerFree) spoilerFree.checked = localStorage.getItem("streamx_spoiler_free") === "true";
+
+    const reduceMotion = document.getElementById("pref-reduce-motion");
+    if (reduceMotion) reduceMotion.checked = localStorage.getItem("streamx_reduce_motion") === "true";
+
+    // 3. Playback toggles
     const autoNext = document.getElementById("pref-auto-next");
     if (autoNext) autoNext.checked = localStorage.getItem("streamx_auto_next") !== "false";
 
@@ -6174,7 +6698,7 @@ const App = (() => {
     if (autoplay) autoplay.checked = localStorage.getItem("streamx_autoplay") !== "false";
 
     const autoSkipIntro = document.getElementById("pref-skip-intro");
-    if (autoSkipIntro) autoSkipIntro.checked = localStorage.getItem("streamx_auto_skip_intro") === "true";
+    if (autoSkipIntro) autoSkipIntro.checked = localStorage.getItem("streamx_auto_skip_intro") !== "false";
 
     const autoSkipOutro = document.getElementById("pref-skip-outro");
     if (autoSkipOutro) autoSkipOutro.checked = localStorage.getItem("streamx_auto_skip_outro") === "true";
@@ -6194,11 +6718,66 @@ const App = (() => {
     const subdubSel = document.getElementById("pref-subdub-selector");
     if (subdubSel) subdubSel.value = localStorage.getItem("streamx_sub_dub") || "sub";
 
+    // 4. Subtitles
+    const subFont = localStorage.getItem("streamx_subtitle_font") || "cinejoy";
+    document.querySelectorAll(".settings-pill-sub-font").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-val") === subFont);
+    });
+
+    const subSize = localStorage.getItem("streamx_subtitle_size") || "100";
+    const subSlider = document.getElementById("pref-sub-size-slider");
+    if (subSlider) subSlider.value = subSize;
+    const subSizeText = document.getElementById("sub-size-text");
+    if (subSizeText) subSizeText.textContent = `${subSize}%`;
+
+    const subColor = localStorage.getItem("streamx_subtitle_color") || "#ffffff";
+    document.querySelectorAll(".sub-color-dot").forEach(dot => {
+      dot.classList.toggle("active", dot.getAttribute("data-color") === subColor);
+    });
+
+    const subBlur = document.getElementById("pref-sub-blur");
+    if (subBlur) subBlur.checked = localStorage.getItem("streamx_sub_blur") !== "false";
+
+    // 5. Advertisements & Febbox
+    const enableAds = document.getElementById("pref-enable-ads");
+    if (enableAds) enableAds.checked = localStorage.getItem("streamx_enable_ads") !== "false";
+
+    const febboxInput = document.getElementById("pref-febbox-cookie");
+    if (febboxInput) febboxInput.value = localStorage.getItem("streamx_febbox_cookie") || "";
+
+    // 6. Servers list dynamic generation
+    const serverListEl = document.getElementById("settings-server-list");
+    if (serverListEl && typeof STREAM_SERVERS !== "undefined") {
+      const defKey = localStorage.getItem("streamx_default_server") || "nxsha";
+      serverListEl.innerHTML = STREAM_SERVERS.map(srv => {
+        const isDef = srv.key === defKey;
+        return `
+          <div class="settings-server-row ${isDef ? 'active' : ''}" data-server-key="${srv.key}" onclick="App.setDefaultServer('${srv.key}')">
+            <div class="server-info-col">
+              <div class="server-title-line">
+                <span class="server-color-dot" style="background:${srv.color || '#fff'}"></span>
+                <strong>${_esc(srv.label)}</strong>
+                <span class="server-badge">${_esc(srv.badge || 'Embed')}</span>
+                <span class="server-default-badge" style="${isDef ? '' : 'display:none'}">Default</span>
+              </div>
+              <p class="server-desc">${_esc(srv.desc || '')}</p>
+            </div>
+            <button type="button" class="server-select-btn" aria-label="Select ${srv.label} as default">
+              ${isDef ? 'Active' : 'Select'}
+            </button>
+          </div>
+        `;
+      }).join("");
+    }
+
     const backendInput = document.getElementById("settings-backend-url-input");
     if (backendInput) {
       backendInput.value = localStorage.getItem("streamx_backend_url") || "";
     }
     _checkBackendStatus();
+
+    // Default activate initial tab
+    switchSettingsTab(_activeSettingsTab || "account");
   }
 
   function savePlayerPreference(key, value) {
@@ -6520,14 +7099,14 @@ const App = (() => {
       _deferredPrompt.prompt();
       const choiceResult = await _deferredPrompt.userChoice;
       if (choiceResult && choiceResult.outcome === "accepted") {
-        _showToast("🎉 9CineJoy is being installed!");
+        _showToast("🎉 CineJoy is being installed!");
       }
       _deferredPrompt = null;
     } else {
       const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
       const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
       if (isStandalone) {
-        _showToast("✅ 9CineJoy is already running as an installed standalone app!");
+        _showToast("✅ CineJoy is already running as an installed standalone app!");
       } else if (isIos) {
         _showToast("📱 On iOS: Tap Share (⎋) in Safari and select 'Add to Home Screen' (➕)");
       } else {
@@ -6586,22 +7165,28 @@ const App = (() => {
       return;
     }
 
-    grid.innerHTML = watched.map(item => `
-      <div class="card" onclick="App.openItem(${_jsonAttr(item)})">
-        <div class="card-poster">
-          <img src="${item.poster || ""}" alt="${_esc(item.title)}" class="card-img">
-          <span class="card-badge badge-${item.media || "movie"}">
-            ${(item.media || "movie").toUpperCase()}
-          </span>
-        </div>
-        <div class="card-info">
-          <div class="card-title">${_esc(item.title)}</div>
-          <div class="card-meta">
-            <span class="card-year">${item.season ? `S${item.season} E${item.episode}` : (item.media === "anime" || item.media === "donghua") ? (item.episode ? `Ep ${item.episode}` : "Anime") : "Movie"}</span>
+    grid.innerHTML = watched.map(item => {
+      const safeId = String(item.id || "").replace(/'/g, "\\'");
+      const safeMedia = String(item.media || "movie").replace(/'/g, "\\'");
+      return `
+        <div class="card history-card" onclick="App.openItem(${_jsonAttr(item)})">
+          <div class="card-poster history-poster">
+            <img src="${item.poster || ""}" alt="${_esc(item.title)}" class="card-img">
+            <span class="card-badge badge-${item.media || "movie"}">
+              ${(item.media || "movie").toUpperCase()}
+            </span>
+            <button type="button" class="history-remove-btn" onclick="event.stopPropagation(); event.preventDefault(); App.removeFromHistory('${safeId}', '${safeMedia}')" ontouchstart="event.stopPropagation();" aria-label="Remove from Watch History" title="Remove from Watch History">
+              ${_CLOSE_SVG}
+            </button>
           </div>
-        </div>
-      </div>
-    `).join("");
+          <div class="card-info">
+            <div class="card-title">${_esc(item.title)}</div>
+            <div class="card-meta">
+              <span class="card-year">${item.season ? `S${item.season} E${item.episode}` : (item.media === "anime" || item.media === "donghua") ? (item.episode ? `Ep ${item.episode}` : "Anime") : "Movie"}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join("");
   }
 
   function _renderContinuePage() {
@@ -6623,22 +7208,28 @@ const App = (() => {
       return;
     }
 
-    grid.innerHTML = watched.map(item => `
-      <div class="card" onclick="App.openItem(${_jsonAttr(item)})">
-        <div class="card-poster">
-          <img src="${item.poster || ""}" alt="${_esc(item.title)}" class="card-img">
-          <span class="card-badge badge-${item.media || "movie"}">
-            ${(item.media || "movie").toUpperCase()}
-          </span>
-        </div>
-        <div class="card-info">
-          <div class="card-title">${_esc(item.title)}</div>
-          <div class="card-meta">
-            <span>${item.season ? `S${item.season}E${item.episode}` : (item.media === "anime" || item.media === "donghua") ? (item.episode ? `Ep ${item.episode}` : "Anime") : "Movie"}</span>
+    grid.innerHTML = watched.map(item => {
+      const safeId = String(item.id || "").replace(/'/g, "\\'");
+      const safeMedia = String(item.media || "movie").replace(/'/g, "\\'");
+      return `
+        <div class="card history-card" onclick="App.openItem(${_jsonAttr(item)})">
+          <div class="card-poster history-poster">
+            <img src="${item.poster || ""}" alt="${_esc(item.title)}" class="card-img">
+            <span class="card-badge badge-${item.media || "movie"}">
+              ${(item.media || "movie").toUpperCase()}
+            </span>
+            <button type="button" class="history-remove-btn" onclick="event.stopPropagation(); event.preventDefault(); App.removeFromHistory('${safeId}', '${safeMedia}')" ontouchstart="event.stopPropagation();" aria-label="Remove from Watch History" title="Remove from Watch History">
+              ${_CLOSE_SVG}
+            </button>
           </div>
-        </div>
-      </div>
-    `).join("");
+          <div class="card-info">
+            <div class="card-title">${_esc(item.title)}</div>
+            <div class="card-meta">
+              <span>${item.season ? `S${item.season}E${item.episode}` : (item.media === "anime" || item.media === "donghua") ? (item.episode ? `Ep ${item.episode}` : "Anime") : "Movie"}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join("");
   }
 
   // Helper helper to support submenu collapsing/expanding
@@ -6721,6 +7312,11 @@ const App = (() => {
     cancelAutoNext,
     toggleMobileDrawer,
     handleNavItemClick,
+    goBack,
+    toggleContinueWatchingEdit,
+    clearAllWatchHistory,
+    onBrowseFilterChange,
+    resetBrowseFilters,
 
     // Phase 2 Sidebar & Settings Toggles
     toggleSidebar,
@@ -6733,10 +7329,22 @@ const App = (() => {
     showProfileToast,
     savePlayerPreference,
 
+    // CineJoy Settings Actions
+    switchSettingsTab,
+    setEpisodeViewStyle,
+    setDetailViewType,
+    setSubtitleFont,
+    setSubtitleSize,
+    setSubtitleColor,
+    setDefaultServer,
+    saveFebboxCookie,
+    clearSiteData,
+
     // Search Helpers
     triggerSearch,
     setSearchContext,
     toggleMobileSearch,
+    toggleSearchModal,
     setFilter,
     clearFilters,
     selectSearchHistory,
@@ -6797,6 +7405,8 @@ const App = (() => {
     setPlatformMediaType,
     scrollPlatformRail,
     renderStreamingPlatformSection: _renderStreamingPlatformSection,
+    filterByProvider,
+    renderBrowseProvidersRow: _renderBrowseProvidersRow,
 
     // Live TV Module Reference
     LiveTV: window.LiveTV,

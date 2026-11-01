@@ -1,0 +1,1009 @@
+/* ==========================================================================
+   StreamX Universal Custom Video Player (CloudStream-Inspired)
+   ========================================================================== */
+
+.sx-player-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--radius, 12px);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sx-player-container:fullscreen,
+.sx-player-container:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  aspect-ratio: auto !important;
+  border-radius: 0 !important;
+}
+
+/* ── Aspect Ratio / Stretch Modes ── */
+.sx-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: object-fit 0.2s ease, transform 0.2s ease;
+}
+
+/* Contain (Fit) */
+.sx-player-container[data-aspect="contain"] .sx-video {
+  object-fit: contain;
+}
+
+/* Cover (Crop) */
+.sx-player-container[data-aspect="cover"] .sx-video {
+  object-fit: cover;
+}
+
+/* Stretch to Fill */
+.sx-player-container[data-aspect="stretch"] .sx-video {
+  object-fit: fill;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Original 1:1 */
+.sx-player-container[data-aspect="original"] .sx-video {
+  object-fit: none;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* ── Long-Press 2× Dynamic Overlay Badge ── */
+.sx-speed-badge {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  background: rgba(16, 185, 129, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4), 0 0 15px rgba(255, 255, 255, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 50;
+}
+
+.sx-speed-badge.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Double-Tap Ripple Indicator ── */
+.sx-ripple-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 50%;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.sx-ripple-indicator.left {
+  left: 15%;
+}
+
+.sx-ripple-indicator.right {
+  right: 15%;
+}
+
+.sx-ripple-indicator.active {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* ── Loading Spinner Overlay ── */
+.sx-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.sx-loading-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sx-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #ff2a6d;
+  border-radius: 50%;
+  animation: sx-spin 0.8s linear infinite;
+}
+
+@keyframes sx-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Center Play / Pause Indicator ── */
+.sx-center-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  width: 72px;
+  height: 72px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  z-index: 35;
+}
+
+.sx-center-indicator.flash {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ── Controls Overlay ── */
+.sx-controls-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 20%, transparent 75%, rgba(0,0,0,0.85) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 20px;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  z-index: 25;
+}
+
+.sx-controls-overlay.autohide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Top bar */
+.sx-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+}
+
+.sx-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.sx-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.sx-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.sx-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sx-btn-icon {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.sx-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.sx-btn-icon:active {
+  transform: scale(0.95);
+}
+
+/* ── Bottom Controls ── */
+.sx-bottom-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Scrub Progress Bar */
+.sx-scrub-wrap {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.sx-scrub-track {
+  position: relative;
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  overflow: visible;
+  transition: height 0.15s ease;
+}
+
+.sx-scrub-wrap:hover .sx-scrub-track {
+  height: 7px;
+}
+
+.sx-scrub-buffer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 3px;
+  width: 0%;
+  pointer-events: none;
+}
+
+.sx-scrub-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #ff2a6d 0%, #05d9e8 100%);
+  border-radius: 3px;
+  width: 0%;
+  pointer-events: none;
+}
+
+.sx-scrub-handle {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  transition: transform 0.15s ease;
+}
+
+.sx-scrub-wrap:hover .sx-scrub-handle {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.sx-scrub-tooltip {
+  position: absolute;
+  bottom: 22px;
+  transform: translateX(-50%);
+  background: rgba(15, 17, 23, 0.95);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.sx-scrub-wrap:hover .sx-scrub-tooltip {
+  opacity: 1;
+}
+
+/* Control Row Buttons */
+.sx-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sx-left-ctrls,
+.sx-right-ctrls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sx-time-display {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+/* Volume Slider */
+.sx-volume-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sx-volume-slider {
+  -webkit-appearance: none;
+  width: 65px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  outline: none;
+  cursor: pointer;
+  transition: width 0.2s ease;
+}
+
+.sx-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* ── Settings Dropdown Menus ── */
+.sx-menu-panel {
+  position: absolute;
+  bottom: 60px;
+  right: 20px;
+  background: rgba(15, 17, 23, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 12px;
+  width: 250px;
+  max-height: 320px;
+  overflow-y: auto;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 60;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+}
+
+.sx-menu-panel.open {
+  display: flex;
+}
+
+.sx-menu-header {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text3, #8a96a3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+
+.sx-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.sx-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sx-menu-item.active {
+  background: rgba(255, 42, 109, 0.2);
+  color: #ff2a6d;
+  font-weight: 700;
+}
+
+/* Subtitle Sync Slider in menu */
+.sx-sync-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+.sx-sync-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #fff;
+}
+
+/* ── Error Screen ── */
+.sx-error-screen {
+  position: absolute;
+  inset: 0;
+  background: #0f1117;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  z-index: 70;
+  display: none;
+}
+
+.sx-error-screen.visible {
+  display: flex;
+}
+
+.sx-error-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ef4444;
+  margin-bottom: 8px;
+}
+
+.sx-error-msg {
+  font-size: 13px;
+  color: #8a96a3;
+  margin-bottom: 16px;
+  max-width: 400px;
+}
+
+.sx-error-retry-btn {
+  background: #ff2a6d;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sx-error-retry-btn:hover {
+  opacity: 0.85;
+}
+
+/* ── Mobile Viewport Adaptations ── */
+@media (max-width: 768px) {
+  .sx-controls-overlay {
+    padding: 10px 12px;
+  }
+  .sx-btn-icon {
+    width: 32px;
+    height: 32px;
+  }
+  /* Keep the top bar inside the viewport: a long title must never push
+     the actions row (Playback Settings etc.) off-screen. */
+  .sx-top-bar {
+    gap: 8px;
+  }
+  .sx-title-group {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .sx-title,
+  .sx-subtitle {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sx-top-actions {
+    flex-shrink: 0;
+    gap: 6px;
+  }
+  .sx-volume-group {
+    display: none; /* Hide slider on mobile, use hardware volume buttons */
+  }
+  .sx-menu-panel {
+    width: calc(100% - 24px);
+    right: 12px;
+    bottom: 50px;
+  }
+}
+
+/* ── Direct Stream Resolution States & Clean Embed Fallback Card ── */
+.sx-direct-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(20, 24, 35, 0.95), rgba(7, 9, 15, 0.98));
+  gap: 16px;
+  color: #fff;
+  z-index: 10;
+  padding: 24px;
+  text-align: center;
+}
+
+.sx-no-direct-card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top center, rgba(30, 24, 45, 0.95), rgba(10, 11, 18, 0.98));
+  backdrop-filter: blur(20px);
+  padding: 32px 24px;
+  text-align: center;
+  color: #fff;
+  z-index: 10;
+  overflow-y: auto;
+}
+
+.sx-no-direct-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 42, 109, 0.12);
+  border: 1px solid rgba(255, 42, 109, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff2a6d;
+  margin-bottom: 16px;
+  box-shadow: 0 0 24px rgba(255, 42, 109, 0.2);
+}
+
+.sx-no-direct-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 0 0 8px 0;
+  color: #ffffff;
+}
+
+.sx-no-direct-desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #94a3b8;
+  max-width: 520px;
+  margin: 0 0 20px 0;
+}
+
+.sx-no-direct-recommend-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.sx-no-direct-providers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 560px;
+  margin-bottom: 20px;
+}
+
+.sx-provider-switch-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.sx-provider-switch-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.sx-provider-switch-btn.primary {
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.2), rgba(255, 42, 109, 0.05));
+  border-color: rgba(255, 42, 109, 0.4);
+}
+
+.sx-provider-switch-btn.primary:hover {
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.3), rgba(255, 42, 109, 0.1));
+  border-color: #ff2a6d;
+}
+
+.sx-provider-switch-btn .icon {
+  font-size: 18px;
+}
+
+.sx-provider-switch-btn .name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.sx-provider-switch-btn .badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.sx-provider-switch-btn.primary .badge {
+  background: rgba(255, 42, 109, 0.25);
+  color: #ff8cb3;
+}
+
+.sx-retry-direct-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sx-retry-direct-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+/* ==========================================================================
+   Unified Source Selector (Dual-Mode Direct vs. Embedded Stream)
+   ========================================================================== */
+
+.sx-unified-selector {
+  margin: 16px 0 10px;
+  background: rgba(18, 20, 29, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Mode Segmented Control ── */
+.sx-mode-segmented-control {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.sx-mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.sx-mode-tab:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sx-mode-tab.active {
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.2), rgba(16, 185, 129, 0.15));
+  border: 1px solid rgba(255, 42, 109, 0.4);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255, 42, 109, 0.25);
+}
+
+.sx-mode-tab .sx-mode-icon {
+  font-size: 15px;
+}
+
+.sx-mode-tab .sx-mode-title {
+  letter-spacing: 0.3px;
+}
+
+.sx-mode-tab .sx-mode-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.sx-mode-tab.active .sx-mode-badge {
+  background: rgba(255, 42, 109, 0.3);
+  color: #ffb3cb;
+}
+
+/* ── Subpanel & Pills ── */
+.sx-provider-subpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sx-subpanel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.sx-subpanel-title {
+  font-weight: 600;
+  color: #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 11px;
+}
+
+.sx-subpanel-hint {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.sx-provider-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sx-provider-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.sx-provider-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.sx-provider-pill.selected {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(16, 185, 129, 0.08));
+  border-color: rgba(16, 185, 129, 0.6);
+  color: #10b981;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+}
+
+.sx-provider-pill .pill-icon {
+  font-size: 13px;
+}
+
+.sx-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #64748b;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.sx-provider-pill.selected .sx-status-dot {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+}
+
+.sx-provider-pill.direct.selected .sx-status-dot {
+  background: #06b6d4;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.8);
+}
+
+.sx-provider-pill .pill-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #94a3b8;
+}
+
+.sx-provider-pill.selected .pill-badge {
+  background: rgba(16, 185, 129, 0.25);
+  color: #a7f3d0;
+}
+
+/* ── Audio Language Selector Row ── */
+.sx-audio-lang-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.sx-audio-lang-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.sx-audio-lang-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sx-audio-lang-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.sx-audio-lang-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.sx-audio-lang-btn.active {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(255, 42, 109, 0.35));
+  border-color: #ec4899;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(236, 72, 153, 0.3);
+}
+
+/* ── Provider Info Bar ── */
+.sx-provider-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.sx-provider-info-bar .sx-info-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* ── Responsive Mobile Adjustments ── */
+@media (max-width: 640px) {
+  .sx-mode-segmented-control {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sx-mode-tab {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .sx-provider-pills {
+    gap: 6px;
+  }
+  .sx-provider-pill {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .sx-provider-pill .pill-badge {
+    font-size: 10px;
+  }
+  .sx-mode-tab .sx-mode-badge {
+    font-size: 10.5px;
+  }
+}

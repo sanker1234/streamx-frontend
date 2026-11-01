@@ -1,0 +1,53 @@
+<!doctype html>
+<!-- TEMPORARY QA page (scratch-QA, deletable): verifies two subtitle bugs fixed in
+     js/universalPlayer.js against the REAL upstream caption host (strem.io):
+       Bug A — extensionless /file/<id> SRT captions were attached as if VTT (never rendered);
+       Bug B — <video> had no crossorigin attr, so cross-origin <track> loads were blocked.
+     No movie-playback claims are made; the sample mp4 is a public CC0 test clip whose
+     only role is giving the video element a loadable source so <track> machinery runs. -->
+<html lang="en">
+<head><meta charset="utf-8"><title>universalPlayer subtitle QA</title></head>
+<body style="background:#111;color:#eee;font-family:sans-serif">
+  <div id="wrap" style="width:640px;height:360px"></div>
+  <pre id="out"></pre>
+  <script src="/js/universalPlayer.js?v=1.5"></script>
+  <script>
+    window.__qa = { logs: [] };
+    const note = (k, v) => { window.__qa.logs.push(`${k}: ${v}`); document.getElementById("out").textContent = window.__qa.logs.join("\n"); };
+
+    // LIVE caption URLs captured from the backend response for movie 157336
+    // (anyembed-direct): strem.io serves SRT content with NO file extension.
+    const EN_SRT_EXTLESS = "https://subs5.strem.io/en/download/subencoding-stremio-utf8/src-api/file/1954509006";
+
+    const SAMPLE_MP4 = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"; // CC0 test clip
+
+    async function runSubtitleQA() {
+      const wrap = document.getElementById("wrap");
+      UniversalPlayer.mount(wrap, {
+        title: "subtitle QA (not a content claim)",
+        sources: [{ url: SAMPLE_MP4, type: "mp4", isDirect: true, requiresProxy: false, quality: "auto" }],
+        subtitles: [
+          { label: "English", srclang: "en", kind: "subtitles", src: EN_SRT_EXTLESS },
+          { label: "MysteryExt", srclang: "qq", kind: "subtitles", src: "https://subs5.strem.io/en/download/subencoding-stremio-utf8/src-api/file/1954548609" }
+        ],
+        servers: [], onRetry: () => {}
+      });
+      await new Promise(r => setTimeout(r, 4000));
+      const v = document.getElementById("sx-video-element");
+      note("crossOrigin", JSON.stringify(v.crossOrigin));
+      const tracks = Array.from(v.textTracks);
+      note("textTracks", tracks.length);
+      tracks.forEach((t, i) => { t.mode = "showing"; note("track-" + i + " label", t.label); });
+      await new Promise(r => setTimeout(r, 5000));
+      tracks.forEach((t, i) => {
+        const cues = t.cues ? t.cues.length : -1;
+        note("cues-" + i, cues);
+      });
+      // success marker
+      const mainCues = tracks[0] && tracks[0].cues ? tracks[0].cues.length : 0;
+      note("SUBTITLE_VERDICT", mainCues > 0 ? "PASS (English cues loaded from extensionless SRT)" : "FAIL");
+    }
+    window.addEventListener("load", () => { runSubtitleQA().catch(e => note("runError", String(e))); });
+  </script>
+</body>
+</html>

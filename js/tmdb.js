@@ -244,6 +244,13 @@ const TMDB = (() => {
     // Season list for TV
     norm.season_list = (data.seasons || []).filter(s => s.season_number > 0);
 
+    // Director & Studio metadata
+    const directorObj = data.credits?.crew?.find(c => c.job === "Director")
+      || (data.created_by && data.created_by[0]);
+    norm.director = directorObj ? (directorObj.name || "") : "";
+    norm.production_companies = data.production_companies || [];
+    norm.release_date_full = data.release_date || data.first_air_date || "";
+
     return norm;
   }
 
