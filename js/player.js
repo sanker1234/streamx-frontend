@@ -532,28 +532,17 @@ const Player = (() => {
 
   function _setFrameSourceWithSandbox(frameEl, targetUrl, serverKey) {
     if (!frameEl) return null;
-    const isNxsha = !serverKey || serverKey === "nxsha";
-    const currentHasSandbox = frameEl.hasAttribute("sandbox");
 
-    // When toggling between sandboxed (NXsha) and unsandboxed (external embed engines),
-    // clone and replace the node to force browser instantiation of the new security context.
-    if (currentHasSandbox !== isNxsha && frameEl.parentNode) {
-      const clone = frameEl.cloneNode(false);
-      if (isNxsha) {
-        clone.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
-      } else {
-        clone.removeAttribute("sandbox");
-      }
-      clone.src = targetUrl;
-      frameEl.parentNode.replaceChild(clone, frameEl);
-      return clone;
-    }
-
-    if (isNxsha) {
-      frameEl.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
-    } else {
+    // All streaming providers (NXsha, CineSrc, VidRift, 0vidads, CinemaOS, Atlantic, VidCore, etc.)
+    // must be unsandboxed so mobile WebKit (iOS Safari) and mobile Chrome do not restrict
+    // MediaSource (MSE) blob creation, localStorage, and inline video playback (which cause blank screens).
+    if (frameEl.hasAttribute("sandbox")) {
       frameEl.removeAttribute("sandbox");
     }
+
+    frameEl.style.width = "100%";
+    frameEl.style.height = "100%";
+    frameEl.style.display = "block";
 
     if (frameEl.src !== targetUrl) {
       frameEl.src = targetUrl;
@@ -902,7 +891,9 @@ const Player = (() => {
 
     // Transition from loader to big cinema player
     if (loader) {
+      loader.style.pointerEvents = "none";
       loader.style.opacity = "0";
+      loader.style.visibility = "hidden";
       setTimeout(() => {
         loader.style.display = "none";
       }, 300);
@@ -916,6 +907,9 @@ const Player = (() => {
         bigVideo.style.display = "none";
       }
       bigFrame.style.display = "block";
+      bigFrame.style.width = "100%";
+      bigFrame.style.height = "100%";
+      bigFrame.removeAttribute("sandbox");
       const targetUrl = _getSelectedServerUrl(finalKey);
       _setFrameSourceWithSandbox(bigFrame, targetUrl, finalKey);
 
@@ -1034,6 +1028,8 @@ const Player = (() => {
     };
 
     bigPlayer.onmousemove = resetTimer;
+    bigPlayer.ontouchstart = resetTimer;
+    bigPlayer.onclick = resetTimer;
     resetTimer();
   }
 
@@ -1061,7 +1057,10 @@ const Player = (() => {
     if (_bigPlayerMouseMoveTimer) clearTimeout(_bigPlayerMouseMoveTimer);
 
     const loader = document.getElementById("cinejoy-watch-loader");
-    if (loader) loader.style.display = "none";
+    if (loader) {
+      loader.style.pointerEvents = "none";
+      loader.style.display = "none";
+    }
 
     // Restore previous hash cleanly without history push loops
     if (!skipHistory) {
@@ -1092,7 +1091,10 @@ const Player = (() => {
 
   function cancelWatchLoader() {
     const loader = document.getElementById("cinejoy-watch-loader");
-    if (loader) loader.style.display = "none";
+    if (loader) {
+      loader.style.pointerEvents = "none";
+      loader.style.display = "none";
+    }
     if (_watchLoaderTimer) clearTimeout(_watchLoaderTimer);
     const bigFrame = document.getElementById("big-stream-frame");
     if (bigFrame) bigFrame.src = "";
@@ -1852,7 +1854,10 @@ const Player = (() => {
     const item = _details || _item;
     const trailerKey = _details?.trailer?.key || item?.trailer?.key;
     const loader = document.getElementById("cinejoy-watch-loader");
-    if (loader) loader.style.display = "none";
+    if (loader) {
+      loader.style.pointerEvents = "none";
+      loader.style.display = "none";
+    }
     if (trailerKey) {
       const bigPlayer = document.getElementById("cinejoy-big-player");
       const bigFrame = document.getElementById("big-stream-frame");

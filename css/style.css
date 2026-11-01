@@ -11994,13 +11994,21 @@ img.loaded {
 .cinejoy-big-player {
   position: fixed;
   inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100vw;
+  width: 100%;
   height: 100vh;
+  height: 100%;
+  height: 100dvh;
   background: #000;
   z-index: 999999;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .big-player-top-bar {
@@ -12294,9 +12302,10 @@ img.loaded {
 }
 
 .big-player-frame-wrap {
-  flex: 1;
+  flex: 1 1 auto;
   width: 100%;
   height: 100%;
+  min-height: 0;
   position: relative;
   background: #000;
   display: flex;
@@ -12307,6 +12316,7 @@ img.loaded {
 .big-stream-frame {
   width: 100%;
   height: 100%;
+  min-height: 100%;
   border: 0;
   display: block;
 }
@@ -12315,15 +12325,22 @@ img.loaded {
 .cinejoy-watch-loader {
   position: fixed;
   inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100vw;
+  width: 100%;
   height: 100vh;
+  height: 100%;
+  height: 100dvh;
   z-index: 1000000;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #050609;
   overflow: hidden;
-  transition: opacity 0.4s ease, visibility 0.4s ease;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
 }
 
 .watch-loader-backdrop {
@@ -13976,6 +13993,50 @@ img.loaded {
   }
   .probe-name {
     font-size: 12.5px !important;
+  }
+
+  /* Mobile Big Player & Video Dimensions */
+  .cinejoy-big-player {
+    width: 100vw !important;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    inset: 0 !important;
+  }
+  .big-player-frame-wrap {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    position: relative !important;
+  }
+  .big-stream-frame {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    display: block !important;
+    border: 0 !important;
+    background: #000 !important;
+  }
+  .cinejoy-watch-loader {
+    width: 100vw !important;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    inset: 0 !important;
+  }
+  .cinejoy-watch-loader[style*="opacity: 0"],
+  .cinejoy-watch-loader.fade-out {
+    pointer-events: none !important;
+    visibility: hidden !important;
+    display: none !important;
+  }
+  .big-player-top-bar {
+    padding-top: max(8px, env(safe-area-inset-top, 8px)) !important;
+    height: 64px !important;
   }
 }
 

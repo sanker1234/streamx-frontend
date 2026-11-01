@@ -70,18 +70,19 @@ const IMG = {
 //   },
 // ];
 // ── PROVIDER SECURITY & SANDBOX REGISTRY ──────────────────────────────────
-// NXsha maintains secure sandbox restrictions (allow-scripts allow-same-origin allow-forms).
-// External embed engines (0vidads, Vidy, Atlantic, CinemaOS, VidRift, etc.) are unsandboxed
-// (sandbox: null) so they are not blocked by iframe sandbox restrictions.
+// All streaming providers (NXsha, CineSrc, 0vidads, Vidy, Atlantic, CinemaOS, VidRift, etc.)
+// are unsandboxed (sandbox: null) so they are not blocked by iframe sandbox restrictions
+// on mobile browsers (iOS Safari, Mobile Chrome) which require unrestricted MediaSource/HLS blob
+// access and localStorage for inline video playback.
 const PROVIDER_SECURITY_CONFIG = {
   nxsha: {
     tested: true,
     status: "compatible",
     isDirect: false,
-    sandbox: "allow-scripts allow-same-origin allow-forms",
+    sandbox: null,
     hasAds: false,
     adMechanism: "none",
-    notes: "NXsha embed player (web.nxsha.app/embed). Sandboxed with allow-scripts allow-same-origin allow-forms to stop top-navigation redirects and new tab popups."
+    notes: "NXsha embed player (web.nxsha.app/embed). Unsandboxed to guarantee MediaSource and localStorage playback across mobile & desktop."
   },
   cinesrc: { tested: true, status: "compatible", sandbox: null },
   "0vidads": { tested: true, status: "compatible", sandbox: null },
