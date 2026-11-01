@@ -532,11 +532,33 @@ const Player = (() => {
 
   function _setFrameSourceWithSandbox(frameEl, targetUrl, serverKey) {
     if (!frameEl) return null;
+    const isNxsha = !serverKey || serverKey === "nxsha";
+    const currentHasSandbox = frameEl.hasAttribute("sandbox");
 
-    // All streaming providers (NXsha, CineSrc, VidRift, 0vidads, CinemaOS, Atlantic, VidCore, etc.)
-    // must be unsandboxed so mobile WebKit (iOS Safari) and mobile Chrome do not restrict
-    // MediaSource (MSE) blob creation, localStorage, and inline video playback (which cause blank screens).
-    if (frameEl.hasAttribute("sandbox")) {
+    // When toggling between sandboxed (NXsha: allow-scripts allow-same-origin allow-forms)
+    // and unsandboxed (CinemaOS, CineSrc, 0vidads, etc.), cloning and replacing the iframe DOM node
+    // is REQUIRED by the HTML specification. In WebKit and Blink, dynamically adding or removing
+    // the sandbox attribute on an existing iframe does not update the active browsing context's sandbox flags.
+    // Without cloning, external embed engines like CinemaOS remain trapped in the sandbox security context,
+    // which throws DOMExceptions on storage and cross-origin checks, rendering a blank screen.
+    if (currentHasSandbox !== isNxsha && frameEl.parentNode) {
+      const clone = frameEl.cloneNode(false);
+      if (isNxsha) {
+        clone.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
+      } else {
+        clone.removeAttribute("sandbox");
+      }
+      clone.src = targetUrl;
+      clone.style.width = "100%";
+      clone.style.height = "100%";
+      clone.style.display = "block";
+      frameEl.parentNode.replaceChild(clone, frameEl);
+      return clone;
+    }
+
+    if (isNxsha) {
+      frameEl.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
+    } else {
       frameEl.removeAttribute("sandbox");
     }
 
@@ -909,7 +931,6 @@ const Player = (() => {
       bigFrame.style.display = "block";
       bigFrame.style.width = "100%";
       bigFrame.style.height = "100%";
-      bigFrame.removeAttribute("sandbox");
       const targetUrl = _getSelectedServerUrl(finalKey);
       _setFrameSourceWithSandbox(bigFrame, targetUrl, finalKey);
 
