@@ -42,7 +42,7 @@
     if ('caches' in window) {
       caches.keys().then(function (keys) {
         keys.forEach(function (k) {
-          if (k !== 'cinejoy-v20') {
+          if (k !== 'cinejoy-v25') {
             caches.delete(k);
           }
         });
@@ -50,10 +50,10 @@
     }
   </script>
   <link rel="canonical" href="https://cinejoy.pages.dev/">
-  <link rel="stylesheet" href="css/style.css?v=21.0">
-  <link rel="stylesheet" href="css/player-universal.css?v=2.0">
+  <link rel="stylesheet" href="css/style.css?v=25.0">
+  <link rel="stylesheet" href="css/player-universal.css?v=25.0">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <link rel="manifest" href="manifest.json?v=21.0">
+  <link rel="manifest" href="manifest.json?v=25.0">
 </head>
 <!-- ── Premium CineJoy Initial Branded Loading Screen ──────── -->
 <div id="cinejoy-loader" class="cinejoy-loader-screen" aria-label="Loading CineJoy" role="status">
@@ -203,7 +203,7 @@
           <path d="M21 21l-4.35-4.35" />
         </svg>
       </button>
-      <input type="search" id="search-input" placeholder="Search movies, shows, anime..." aria-label="Search"
+      <input type="text" id="search-input" placeholder="Search movies, shows, anime..." aria-label="Search"
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
         inputmode="search" oninput="App.onSearchInput(this.value)"
         onkeydown="if(event.key==='Enter'){event.preventDefault();App.triggerSearch();}">
@@ -843,7 +843,7 @@
     </div>
 
     <!-- 2. APPEARANCE CARD (Screenshot 9) -->
-    <div class="settings-card-section" id="settings-card-appearance" data-section="appearance" style="display:none">
+    <div class="settings-card-section" id="settings-card-appearance" data-section="appearance">
       <div class="settings-glass-card">
         <div class="settings-card-header">
           <h2>Appearance</h2>
@@ -939,7 +939,7 @@
     </div>
 
     <!-- 3. PLAYBACK CARD -->
-    <div class="settings-card-section" id="settings-card-playback" data-section="playback" style="display:none">
+    <div class="settings-card-section" id="settings-card-playback" data-section="playback">
       <div class="settings-glass-card">
         <div class="settings-card-header">
           <h2>Playback</h2>
@@ -1033,7 +1033,7 @@
     </div>
 
     <!-- 4. SERVERS CARD -->
-    <div class="settings-card-section" id="settings-card-servers" data-section="servers" style="display:none">
+    <div class="settings-card-section" id="settings-card-servers" data-section="servers">
       <div class="settings-glass-card">
         <div class="settings-card-header">
           <h2>Servers</h2>
@@ -1046,7 +1046,7 @@
     </div>
 
     <!-- 5. SUBTITLES CARD (Screenshot 10) -->
-    <div class="settings-card-section" id="settings-card-subtitles" data-section="subtitles" style="display:none">
+    <div class="settings-card-section" id="settings-card-subtitles" data-section="subtitles">
       <div class="settings-glass-card">
         <div class="settings-card-header">
           <h2>Subtitles</h2>
@@ -1105,7 +1105,7 @@
     </div>
 
     <!-- 6. ADVERTISEMENTS & FEBBOX CARD (Screenshot 10) -->
-    <div class="settings-card-section" id="settings-card-ads" data-section="ads" style="display:none">
+    <div class="settings-card-section" id="settings-card-ads" data-section="ads">
       <div class="settings-glass-card">
         <div class="settings-card-header">
           <h2>Advertisements</h2>
@@ -1346,6 +1346,7 @@
       </svg>
     </div>
     <div class="watch-loader-status" id="watch-loader-status">Pinging Solara...</div>
+    <div class="watch-loader-servers" id="watch-loader-servers"></div>
   </div>
 </div>
 
@@ -1695,15 +1696,15 @@
 </button>
 
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=21.0"></script>
-<script src="js/tmdb.js?v=21.0"></script>
-<script src="js/anilist.js?v=21.0"></script>
-<script src="js/watchlist.js?v=21.0"></script>
-<script src="js/history.js?v=21.0"></script>
-<script src="js/universalPlayer.js?v=2.0"></script>
-<script src="js/player.js?v=21.0"></script>
-<script src="js/livetv.js?v=21.0"></script>
-<script src="js/app.js?v=21.0"></script>
+<script src="js/config.js?v=25.0"></script>
+<script src="js/tmdb.js?v=25.0"></script>
+<script src="js/anilist.js?v=25.0"></script>
+<script src="js/watchlist.js?v=25.0"></script>
+<script src="js/history.js?v=25.0"></script>
+<script src="js/universalPlayer.js?v=25.0"></script>
+<script src="js/player.js?v=25.0"></script>
+<script src="js/livetv.js?v=25.0"></script>
+<script src="js/app.js?v=25.0"></script>
 
 </body>
 

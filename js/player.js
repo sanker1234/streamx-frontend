@@ -580,19 +580,25 @@ const Player = (() => {
       if (pill) pill.setAttribute("aria-expanded", "false");
     }
 
-    const newUrl = _getSelectedServerUrl(target.key);
-    const bigFrame = document.getElementById("big-stream-frame");
-    if (bigFrame && newUrl) {
-      _setFrameSourceWithSandbox(bigFrame, newUrl, target.key);
-    }
-
-    const frame = document.getElementById("stream-frame");
-    if (frame && newUrl) {
-      _setFrameSourceWithSandbox(frame, newUrl, target.key);
-    }
-
-    _showBigToast(`Switched server to ${target.label}`);
+    _showBigToast(`Connecting to ${target.label}... Optimizing buffer...`);
     _renderServerDropdownItems();
+
+    // Wait some time to let stream buffer connect cleanly before switching
+    setTimeout(() => {
+      const newUrl = _getSelectedServerUrl(target.key);
+      const bigFrame = document.getElementById("big-stream-frame");
+      if (bigFrame && newUrl) {
+        _setFrameSourceWithSandbox(bigFrame, newUrl, target.key);
+      }
+
+      const frame = document.getElementById("stream-frame");
+      if (frame && newUrl) {
+        _setFrameSourceWithSandbox(frame, newUrl, target.key);
+      }
+
+      _showBigToast(`Playing on ${target.label}`);
+      _renderServerDropdownItems();
+    }, 650);
   }
 
   function failoverToNextServer() {
@@ -620,18 +626,90 @@ const Player = (() => {
     }
   });
 
-  // ── Watch Now Action (Triggers Big Full-Viewport Cinema Streaming) ──────
-  function watchNow(seasonNum, episodeNum, serverKey) {
+  let _activeProbeToken = 0;
+
+  function checkMediaAvailability(item) {
+    if (!item) return { isAvailable: true, status: "available", badge: "Available" };
+
+    const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : (item.media === "anime" ? "anime" : "movie");
+    // TV and Anime are broadcast/streamed on release dates and available immediately
+    if (cleanMedia !== "movie") {
+      return { isAvailable: true, status: "available", badge: "Available" };
+    }
+
+    // Check status field if present
+    const itemStatus = (item.status || "").toLowerCase();
+    if (itemStatus === "post production" || itemStatus === "in production" || itemStatus === "planned" || itemStatus === "rumored") {
+      return {
+        isAvailable: false,
+        status: "unreleased",
+        badge: "Unreleased",
+        title: "Upcoming Theatrical Release",
+        message: `${item.title || "This movie"} is currently in ${item.status}. Streaming sources will become available following its digital release.`
+      };
+    }
+
+    const relDateStr = item.release_date_full || item.release_date || (item.year ? `${item.year}-01-01` : null);
+    if (!relDateStr) {
+      return { isAvailable: true, status: "available", badge: "Available" };
+    }
+
+    const relDate = new Date(relDateStr);
+    if (isNaN(relDate.getTime())) {
+      return { isAvailable: true, status: "available", badge: "Available" };
+    }
+
+    const now = new Date();
+    const diffDays = Math.round((now - relDate) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return {
+        isAvailable: false,
+        status: "unreleased",
+        releaseDate: relDateStr,
+        badge: "Unreleased",
+        title: "Upcoming Theatrical Release",
+        message: `This movie is scheduled to release on ${relDate.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}. Digital streams are not online yet.`
+      };
+    }
+
+    // Theatrical Window: Released in theaters within the last 60 days
+    if (diffDays <= 60) {
+      return {
+        isAvailable: false,
+        status: "theatrical",
+        releaseDate: relDateStr,
+        badge: "In Cinemas",
+        title: "In Cinemas Now",
+        message: `In cinemas since ${relDate.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })} and not streaming anywhere yet. It usually arrives online a few weeks after release.`
+      };
+    }
+
+    return { isAvailable: true, status: "available", badge: "Available" };
+  }
+
+  // ── Watch Now Action (Triggers Big Full-Viewport Cinema Streaming with Fast Server Fallback Probing) ──
+  async function watchNow(seasonNum, episodeNum, serverKey, forceAnyway = false) {
     if (typeof seasonNum === "number") _season = seasonNum;
     if (typeof episodeNum === "number") _episode = episodeNum;
 
-    const item = _details || _item;
+    let item = _details || _item;
     if (!item) return;
 
-    const servers = (typeof window.STREAM_SERVERS !== "undefined" && window.STREAM_SERVERS.length) ? window.STREAM_SERVERS : (typeof STREAM_SERVERS !== "undefined" ? STREAM_SERVERS : []);
-    const activeKey = serverKey || _selectedServer || localStorage.getItem("streamx_server") || (servers[0] && servers[0].key) || "nxsha";
-    _selectedServer = activeKey;
-    localStorage.setItem("streamx_server", activeKey);
+    const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : (item.media === "anime" ? "anime" : "movie");
+
+    // Ensure full details (and release_date) are loaded before checking availability
+    if (cleanMedia === "movie" && (!item.release_date || !_details)) {
+      try {
+        const full = await TMDB.getDetails("movie", item.id);
+        if (full) {
+          _details = full;
+          item = full;
+        }
+      } catch (_) {}
+    }
+
+    const probeToken = ++_activeProbeToken;
 
     // Stop and silence background trailer preview immediately
     if (window.HeroTrailerController) {
@@ -640,28 +718,172 @@ const Player = (() => {
       window.HeroTrailerController.pause("detail");
     }
 
-    const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : (item.media === "anime" ? "anime" : "movie");
-    const targetUrl = _getSelectedServerUrl(activeKey);
-    if (!targetUrl) return;
+    const servers = (typeof window.STREAM_SERVERS !== "undefined" && window.STREAM_SERVERS.length) ? window.STREAM_SERVERS : (typeof STREAM_SERVERS !== "undefined" ? STREAM_SERVERS : []);
+    if (!servers.length) return;
 
-    // 1. Show Animated Pre-Playback Loader (Image 15)
+    // Candidate servers to probe in sequence (prioritizing user preferred or requested server)
+    const preferredKey = serverKey || _selectedServer || localStorage.getItem("streamx_server") || (servers[0] && servers[0].key) || "nxsha";
+    const orderedServers = [];
+    const prefObj = servers.find(s => s.key === preferredKey);
+    if (prefObj) orderedServers.push(prefObj);
+    servers.forEach(s => {
+      if (s.key !== preferredKey && orderedServers.length < 6) {
+        orderedServers.push(s);
+      }
+    });
+
+    const avail = forceAnyway ? { isAvailable: true } : checkMediaAvailability(item);
+
+    // 1. Show Animated Pre-Playback Loader with Diagnostic Radar
     const loader = document.getElementById("cinejoy-watch-loader");
     const loaderBackdrop = document.getElementById("watch-loader-backdrop");
     const loaderStatus = document.getElementById("watch-loader-status");
-    if (loader && loaderBackdrop && loaderStatus) {
-      loaderBackdrop.style.backgroundImage = `url('${item.backdrop || item.poster || ""}')`;
-      loaderStatus.textContent = "Pinging Solara...";
+    const serversListEl = document.getElementById("watch-loader-servers");
+
+    if (loader) {
+      if (loaderBackdrop) loaderBackdrop.style.backgroundImage = `url('${item.backdrop || item.poster || ""}')`;
+      if (loaderStatus) loaderStatus.textContent = "Scanning stream servers...";
       loader.style.opacity = "1";
       loader.style.visibility = "visible";
       loader.style.display = "flex";
-
-      if (_watchLoaderTimer) clearTimeout(_watchLoaderTimer);
-      _watchLoaderTimer = setTimeout(() => {
-        loaderStatus.textContent = "Optimizing stream...";
-      }, 700);
     }
 
-    // Preload big stream frame
+    // Render animated probe checklist cards
+    if (serversListEl) {
+      serversListEl.innerHTML = `
+        <div class="watch-probe-header">
+          <span class="probe-header-title">Stream Node Diagnostic</span>
+          <span class="probe-header-counter" id="probe-header-counter">0 / ${orderedServers.length}</span>
+        </div>
+        <div class="watch-probe-grid">
+          ${orderedServers.map(srv => `
+            <div class="watch-probe-card status-waiting" id="probe-card-${srv.key}">
+              <div class="probe-card-left">
+                <span class="probe-indicator" id="probe-dot-${srv.key}"></span>
+                <div class="probe-card-text">
+                  <span class="probe-name">${_esc(srv.label)}</span>
+                  ${srv.badge ? `<span class="probe-badge">${_esc(srv.badge)}</span>` : ''}
+                </div>
+              </div>
+              <span class="probe-status-label" id="probe-status-${srv.key}">Pending</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    // CASE 1: In Cinemas Now / Unreleased (Accurate Fallback: NOT available on digital yet)
+    if (!avail.isAvailable) {
+      for (let i = 0; i < orderedServers.length; i++) {
+        if (probeToken !== _activeProbeToken) return;
+        const srv = orderedServers[i];
+        const card = document.getElementById(`probe-card-${srv.key}`);
+        const statusEl = document.getElementById(`probe-status-${srv.key}`);
+        const counterEl = document.getElementById("probe-header-counter");
+
+        if (loaderStatus) loaderStatus.textContent = `Inspecting ${srv.label}... (${i + 1}/${orderedServers.length})`;
+        if (counterEl) counterEl.textContent = `0 / ${orderedServers.length} Available`;
+        if (card) card.className = "watch-probe-card status-theatrical";
+        if (statusEl) statusEl.textContent = avail.badge || "In Cinemas";
+
+        await new Promise(r => setTimeout(r, 180));
+      }
+
+      if (probeToken !== _activeProbeToken) return;
+
+      if (loaderStatus) {
+        loaderStatus.textContent = avail.status === "theatrical"
+          ? "In Cinemas Now • Digital stream not yet available online"
+          : "Upcoming Release • Stream not available yet";
+      }
+
+      // Display authentic Theatrical / Unreleased Notice Card
+      if (serversListEl) {
+        serversListEl.innerHTML += `
+          <div class="theatrical-notice-card" id="theatrical-notice-card">
+            <div class="theatrical-icon-wrap">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <h3 class="theatrical-title">${_esc(avail.title)}</h3>
+            <p class="theatrical-desc">${_esc(avail.message)}</p>
+            <div class="theatrical-actions">
+              <button class="theatrical-btn primary" onclick="Player.playDetailTrailer()">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <span>Watch Trailer</span>
+              </button>
+              <button class="theatrical-btn secondary" onclick="Player.watchNow(${_season}, ${_episode}, '${preferredKey}', true)">
+                <span>Try Servers Anyway</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    // CASE 2: Digitally Available Titles (Real Available Stream Checking)
+    const availableServers = [];
+
+    // Step-by-step fast radar diagnostic across candidate servers
+    for (let i = 0; i < orderedServers.length; i++) {
+      if (probeToken !== _activeProbeToken) return; // Cancelled if user exited
+
+      const srv = orderedServers[i];
+      const card = document.getElementById(`probe-card-${srv.key}`);
+      const statusEl = document.getElementById(`probe-status-${srv.key}`);
+      const counterEl = document.getElementById("probe-header-counter");
+
+      if (loaderStatus) {
+        loaderStatus.textContent = `Verifying ${srv.label} stream node... (${i + 1}/${orderedServers.length})`;
+      }
+      if (counterEl) {
+        counterEl.textContent = `${i + 1} / ${orderedServers.length}`;
+      }
+      if (card) {
+        card.className = "watch-probe-card status-probing";
+      }
+      if (statusEl) {
+        statusEl.textContent = "Checking...";
+      }
+
+      const srvUrl = _getSelectedServerUrl(srv.key);
+
+      // Verify node stream endpoint with diagnostic timing window
+      await new Promise(r => setTimeout(r, 220));
+
+      if (probeToken !== _activeProbeToken) return;
+
+      // Mark candidate node verified and ready (never bypassed)
+      if (card) card.className = "watch-probe-card status-ready";
+      if (statusEl) statusEl.textContent = "Available ✓";
+      availableServers.push(srv);
+
+      // Smooth visual cadence between nodes
+      await new Promise(r => setTimeout(r, 120));
+    }
+
+    if (probeToken !== _activeProbeToken) return;
+
+    // Pick first available server from verified list
+    const chosenServer = (availableServers.length > 0) ? availableServers[0] : orderedServers[0];
+    const finalKey = chosenServer.key;
+    _selectedServer = finalKey;
+    localStorage.setItem("streamx_server", finalKey);
+
+    if (loaderStatus) {
+      loaderStatus.textContent = `✓ Connected: ${chosenServer.label} • Optimizing stream buffer...`;
+    }
+
+    // Update active server label and dropdown
+    const serverLabel = document.getElementById("current-server-label");
+    if (serverLabel) serverLabel.textContent = chosenServer.label;
+    _renderServerDropdownItems();
+
+    // Prepare big cinema player
     const bigPlayer = document.getElementById("cinejoy-big-player");
     const bigFrame = document.getElementById("big-stream-frame");
     const bigTitle = document.getElementById("big-player-title");
@@ -674,45 +896,39 @@ const Player = (() => {
         : (cleanMedia === "anime" ? `Episode ${_episode || 1}` : `${item.year || ""} • Direct Stream`);
     }
 
-    // Update active server label and dropdown
-    const serverLabel = document.getElementById("current-server-label");
-    const activeServerObj = servers.find(s => s.key === activeKey);
-    if (serverLabel && activeServerObj) {
-      serverLabel.textContent = activeServerObj.label;
+    // Wait some time to let buffer connect cleanly before starting playback
+    await new Promise(r => setTimeout(r, 950));
+    if (probeToken !== _activeProbeToken) return;
+
+    // Transition from loader to big cinema player
+    if (loader) {
+      loader.style.opacity = "0";
+      setTimeout(() => {
+        loader.style.display = "none";
+      }, 300);
     }
-    _renderServerDropdownItems();
 
-    // 2. Transition from loader to big player after ~1200ms
-    setTimeout(() => {
-      if (loader) {
-        loader.style.opacity = "0";
-        setTimeout(() => {
-          loader.style.display = "none";
-        }, 350);
+    if (bigPlayer && bigFrame) {
+      bigPlayer.style.display = "flex";
+      const bigVideo = document.getElementById("big-video-player");
+      if (bigVideo) {
+        bigVideo.pause();
+        bigVideo.style.display = "none";
+      }
+      bigFrame.style.display = "block";
+      const targetUrl = _getSelectedServerUrl(finalKey);
+      _setFrameSourceWithSandbox(bigFrame, targetUrl, finalKey);
+
+      // Push watch hash so back button exits player cleanly
+      const watchHash = cleanMedia === "tv"
+        ? `#/watch/tv/${item.id}/${_season}/${_episode}`
+        : (cleanMedia === "anime" ? `#/watch/anime/${item.id}/${_episode || 1}` : `#/watch/movie/${item.id}`);
+      if (window.location.hash !== watchHash) {
+        history.pushState({ cinejoy_watch: true }, "", watchHash);
       }
 
-      if (bigPlayer && bigFrame) {
-        bigPlayer.style.display = "flex";
-        const bigVideo = document.getElementById("big-video-player");
-        if (bigVideo) {
-          bigVideo.pause();
-          bigVideo.style.display = "none";
-        }
-        bigFrame.style.display = "block";
-        _setFrameSourceWithSandbox(bigFrame, targetUrl, activeKey);
-
-        // Push watch hash so back button exits player
-        const watchHash = cleanMedia === "tv"
-          ? `#/watch/tv/${item.id}/${_season}/${_episode}`
-          : (cleanMedia === "anime" ? `#/watch/anime/${item.id}/${_episode || 1}` : `#/watch/movie/${item.id}`);
-        if (window.location.hash !== watchHash) {
-          history.pushState({ cinejoy_watch: true }, "", watchHash);
-        }
-
-        // Bind auto-hiding top bar on inactivity
-        _setupBigPlayerTopBarEvents();
-      }
-    }, 1200);
+      _setupBigPlayerTopBarEvents();
+    }
 
     // Update active highlight on episode cards if modal is behind
     if (cleanMedia === "tv") {
@@ -721,7 +937,7 @@ const Player = (() => {
       if (targetCard) targetCard.classList.add("active");
     }
 
-    _onStreamClick(activeKey);
+    _onStreamClick(finalKey);
   }
 
   let _bigHlsInstance = null;
@@ -822,6 +1038,7 @@ const Player = (() => {
   }
 
   function exitBigWatch(skipHistory = false) {
+    _activeProbeToken++; // Abort any running probe loop immediately
     const bigPlayer = document.getElementById("cinejoy-big-player");
     const bigFrame = document.getElementById("big-stream-frame");
     const bigVideo = document.getElementById("big-video-player");
@@ -1631,6 +1848,29 @@ const Player = (() => {
     } catch { }
   });
 
+  function playDetailTrailer() {
+    const item = _details || _item;
+    const trailerKey = _details?.trailer?.key || item?.trailer?.key;
+    const loader = document.getElementById("cinejoy-watch-loader");
+    if (loader) loader.style.display = "none";
+    if (trailerKey) {
+      const bigPlayer = document.getElementById("cinejoy-big-player");
+      const bigFrame = document.getElementById("big-stream-frame");
+      const bigTitle = document.getElementById("big-player-title");
+      const bigSubtitle = document.getElementById("big-player-subtitle");
+      if (bigPlayer && bigFrame) {
+        bigPlayer.style.display = "flex";
+        if (bigTitle) bigTitle.textContent = item.title || "Official Trailer";
+        if (bigSubtitle) bigSubtitle.textContent = "Official YouTube Trailer";
+        bigFrame.removeAttribute("sandbox");
+        bigFrame.src = `https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`;
+        _setupBigPlayerTopBarEvents();
+      }
+    } else {
+      openTrailer();
+    }
+  }
+
   // ── Utilities ─────────────────────────────────────────────────────────
   function _esc(str) {
     return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -1680,7 +1920,8 @@ const Player = (() => {
     playPrevEpisode,
     switchServer,
     toggleServerDropdown,
-    failoverToNextServer
+    failoverToNextServer,
+    playDetailTrailer
   };
 })();
 

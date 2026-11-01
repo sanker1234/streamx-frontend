@@ -94,6 +94,7 @@ const TMDB = (() => {
       title       : item.title || item.name || "Untitled",
       overview    : item.overview || "",
       year        : (item.release_date || item.first_air_date || "").slice(0, 4),
+      release_date: item.release_date || item.first_air_date || "",
       rating      : parseFloat((item.vote_average || 0).toFixed(1)),
       votes       : item.vote_count || 0,
       popularity  : item.popularity || 0,

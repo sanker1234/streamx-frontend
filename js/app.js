@@ -347,6 +347,28 @@ const App = (() => {
       document.addEventListener("mousemove", mouseMove);
       document.addEventListener("mouseup", mouseUp);
     });
+
+    // Guarantee instant soft keyboard appearance and cursor focus on mobile touch devices
+    const searchTriggerElements = [
+      document.getElementById("mob-nav-search"),
+      document.getElementById("mobile-header-search-btn"),
+      document.getElementById("nav-search-btn")
+    ].filter(Boolean);
+
+    searchTriggerElements.forEach(btn => {
+      const openSearchFast = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSearchModal(true);
+      };
+      btn.addEventListener("touchstart", openSearchFast, { passive: false });
+      btn.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "touch" || e.pointerType === "pen") {
+          openSearchFast(e);
+        }
+      });
+      btn.onclick = openSearchFast;
+    });
   }
 
 
@@ -1085,46 +1107,36 @@ const App = (() => {
     modal.style.display = isNowOpen ? "flex" : "none";
     if (isNowOpen) {
       if (inp) {
-        inp.focus();
-        requestAnimationFrame(() => inp.focus());
+        try {
+          inp.focus({ preventScroll: true });
+          const len = inp.value.length;
+          inp.setSelectionRange(len, len);
+        } catch (_) {}
+
+        setTimeout(() => {
+          try {
+            inp.focus();
+          } catch (_) {}
+        }, 50);
+
+        if (inp.value && inp.value.trim().length >= 2) {
+          onSearchInput(inp.value);
+        }
       }
     } else {
       if (inp) inp.blur();
       const historyEl = document.getElementById("search-history");
       if (historyEl) historyEl.classList.remove("show");
       const liveEl = document.getElementById("search-modal-live-results");
-      if (liveEl) liveEl.style.display = "none";
+      if (liveEl) {
+        liveEl.style.display = "none";
+        liveEl.innerHTML = "";
+      }
     }
   }
 
   function toggleMobileSearch(forceState) {
-    const header = document.getElementById("top-header") || document.querySelector(".top-header");
-    const wrap = document.getElementById("header-search-wrap");
-    const inp = document.getElementById("search-input");
-    if (!header) return;
-
-    const isNowOpen = typeof forceState === "boolean" ? forceState : !header.classList.contains("mobile-search-open");
-    header.classList.toggle("mobile-search-open", isNowOpen);
-    if (wrap) wrap.classList.toggle("mobile-search-open", isNowOpen);
-
-    if (isNowOpen) {
-      if (inp) {
-        inp.focus();
-        requestAnimationFrame(() => {
-          inp.focus();
-          if (inp.value) {
-            const len = inp.value.length;
-            inp.setSelectionRange(len, len);
-          }
-        });
-      }
-    } else {
-      if (inp) inp.blur();
-      const historyEl = document.getElementById("search-history");
-      if (historyEl) historyEl.classList.remove("show");
-      const liveEl = document.getElementById("search-modal-live-results");
-      if (liveEl) liveEl.style.display = "none";
-    }
+    toggleSearchModal(forceState);
   }
 
   function _startHeroRotation() {
@@ -2428,6 +2440,17 @@ const App = (() => {
         liveContainer.innerHTML = "";
       }
       return;
+    }
+
+    // Instant searching feedback while typing
+    if (liveContainer) {
+      liveContainer.style.display = "flex";
+      liveContainer.innerHTML = `
+        <div style="padding:14px 20px; font-size:13.5px; color:rgba(255,255,255,0.65); display:flex; align-items:center; justify-content:center; gap:8px;">
+          <div class="loader-spinner-sm" style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.2);border-top-color:#ff2a6d;border-radius:50%;animation:spin 0.6s linear infinite;"></div>
+          <span>Searching for &ldquo;${_esc(query)}&rdquo;...</span>
+        </div>
+      `;
     }
 
     // Debounced live instant suggestions directly inside the search modal
@@ -6592,13 +6615,17 @@ const App = (() => {
     document.querySelectorAll(".settings-tab-btn").forEach(btn => {
       btn.classList.toggle("active", btn.getAttribute("data-tab") === tabKey);
     });
-    // Ensure all sections are visible stacked in flowing vertical layout matching cinejoy.pk
     document.querySelectorAll(".settings-card-section").forEach(sec => {
       sec.style.display = "block";
     });
     const target = document.querySelector(`.settings-card-section[data-section="${tabKey}"]`) || document.getElementById(`settings-card-${tabKey}`);
     if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      const topOffset = 135;
+      const targetY = target.getBoundingClientRect().top + window.pageYOffset - topOffset;
+      window.scrollTo({
+        top: Math.max(0, targetY),
+        behavior: "smooth"
+      });
     }
   }
 
