@@ -256,13 +256,13 @@ const Player = (() => {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
   }
 
-  function _formatReleaseDate(dateStr) {
+  function _formatReleaseDate(dateStr, longMonth = false) {
     if (!dateStr) return "";
     try {
       const parts = dateStr.split("-");
       if (parts.length === 3) {
-        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        return d.toLocaleDateString("en-US", { month: longMonth ? "long" : "short", day: "numeric", year: "numeric" });
       }
       return dateStr;
     } catch {
@@ -331,6 +331,32 @@ const Player = (() => {
     const runtimeText = _formatRuntime(runtimeMinutes);
     const endsAtText = _calculateEndsAt(runtimeMinutes);
     const releaseDateText = _formatReleaseDate(d.release_date_full || d.year || "");
+    const firstAiredText = _formatReleaseDate(d.first_air_date || d.release_date_full || d.release_date || "", true);
+    const lastAiredText = _formatReleaseDate(d.last_air_date || "", true);
+    const seasonsCount = d.seasons || (d.season_list ? d.season_list.length : null) || 1;
+    let episodesCount = d.episodes || null;
+    if (!episodesCount && d.season_list && d.season_list.length) {
+      episodesCount = d.season_list.reduce((acc, s) => acc + (s.episode_count || 0), 0);
+    }
+    if (!episodesCount && _currentEpisodes && _currentEpisodes.length) {
+      episodesCount = _currentEpisodes.length;
+    }
+    if (!episodesCount) {
+      episodesCount = seasonsCount * 8;
+    }
+
+    let creatorDirectorHtml = "";
+    if (d.media === "tv") {
+      const creatorsList = (d.created_by && d.created_by.length)
+        ? d.created_by.join(", ")
+        : (d.director || "");
+      if (creatorsList) {
+        creatorDirectorHtml = `<div class="pm-hero-director-line">Creators: <strong>${_esc(creatorsList)}</strong></div>`;
+      }
+    } else if (d.director) {
+      creatorDirectorHtml = `<div class="pm-hero-director-line">Director: <strong>${_esc(d.director)}</strong></div>`;
+    }
+
     const langCode = (d.original_language || "en").toUpperCase();
     const studioName = (d.production_companies && d.production_companies[0]?.name)
       || (d.networks && d.networks[0])
@@ -386,15 +412,15 @@ const Player = (() => {
 
               <!-- Metadata Line: Year • Runtime • Rating • Stars • Likes -->
               <div class="pm-hero-meta-row">
-                ${d.year ? `<span class="pm-meta-item">${d.year}</span>` : ""}
-                ${runtimeText ? `<span class="pm-meta-item">${runtimeText}</span>` : ""}
+                ${d.year ? `<span class="pm-meta-item">${d.media === "tv" ? `${d.year}–` : d.year}</span>` : ""}
+                ${(d.media !== "tv" && runtimeText) ? `<span class="pm-meta-item">${runtimeText}</span>` : ""}
                 <span class="pm-meta-item pm-cert-badge">${certRating}</span>
                 <span class="pm-meta-item pm-star-rating">★ ${d.rating.toFixed(1)}</span>
                 <span class="pm-meta-item pm-votes-count">👍 0 &nbsp; 👎 0</span>
               </div>
 
-              <!-- Director Info Line -->
-              ${d.director ? `<div class="pm-hero-director-line">Director: <strong>${_esc(d.director)}</strong></div>` : ""}
+              <!-- Director / Creators Info Line -->
+              ${creatorDirectorHtml}
 
               <!-- Synopsis Overview -->
               ${shortOverview ? `<p class="pm-hero-overview">${_esc(shortOverview)}</p>` : ""}
@@ -403,20 +429,49 @@ const Player = (() => {
             <!-- Right-Side Glassmorphic Card (Screenshot 8 & 9) -->
             <div class="pm-hero-right">
               <div class="pm-hero-side-card">
-                ${runtimeText ? `
-                <div class="pm-side-meta-row">
-                  <span class="pm-side-label">Runtime</span>
-                  <span class="pm-side-val">${runtimeText} ${endsAtText ? `• Ends ${endsAtText}` : ""}</span>
-                </div>` : ""}
-                <div class="pm-side-meta-row">
-                  <span class="pm-side-label">Language</span>
-                  <span class="pm-side-val">${langCode}</span>
-                </div>
-                ${releaseDateText ? `
-                <div class="pm-side-meta-row">
-                  <span class="pm-side-label">Release Date</span>
-                  <span class="pm-side-val">${releaseDateText}</span>
-                </div>` : ""}
+                ${d.media === "tv" ? `
+                  <div class="pm-side-meta-row">
+                    <span class="pm-side-label">Status</span>
+                    <span class="pm-side-val">${_esc(d.status || "Returning Series")}</span>
+                  </div>
+                  <div class="pm-side-meta-row">
+                    <span class="pm-side-label">Language</span>
+                    <span class="pm-side-val">${langCode}</span>
+                  </div>
+                  ${firstAiredText ? `
+                  <div class="pm-side-meta-row">
+                    <span class="pm-side-label">First Aired</span>
+                    <span class="pm-side-val">${firstAiredText}</span>
+                  </div>` : ""}
+                  ${lastAiredText ? `
+                  <div class="pm-side-meta-row">
+                    <span class="pm-side-label">Last Aired</span>
+                    <span class="pm-side-val">${lastAiredText}</span>
+                  </div>` : ""}
+                  <div class="pm-side-meta-row">
+                    <span class="pm-side-label">Seasons</span>
+                    <span class="pm-side-val">${seasonsCount}</span>
+                  </div>
+                  <div class="pm-side-meta-row">
+                    <span class="pm-side-label">Episodes</span>
+                    <span class="pm-side-val">${episodesCount}</span>
+                  </div>
+                ` : `
+                  ${runtimeText ? `
+                  <div class="pm-side-meta-row">
+                    <span class="pm-side-label">Runtime</span>
+                    <span class="pm-side-val">${runtimeText} ${endsAtText ? `• Ends ${endsAtText}` : ""}</span>
+                  </div>` : ""}
+                  <div class="pm-side-meta-row">
+                    <span class="pm-side-label">Language</span>
+                    <span class="pm-side-val">${langCode}</span>
+                  </div>
+                  ${releaseDateText ? `
+                  <div class="pm-side-meta-row">
+                    <span class="pm-side-label">Release Date</span>
+                    <span class="pm-side-val">${releaseDateText}</span>
+                  </div>` : ""}
+                `}
                 ${studioName ? `
                 <div class="pm-side-studio-wrap">
                   <span class="pm-side-studio-badge">${_esc(studioName)}</span>
@@ -1288,28 +1343,46 @@ const Player = (() => {
       loader.style.display = "none";
     }
 
-    // Restore previous hash cleanly without history push loops
+    // Restore previous hash cleanly and route properly back to movie details page
     if (!skipHistory) {
-      if (window.location.hash.startsWith("#/watch/")) {
-        if (window.history.length > 1) {
-          window.history.back();
-        } else {
-          const item = _details || _item;
-          if (item) {
-            const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : "movie";
-            history.replaceState({ streamx: true }, "", `#/${cleanMedia}/${item.id}`);
-          } else {
-            history.replaceState({ streamx: true }, "", "#/");
+      let item = _details || _item;
+      if (!item || !item.id) {
+        const curHash = window.location.hash || "";
+        const m = curHash.match(/^#?\/watch\/(movie|tv|drama|anime)\/(\d+)/);
+        if (m) {
+          const media = m[1] === "drama" ? "tv" : m[1];
+          const id = parseInt(m[2], 10);
+          if (id && !isNaN(id)) {
+            item = { id, media, title: "Loading…", poster: "", backdrop: "" };
           }
         }
-      } else {
-        const item = _details || _item;
-        if (item) {
-          const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : "movie";
-          const detailHash = `#/${cleanMedia}/${item.id}`;
-          if (window.location.hash !== detailHash) {
-            history.replaceState({ streamx: true }, "", detailHash);
+      }
+
+      if (item && item.id) {
+        const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : (item.media === "anime" ? "anime" : "movie");
+        const targetHash = `#/${cleanMedia}/${item.id}`;
+        if (window.location.hash.startsWith("#/watch/")) {
+          history.replaceState({ streamx: true }, "", targetHash);
+          if (false && window.history.length > 1) {
+            window.history.back();
           }
+        } else if (window.location.hash !== targetHash) {
+          history.replaceState({ streamx: true }, "", targetHash);
+        }
+
+        // Restore the movie details modal cleanly
+        if (cleanMedia === "anime") {
+          if (window.App && typeof window.App._openAnimeDetail === "function") {
+            window.App._openAnimeDetail(item, true);
+          }
+        } else {
+          open(item, true);
+        }
+      } else {
+        if (window.location.hash.startsWith("#/watch/") && window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.hash = "#/";
         }
       }
     }

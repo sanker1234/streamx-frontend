@@ -50,10 +50,10 @@
     }
   </script>
   <link rel="canonical" href="https://cinejoy.pages.dev/">
-  <link rel="stylesheet" href="css/style.css?v=27.0">
-  <link rel="stylesheet" href="css/player-universal.css?v=27.0">
+  <link rel="stylesheet" href="css/style.css?v=28.0">
+  <link rel="stylesheet" href="css/player-universal.css?v=28.0">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <link rel="manifest" href="manifest.json?v=27.0">
+  <link rel="manifest" href="manifest.json?v=28.0">
 </head>
 <!-- ── Premium CineJoy Initial Branded Loading Screen ──────── -->
 <div id="cinejoy-loader" class="cinejoy-loader-screen" aria-label="Loading CineJoy" role="status">
@@ -1365,20 +1365,22 @@
     </div>
 
   <!-- Top-Center Floating Server Switcher (7movies.ac style) -->
-    <div class="big-player-server-rail" id="big-player-server-rail" role="tablist" aria-label="Streaming Servers"></div>
+    <div class="big-player-center-group" id="big-player-center-group">
+      <div class="big-player-server-bar" id="big-player-server-bar">
+        <div class="server-badge-pill" title="Playback Mode">
+          <span>Direct</span>
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="server-select-dropdown-wrap" id="server-select-dropdown-wrap">
+          <button type="button" class="server-active-pill" id="server-active-pill" onclick="Player.toggleServerDropdown(event)" aria-haspopup="true" aria-expanded="false">
+            <span id="current-server-label">NXsha</span>
+            <svg class="dropdown-chevron-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="server-dropdown-menu" id="server-dropdown-menu" style="display:none;" role="menu"></div>
+        </div>
+      </div>
 
-    <div class="big-player-server-bar" id="big-player-server-bar">
-      <div class="server-badge-pill" title="Playback Mode">
-        <span>Direct</span>
-        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-      </div>
-      <div class="server-select-dropdown-wrap" id="server-select-dropdown-wrap">
-        <button type="button" class="server-active-pill" id="server-active-pill" onclick="Player.toggleServerDropdown(event)" aria-haspopup="true" aria-expanded="false">
-          <span id="current-server-label">NXsha</span>
-          <svg class="dropdown-chevron-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="server-dropdown-menu" id="server-dropdown-menu" style="display:none;" role="menu"></div>
-      </div>
+      <div class="big-player-server-rail" id="big-player-server-rail" role="tablist" aria-label="Streaming Servers"></div>
     </div>
 
     <div class="big-player-actions">
@@ -1706,15 +1708,15 @@
 </button>
 
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=27.0"></script>
-<script src="js/tmdb.js?v=27.0"></script>
-<script src="js/anilist.js?v=27.0"></script>
-<script src="js/watchlist.js?v=27.0"></script>
-<script src="js/history.js?v=27.0"></script>
-<script src="js/universalPlayer.js?v=27.0"></script>
-<script src="js/player.js?v=27.0"></script>
-<script src="js/livetv.js?v=27.0"></script>
-<script src="js/app.js?v=27.0"></script>
+<script src="js/config.js?v=28.0"></script>
+<script src="js/tmdb.js?v=28.0"></script>
+<script src="js/anilist.js?v=28.0"></script>
+<script src="js/watchlist.js?v=28.0"></script>
+<script src="js/history.js?v=28.0"></script>
+<script src="js/universalPlayer.js?v=28.0"></script>
+<script src="js/player.js?v=28.0"></script>
+<script src="js/livetv.js?v=28.0"></script>
+<script src="js/app.js?v=28.0"></script>
 
 </body>
 

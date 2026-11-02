@@ -249,8 +249,11 @@ const TMDB = (() => {
     const directorObj = data.credits?.crew?.find(c => c.job === "Director")
       || (data.created_by && data.created_by[0]);
     norm.director = directorObj ? (directorObj.name || "") : "";
+    norm.created_by = (data.created_by || []).map(c => (typeof c === "object" ? c.name : c)).filter(Boolean);
     norm.production_companies = data.production_companies || [];
     norm.release_date_full = data.release_date || data.first_air_date || "";
+    norm.first_air_date = data.first_air_date || "";
+    norm.last_air_date = data.last_air_date || "";
 
     return norm;
   }
