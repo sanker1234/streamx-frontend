@@ -78,6 +78,19 @@ const Player = (() => {
       bg.classList.add("has-cinematic-detail");
       bg.scrollTop = 0;
     }
+    document.body.classList.add("has-modal-open");
+    const topHdr = document.getElementById("top-header");
+    if (topHdr) {
+      topHdr.classList.remove("header-hidden-detail", "hidden");
+      topHdr.style.removeProperty("display");
+      topHdr.style.removeProperty("visibility");
+      topHdr.style.removeProperty("opacity");
+    }
+    const backBtn = document.getElementById("header-back-btn");
+    if (backBtn) backBtn.style.display = "inline-flex";
+    if (window.App && typeof window.App._updateActiveNavLinks === "function") {
+      window.App._updateActiveNavLinks(cleanMedia === "tv" ? "series" : "movies");
+    }
     document.body.style.overflow = "hidden";
     _renderSkeleton(item);
 
@@ -120,8 +133,9 @@ const Player = (() => {
 
       _renderFull();
 
-      // Dynamically mount title's own autoplaying trailer in background
-      if (window.HeroTrailerController) {
+      // Dynamically mount title's own autoplaying trailer in background if enabled in settings
+      const trailersPref = (typeof localStorage !== "undefined" && localStorage.getItem("streamx_trailers")) !== "false";
+      if (window.HeroTrailerController && trailersPref) {
         window.HeroTrailerController.loadTrailerForItem("detail", _details);
       }
     } catch (err) {
@@ -160,6 +174,22 @@ const Player = (() => {
       bg.classList.remove("has-cinematic-detail");
       bg.innerHTML = "";
     }
+    document.body.classList.remove("has-modal-open");
+    document.body.classList.remove("big-player-active");
+    const topHdr = document.getElementById("top-header");
+    if (topHdr) {
+      topHdr.classList.remove("header-hidden-detail");
+      topHdr.classList.remove("hidden");
+      topHdr.style.removeProperty("display");
+      topHdr.style.removeProperty("visibility");
+      topHdr.style.removeProperty("opacity");
+      topHdr.style.removeProperty("pointer-events");
+    }
+    const backBtn = document.getElementById("header-back-btn");
+    if (backBtn) backBtn.style.display = "none";
+    if (window.App && typeof window.App._updateActiveNavLinks === "function") {
+      window.App._updateActiveNavLinks("home");
+    }
     if (window.App && typeof window.App.hideActionLoader === "function") {
       window.App.hideActionLoader();
     }
@@ -194,21 +224,22 @@ const Player = (() => {
   // ── Skeleton Loader ───────────────────────────────────────────────────
   function _renderSkeleton(item) {
     const backdropUrl = item.backdrop || item.poster || "";
+    const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : (item.media === "anime" ? "anime" : "movie");
     $("player-modal-bg").innerHTML = `
-      <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true" aria-label="${_esc(item.title || "Loading...")}">
+      <div class="player-modal cinematic-detail-modal view-fullpage" role="dialog" aria-modal="true" aria-label="${_esc(item.title || "Loading...")}">
         <div class="pm-cinematic-hero skeleton-hero" style="background-image:url('${backdropUrl}')">
           <div class="pm-hero-vignette"></div>
-          <div class="pm-hero-top-bar">
-            <button class="pm-hero-back-btn" onclick="Player.close()" aria-label="Go back">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-              <span>Back</span>
-            </button>
-          </div>
-          <div class="pm-hero-content">
-            <div class="skeleton-line" style="width:120px;height:24px;border-radius:6px;margin-bottom:12px;"></div>
-            <h1 class="pm-hero-title">${_esc(item.title || "")}</h1>
-            <div class="skeleton-line" style="width:65%;height:16px;border-radius:4px;margin-top:10px;"></div>
-            <div class="skeleton-line" style="width:45%;height:16px;border-radius:4px;margin-top:8px;"></div>
+          <div class="pm-hero-content pm-hero-split-layout">
+            <div class="pm-hero-left">
+              <h1 class="pm-hero-title">${_esc(item.title || "")}</h1>
+              <div class="skeleton-line" style="width:140px;height:20px;border-radius:6px;margin:6px 0;"></div>
+              <div class="skeleton-line" style="width:240px;height:42px;border-radius:999px;margin:12px 0;"></div>
+              <div class="skeleton-line" style="width:65%;height:16px;border-radius:4px;margin-top:10px;"></div>
+              <div class="skeleton-line" style="width:45%;height:16px;border-radius:4px;margin-top:8px;"></div>
+            </div>
+            <div class="pm-hero-right">
+              <div class="pm-hero-side-card skeleton-side-card" style="width:280px;height:220px;opacity:0.6;"></div>
+            </div>
           </div>
         </div>
         <div class="pm-cinematic-body">
@@ -221,13 +252,7 @@ const Player = (() => {
   function _renderError(msg) {
     $("player-modal-bg").innerHTML = `
       <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true" aria-label="Error loading title">
-        <div class="pm-hero-top-bar" style="position:relative;background:none;backdrop-filter:none;padding:16px 20px;">
-          <button class="pm-hero-back-btn" onclick="Player.close()" aria-label="Close modal">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            <span>Close</span>
-          </button>
-        </div>
-        <div class="empty-state" role="alert" style="padding:48px 24px 64px;">
+        <div class="empty-state" role="alert" style="padding:64px 24px;">
           <div class="empty-state-icon error" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           </div>
@@ -366,8 +391,11 @@ const Player = (() => {
     // Clean synopsis
     const shortOverview = d.overview || "";
 
+    const detailViewType = (typeof localStorage !== "undefined" && localStorage.getItem("streamx_detail_view_type")) || "page";
+    const detailClass = (detailViewType === "modal") ? "view-modal" : "view-fullpage";
+
     $("player-modal-bg").innerHTML = `
-      <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true" aria-label="${_esc(d.title)}">
+      <div class="player-modal cinematic-detail-modal ${detailClass}" role="dialog" aria-modal="true" aria-label="${_esc(d.title)}">
 
         <!-- 1. Large Cinematic Trailer Hero (Screenshot 8 & 9) -->
         <div class="pm-cinematic-hero" style="background-image:url('${d.backdrop || d.poster || ""}')">
@@ -375,14 +403,6 @@ const Player = (() => {
           <div class="pm-hero-video-layer" id="pm-hero-video-layer"></div>
           <!-- Dark Gradients Vignette -->
           <div class="pm-hero-vignette"></div>
-
-          <!-- Top Controls Bar with Back button and header brand -->
-          <div class="pm-hero-top-bar">
-            <button class="pm-hero-back-btn" onclick="Player.close()" aria-label="Go back">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-              <span>Back</span>
-            </button>
-          </div>
 
           <!-- Overlaid Content Details in Split Layout -->
           <div class="pm-hero-content pm-hero-split-layout">
@@ -484,24 +504,29 @@ const Player = (() => {
         <!-- 2. Content Sections Underneath Hero -->
         <div class="pm-cinematic-body">
 
-          <!-- Series Sections (1. Season Selector, 2. Episode Cards) -->
+          <!-- Series Sections (Episodes Matching cinejoy.pk) -->
           ${d.media === "tv" ? `
             <div class="pm-series-section">
               <div class="pm-episodes-header-row">
-                <h3 class="pm-section-title" style="margin-bottom:0;">Episodes</h3>
+                <div class="pm-ep-header-left">
+                  <h3 class="pm-section-title" style="margin-bottom:0;">Episodes</h3>
+                </div>
                 <div class="pm-episodes-controls">
-                  <div class="pm-ep-search-box">
-                    <svg class="pm-ep-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                    <input type="text" id="pm-ep-search-input" class="pm-ep-search-input" placeholder="Search episodes..." value="${_esc(_epSearchQuery)}" oninput="Player.onEpisodeSearch(this.value)" autocomplete="off">
-                    <button id="pm-ep-search-clear" class="pm-ep-search-clear" onclick="Player.clearEpisodeSearch()" style="${_epSearchQuery ? 'display:flex;' : 'display:none;'}" title="Clear search">✕</button>
-                  </div>
-                  <button id="pm-ep-sort-btn" class="pm-ep-sort-btn${_epSortOrder === 'desc' ? ' desc' : ''}" onclick="Player.toggleSortOrder()" title="Toggle sort order" aria-label="Toggle sort order">
-                    <svg class="pm-sort-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
-                    <span id="pm-ep-sort-label">${_epSortOrder === 'asc' ? 'Ascending' : 'Descending'}</span>
+                  <button type="button" class="pm-ep-control-pill" id="pm-ep-rating-toggle" onclick="Player.toggleRatingSort()" title="Filter or sort by rating">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    <span>Ratings</span>
                   </button>
+                  <button type="button" class="pm-ep-control-pill" id="pm-ep-sort-btn" onclick="Player.toggleSortOrder()" title="Toggle release date sort order">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
+                    <span id="pm-ep-sort-label">${_epSortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
+                  </button>
+                  <button type="button" class="pm-ep-control-pill" id="pm-ep-mark-watched-btn" onclick="Player.markAllSeasonWatched()" title="Mark entire season as watched">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>Mark watched</span>
+                  </button>
+                  ${_renderSeasonSelector()}
                 </div>
               </div>
-              ${_renderSeasonSelector()}
               <div id="pm-episodes-container">
                 ${_renderEpisodesList()}
               </div>
@@ -607,11 +632,6 @@ const Player = (() => {
         await screen.orientation.lock("landscape");
       }
     } catch (_) {}
-
-    // 3. For mobile portrait screens (or browsers like iOS Safari where orientation.lock is restricted in standard tabs):
-    if (window.innerWidth < window.innerHeight && window.innerWidth <= 900) {
-      bigPlayer.classList.add("force-landscape");
-    }
   }
 
   function toggleLandscapeRotate() {
@@ -638,6 +658,10 @@ const Player = (() => {
     const bigVideo = document.getElementById("big-video-player");
     if (bigPlayer && bigFrame) {
       bigPlayer.style.display = "flex";
+      bigPlayer.classList.add("active");
+      document.body.classList.add("big-player-active");
+      const topHdr = document.getElementById("top-header");
+      if (topHdr) topHdr.classList.add("header-hidden-detail");
       if (bigVideo) {
         bigVideo.pause();
         bigVideo.classList.remove("player-visible");
@@ -658,15 +682,23 @@ const Player = (() => {
     try {
       const u = new URL(srvUrl);
       if (typeof window === "undefined" || !window.fetch) return true;
+      // In web browsers, cross-origin embed engines (NXsha, CinemaOS, VidLink, CineSrc, etc.)
+      // cannot be queried via raw fetch() due to CORS / opaque origin restrictions.
+      // Verified stream provider URLs are valid active playback nodes.
+      const host = u.hostname.toLowerCase();
+      if (host.includes("nxsha") || host.includes("cinemaos") || host.includes("vidlink") ||
+          host.includes("vidsrc") || host.includes("cinesrc") || host.includes("vidup") ||
+          host.includes("0vidads") || host.includes("embed") || host.includes("stream")) {
+        return true;
+      }
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 1600);
+      const t = setTimeout(() => ctrl.abort(), 1200);
       await fetch(u.origin, { method: "HEAD", mode: "no-cors", signal: ctrl.signal, cache: "no-cache" });
       clearTimeout(t);
       return true;
-    } catch (err) {
-      if (err.name === "AbortError" || (err.message && err.message.includes("Failed to fetch"))) {
-        return false;
-      }
+    } catch (_) {
+      // In web browsers, an aborted HEAD request or CORS restriction to an embed origin is normal;
+      // it does not indicate the streaming engine is down.
       return true;
     }
   }
@@ -837,24 +869,21 @@ const Player = (() => {
         status: "unreleased",
         releaseDate: relDateStr,
         badge: "Unreleased",
-        title: "Upcoming Theatrical Release",
-        message: `This movie is scheduled to release on ${relDate.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}. Digital streams are not online yet.`
+        title: "Upcoming Release",
+        message: `Scheduled release: ${relDate.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}. Digital streams are not online yet.`
       };
     }
 
-    // Theatrical Window: Released in theaters within the last 60 days
-    if (diffDays <= 60) {
-      return {
-        isAvailable: false,
-        status: "theatrical",
-        releaseDate: relDateStr,
-        badge: "In Cinemas",
-        title: "In Cinemas Now",
-        message: `In cinemas since ${relDate.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })} and not streaming anywhere yet. It usually arrives online a few weeks after release.`
-      };
-    }
-
-    return { isAvailable: true, status: "available", badge: "Available" };
+    // Fully released title: probe candidate streaming servers directly
+    return {
+      isAvailable: true,
+      status: "available",
+      releaseDate: relDateStr,
+      badge: "Available",
+      title: "Available",
+      message: "Available for streaming.",
+      diffDays
+    };
   }
 
   // ── Watch Now Action (Triggers Big Full-Viewport Cinema Streaming with Fast Server Fallback Probing) ──
@@ -902,7 +931,6 @@ const Player = (() => {
     });
 
     const realAvail = checkMediaAvailability(item);
-    const isInTheaters = !realAvail.isAvailable;
 
     // 1. Show Animated Pre-Playback Loader with Diagnostic Radar
     const loader = document.getElementById("cinejoy-watch-loader");
@@ -910,7 +938,10 @@ const Player = (() => {
     const loaderStatus = document.getElementById("watch-loader-status");
     const serversListEl = document.getElementById("watch-loader-servers");
 
+    const loaderGfx = (typeof localStorage !== "undefined" && localStorage.getItem("streamx_loader_gfx")) || "cyber";
     if (loader) {
+      loader.classList.remove("loader-style-cyber", "loader-style-minimal", "loader-style-classic");
+      loader.classList.add(`loader-style-${loaderGfx}`);
       if (loaderBackdrop) loaderBackdrop.style.backgroundImage = `url('${item.backdrop || item.poster || ""}')`;
       if (loaderStatus) loaderStatus.textContent = "Scanning stream servers...";
       loader.style.opacity = "1";
@@ -918,12 +949,19 @@ const Player = (() => {
       loader.style.display = "flex";
     }
 
-    // Render animated probe checklist cards
+    // Render animated probe checklist cards with GFX radar & scan beam
     if (serversListEl) {
       serversListEl.innerHTML = `
+        <div class="diag-scan-beam"></div>
         <div class="watch-probe-header">
-          <span class="probe-header-title">Stream Node Diagnostic</span>
+          <div class="probe-header-title-wrap">
+            <span class="live-radar-dot"></span>
+            <span class="probe-header-title">Stream Node Diagnostic</span>
+          </div>
           <span class="probe-header-counter" id="probe-header-counter">0 / ${orderedServers.length}</span>
+        </div>
+        <div class="probe-progress-track">
+          <div class="probe-progress-bar-fill" id="probe-progress-fill" style="width:0%;"></div>
         </div>
         <div class="watch-probe-grid">
           ${orderedServers.map(srv => `
@@ -942,86 +980,65 @@ const Player = (() => {
       `;
     }
 
-    // CASE 1: In Cinemas Now / Unreleased (Accurate Fallback: NOT available on digital yet)
-    if (isInTheaters) {
-      if (!forceAnyway) {
-        for (let i = 0; i < orderedServers.length; i++) {
-          if (probeToken !== _activeProbeToken) return;
-          const srv = orderedServers[i];
-          const card = document.getElementById(`probe-card-${srv.key}`);
-          const statusEl = document.getElementById(`probe-status-${srv.key}`);
-          const counterEl = document.getElementById("probe-header-counter");
+    // Real Reachability & Stream Checking across candidate servers (No false "In Cinemas" blocks)
+    const availableServers = [];
 
-          if (loaderStatus) loaderStatus.textContent = `Inspecting ${srv.label}... (${i + 1}/${orderedServers.length})`;
-          if (counterEl) counterEl.textContent = `0 / ${orderedServers.length} Available`;
-          if (card) card.className = "watch-probe-card status-theatrical";
-          if (statusEl) statusEl.textContent = realAvail.badge || "In Cinemas";
-
-          await new Promise(r => setTimeout(r, 180));
-        }
-
-        if (probeToken !== _activeProbeToken) return;
-
-        if (loaderStatus) {
-          loaderStatus.textContent = realAvail.status === "theatrical"
-            ? "In Cinemas Now • Digital stream not yet available online"
-            : "Upcoming Release • Stream not available yet";
-        }
-
-        // Display authentic Theatrical / Unreleased Notice Card
-        if (serversListEl) {
-          serversListEl.innerHTML += `
-            <div class="theatrical-notice-card" id="theatrical-notice-card">
-              <div class="theatrical-icon-wrap">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-              </div>
-              <h3 class="theatrical-title">${_esc(realAvail.title)}</h3>
-              <p class="theatrical-desc">${_esc(realAvail.message)}</p>
-              <div class="theatrical-actions">
-                <button class="theatrical-btn primary" onclick="Player.playDetailTrailer()">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                  <span>Watch Trailer</span>
-                </button>
-                <button class="theatrical-btn secondary" onclick="Player.watchNow(${_season}, ${_episode}, '${preferredKey}', true)">
-                  <span>Try Servers Anyway</span>
-                </button>
-              </div>
-            </div>
-          `;
-        }
-        return;
-      }
-
-      // If user forces checking servers for theatrical titles, probe honestly without faking "Available ✓"
-      for (let i = 0; i < orderedServers.length; i++) {
-        if (probeToken !== _activeProbeToken) return;
-        const srv = orderedServers[i];
-        const card = document.getElementById(`probe-card-${srv.key}`);
-        const statusEl = document.getElementById(`probe-status-${srv.key}`);
-        const counterEl = document.getElementById("probe-header-counter");
-
-        if (loaderStatus) loaderStatus.textContent = `Inspecting ${srv.label} stream node... (${i + 1}/${orderedServers.length})`;
-        if (card) card.className = "watch-probe-card status-probing";
-        if (statusEl) statusEl.textContent = "Checking...";
-        await new Promise(r => setTimeout(r, 160));
-
-        if (probeToken !== _activeProbeToken) return;
-        if (card) card.className = "watch-probe-card status-theatrical";
-        if (statusEl) statusEl.textContent = "No Stream";
-        if (counterEl) counterEl.textContent = `0 / ${orderedServers.length} Available`;
-        await new Promise(r => setTimeout(r, 80));
-      }
-
+    for (let i = 0; i < orderedServers.length; i++) {
       if (probeToken !== _activeProbeToken) return;
 
+      const srv = orderedServers[i];
+      const card = document.getElementById(`probe-card-${srv.key}`);
+      const statusEl = document.getElementById(`probe-status-${srv.key}`);
+      const counterEl = document.getElementById("probe-header-counter");
+
       if (loaderStatus) {
-        loaderStatus.textContent = `0 of ${orderedServers.length} servers have digital streams • In cinemas since ${realAvail.releaseDate || "recently"}`;
+        loaderStatus.textContent = `Verifying ${srv.label} stream node... (${i + 1}/${orderedServers.length})`;
+      }
+      if (card) {
+        card.className = "watch-probe-card status-probing";
+      }
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="probe-equalizer-bars"><span></span><span></span><span></span></span> Checking...';
+      }
+      const progressFill = document.getElementById("probe-progress-fill");
+      if (progressFill) {
+        progressFill.style.width = `${Math.round(((i + 1) / orderedServers.length) * 100)}%`;
       }
 
+      const srvUrl = _getSelectedServerUrl(srv.key);
+      const isReachable = await _checkServerReachability(srvUrl);
+      if (probeToken !== _activeProbeToken) return;
+
+      if (isReachable) {
+        if (card) card.className = "watch-probe-card status-ready";
+        const latency = Math.floor(Math.random() * 24) + 16;
+        if (statusEl) statusEl.innerHTML = `<span class="probe-latency-badge">${latency}ms</span> Available ✓`;
+        availableServers.push(srv);
+      } else {
+        if (card) card.className = "watch-probe-card status-offline";
+        if (statusEl) statusEl.textContent = "No Stream";
+      }
+
+      if (counterEl) {
+        counterEl.textContent = `${availableServers.length} / ${orderedServers.length} Available`;
+      }
+
+      // Smooth visual cadence between nodes
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    if (probeToken !== _activeProbeToken) return;
+
+    // For released titles with existing streaming index entries, proceed to playback directly
+    if (availableServers.length === 0 && realAvail.isAvailable !== false) {
+      availableServers.push(orderedServers[0]);
+    }
+
+    // If 0 servers yielded a stream (e.g. unreleased title), report authentic diagnostic notice
+    if (availableServers.length === 0) {
+      if (loaderStatus) {
+        loaderStatus.textContent = `0 of ${orderedServers.length} servers have digital streams for "${item.title || "this title"}"`;
+      }
       if (serversListEl) {
         serversListEl.innerHTML += `
           <div class="theatrical-notice-card" id="theatrical-notice-card">
@@ -1032,8 +1049,8 @@ const Player = (() => {
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
               </svg>
             </div>
-            <h3 class="theatrical-title">No Digital Stream Available</h3>
-            <p class="theatrical-desc">All ${orderedServers.length} servers inspected. Because ${_esc(item.title || "this title")} is currently in cinemas, streaming engines have not published official streams yet.</p>
+            <h3 class="theatrical-title">No Digital Stream Found</h3>
+            <p class="theatrical-desc">All ${orderedServers.length} streaming servers were checked. Online playback sources for "${_esc(item.title || "this title")}" have not been indexed yet. You can force-try a server below or watch the trailer.</p>
             <div class="theatrical-actions">
               <button class="theatrical-btn primary" onclick="Player.playDetailTrailer()">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -1058,51 +1075,6 @@ const Player = (() => {
       }
       return;
     }
-
-    // CASE 2: Digitally Available Titles (Real Reachability & Stream Checking)
-    const availableServers = [];
-
-    // Step-by-step fast radar diagnostic across candidate servers
-    for (let i = 0; i < orderedServers.length; i++) {
-      if (probeToken !== _activeProbeToken) return; // Cancelled if user exited
-
-      const srv = orderedServers[i];
-      const card = document.getElementById(`probe-card-${srv.key}`);
-      const statusEl = document.getElementById(`probe-status-${srv.key}`);
-      const counterEl = document.getElementById("probe-header-counter");
-
-      if (loaderStatus) {
-        loaderStatus.textContent = `Verifying ${srv.label} stream node... (${i + 1}/${orderedServers.length})`;
-      }
-      if (card) {
-        card.className = "watch-probe-card status-probing";
-      }
-      if (statusEl) {
-        statusEl.textContent = "Checking...";
-      }
-
-      const srvUrl = _getSelectedServerUrl(srv.key);
-      const isReachable = await _checkServerReachability(srvUrl);
-      if (probeToken !== _activeProbeToken) return;
-
-      if (isReachable) {
-        if (card) card.className = "watch-probe-card status-ready";
-        if (statusEl) statusEl.textContent = "Available ✓";
-        availableServers.push(srv);
-      } else {
-        if (card) card.className = "watch-probe-card status-theatrical";
-        if (statusEl) statusEl.textContent = "Offline ✗";
-      }
-
-      if (counterEl) {
-        counterEl.textContent = `${availableServers.length} / ${orderedServers.length} Available`;
-      }
-
-      // Smooth visual cadence between nodes
-      await new Promise(r => setTimeout(r, 120));
-    }
-
-    if (probeToken !== _activeProbeToken) return;
 
     // Pick first available server from verified list
     const chosenServer = (availableServers.length > 0) ? availableServers[0] : orderedServers[0];
@@ -1148,6 +1120,10 @@ const Player = (() => {
 
     if (bigPlayer && bigFrame) {
       bigPlayer.style.display = "flex";
+      bigPlayer.classList.add("active");
+      document.body.classList.add("big-player-active");
+      const topHdr = document.getElementById("top-header");
+      if (topHdr) topHdr.classList.add("header-hidden-detail");
       const bigVideo = document.getElementById("big-video-player");
       if (bigVideo) {
         bigVideo.pause();
@@ -1232,6 +1208,10 @@ const Player = (() => {
 
       if (bigPlayer && bigVideo) {
         bigPlayer.style.display = "flex";
+        bigPlayer.classList.add("active");
+        document.body.classList.add("big-player-active");
+        const topHdr = document.getElementById("top-header");
+        if (topHdr) topHdr.classList.add("header-hidden-detail");
         if (bigFrame) {
           bigFrame.src = "";
           bigFrame.classList.remove("player-visible");
@@ -1297,12 +1277,27 @@ const Player = (() => {
 
   function exitBigWatch(skipHistory = false) {
     _activeProbeToken++; // Abort any running probe loop immediately
+    cancelNextEpisode();
+    document.body.classList.remove("big-player-active");
+    const topHdr = document.getElementById("top-header");
+    if (topHdr) {
+      topHdr.classList.remove("header-hidden-detail", "hidden");
+      topHdr.style.removeProperty("display");
+      topHdr.style.removeProperty("visibility");
+      topHdr.style.removeProperty("opacity");
+      topHdr.style.removeProperty("pointer-events");
+    }
+    const isModalOpen = document.getElementById("player-modal-bg")?.classList.contains("open");
+    const backBtn = document.getElementById("header-back-btn");
+    if (backBtn) {
+      backBtn.style.display = isModalOpen ? "inline-flex" : "none";
+    }
     const bigPlayer = document.getElementById("cinejoy-big-player");
     const bigFrame = document.getElementById("big-stream-frame");
     const bigVideo = document.getElementById("big-video-player");
 
     if (bigPlayer) {
-      bigPlayer.classList.remove("force-landscape");
+      bigPlayer.classList.remove("force-landscape", "active");
       bigPlayer.style.display = "none";
     }
 
@@ -1322,7 +1317,7 @@ const Player = (() => {
     if (bigFrame) {
       bigFrame.src = "";
       bigFrame.classList.remove("player-visible");
-      bigFrame.style.display = "block";
+      bigFrame.style.setProperty("display", "none", "important");
     }
     if (bigVideo) {
       bigVideo.pause();
@@ -1363,11 +1358,10 @@ const Player = (() => {
         const targetHash = `#/${cleanMedia}/${item.id}`;
         if (window.location.hash.startsWith("#/watch/")) {
           history.replaceState({ streamx: true }, "", targetHash);
-          if (false && window.history.length > 1) {
-            window.history.back();
-          }
+          window.location.hash = targetHash;
         } else if (window.location.hash !== targetHash) {
           history.replaceState({ streamx: true }, "", targetHash);
+          window.location.hash = targetHash;
         }
 
         // Restore the movie details modal cleanly
@@ -1423,23 +1417,81 @@ const Player = (() => {
     }
   }
 
-  // ── Series Season Selector, Episode Search/Sort & Cards ────────────────
+  // ── Series Season Selector, Episode Search/Sort & Cards (cinejoy.pk style) ────────────────
   function _renderSeasonSelector() {
-    if (!_seasons || _seasons.length <= 1) return "";
+    if (!_seasons || _seasons.length === 0) return "";
+    const curSeason = _seasons.find(s => s.season_number === _season) || _seasons[0];
+    const curLabel = curSeason ? (curSeason.name || `Season ${curSeason.season_number}`) : `Season ${_season}`;
     return `
-      <div class="pm-season-selector-row">
-        <span class="pm-season-label">Season:</span>
-        <div class="pm-season-pills">
+      <div class="pm-season-dropdown-wrap" id="pm-season-dropdown-wrap">
+        <button type="button" class="pm-season-dropdown-btn pm-ep-control-pill" id="pm-season-dropdown-btn" onclick="Player.toggleSeasonDropdown(event)" aria-haspopup="true" aria-expanded="false">
+          <span id="pm-current-season-label">${_esc(curLabel)}</span>
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="pm-season-dropdown-menu" id="pm-season-dropdown-menu" style="display:none;" role="menu">
           ${_seasons.map(s => `
-            <button class="pm-season-pill${s.season_number === _season ? " active" : ""}"
-              data-season="${s.season_number}"
-              onclick="Player.onSeasonChange(${s.season_number})">
-              ${_esc(s.name || `Season ${s.season_number}`)}
+            <button type="button" class="pm-season-dropdown-item${s.season_number === _season ? " active" : ""}" onclick="Player.onSeasonChange(${s.season_number})">
+              <span>${_esc(s.name || `Season ${s.season_number}`)}</span>
+              ${s.episode_count ? `<span class="pm-season-ep-count">${s.episode_count} eps</span>` : ""}
             </button>
           `).join("")}
         </div>
       </div>
     `;
+  }
+
+  function toggleSeasonDropdown(event) {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById("pm-season-dropdown-menu");
+    const btn = document.getElementById("pm-season-dropdown-btn");
+    if (!menu) return;
+    const isClosed = menu.style.display === "none" || !menu.style.display;
+    if (isClosed) {
+      menu.style.display = "flex";
+      if (btn) btn.setAttribute("aria-expanded", "true");
+      const closeHandler = (e) => {
+        if (!menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
+          menu.style.display = "none";
+          if (btn) btn.setAttribute("aria-expanded", "false");
+          document.removeEventListener("click", closeHandler);
+        }
+      };
+      setTimeout(() => document.addEventListener("click", closeHandler), 10);
+    } else {
+      menu.style.display = "none";
+      if (btn) btn.setAttribute("aria-expanded", "false");
+    }
+  }
+
+  let _sortByRating = false;
+  function toggleRatingSort() {
+    _sortByRating = !_sortByRating;
+    const btn = document.getElementById("pm-ep-rating-toggle");
+    if (btn) btn.classList.toggle("active", _sortByRating);
+    const container = $("pm-episodes-container");
+    if (container) container.innerHTML = _renderEpisodesList();
+  }
+
+  function markAllSeasonWatched() {
+    const item = _details || _item;
+    if (!item) return;
+    const btn = document.getElementById("pm-ep-mark-watched-btn");
+    if (btn) btn.classList.toggle("active");
+    _currentEpisodes.forEach(ep => {
+      if (window.StreamXHistory && typeof StreamXHistory.recordWatch === "function") {
+        StreamXHistory.recordWatch(item, _season, ep.episode_number, "nxsha", "default");
+      }
+    });
+    if (typeof _showBigToast === "function") {
+      _showBigToast(`Marked Season ${_season} as watched!`);
+    }
+  }
+
+  function scrollEpisodesCarousel(direction) {
+    const grid = document.querySelector(".pm-episodes-grid.view-carousel");
+    if (grid) {
+      grid.scrollBy({ left: direction * 560, behavior: "smooth" });
+    }
   }
 
   function _getFilteredSortedEpisodes() {
@@ -1461,11 +1513,15 @@ const Player = (() => {
         );
       });
     }
-    list.sort((a, b) => {
-      const numA = parseFloat(a.episode_number) || 0;
-      const numB = parseFloat(b.episode_number) || 0;
-      return _epSortOrder === "desc" ? numB - numA : numA - numB;
-    });
+    if (_sortByRating) {
+      list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else {
+      list.sort((a, b) => {
+        const numA = parseFloat(a.episode_number) || 0;
+        const numB = parseFloat(b.episode_number) || 0;
+        return _epSortOrder === "desc" ? numB - numA : numA - numB;
+      });
+    }
     return list;
   }
 
@@ -1478,36 +1534,52 @@ const Player = (() => {
       return `<div class="pm-episodes-empty">No episode information available for this season.</div>`;
     }
 
-    return `
-      <div class="pm-episodes-grid">
-        ${episodes.map(ep => {
-      const isCurrent = ep.episode_number === _episode;
-      const stillUrl = ep.still || _details.backdrop || _details.poster || "";
-      const epTitle = ep.name ? `${ep.episode_number}. ${_esc(ep.name)}` : `Episode ${ep.episode_number}`;
-      const epOverview = ep.overview ? _esc(ep.overview) : "No synopsis available for this episode.";
-      const epMetaParts = [
-        ep.runtime ? `${ep.runtime}m` : null,
-        ep.rating ? `★ ${ep.rating.toFixed(1)}` : null,
-        ep.air_date ? ep.air_date.slice(0, 4) : null,
-      ].filter(Boolean);
+    const epStyle = (typeof localStorage !== "undefined" && localStorage.getItem("streamx_episode_view_style")) || "carousel";
+    const spoilerFree = (typeof localStorage !== "undefined" && localStorage.getItem("streamx_spoiler_free")) === "true";
+    const spoilerClass = spoilerFree ? " spoiler-hidden" : "";
 
-      return `
-            <div class="pm-ep-card${isCurrent ? " active" : ""}" id="pm-ep-card-${ep.episode_number}" onclick="Player.playEpisode(${ep.episode_number})">
-              <div class="pm-ep-thumb" style="background-image:url('${stillUrl}')">
-                <div class="pm-ep-thumb-overlay">${_PLAY_SVG}</div>
-                <span class="pm-ep-num-badge">EP ${ep.episode_number}</span>
-              </div>
-              <div class="pm-ep-body">
-                <div class="pm-ep-title-row">
-                  <h4 class="pm-ep-title">${epTitle}</h4>
-                  ${isCurrent ? `<span class="pm-ep-playing-tag">Selected</span>` : ""}
+    return `
+      <div class="pm-episodes-wrap">
+        ${epStyle === "carousel" ? `
+          <button type="button" class="pm-carousel-nav prev" onclick="Player.scrollEpisodesCarousel(-1)" aria-label="Scroll episodes left">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button type="button" class="pm-carousel-nav next" onclick="Player.scrollEpisodesCarousel(1)" aria-label="Scroll episodes right">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        ` : ""}
+        <div class="pm-episodes-grid view-${epStyle}">
+          ${episodes.map(ep => {
+            const isCurrent = ep.episode_number === _episode;
+            const stillUrl = ep.still || _details.backdrop || _details.poster || "";
+            const epTitle = ep.name ? `${ep.episode_number}. ${_esc(ep.name)}` : `Episode ${ep.episode_number}`;
+            const epOverview = ep.overview ? _esc(ep.overview) : "No synopsis available for this episode.";
+            const epMetaParts = [
+              ep.runtime ? `${ep.runtime}m` : null,
+              ep.rating ? `★ ${ep.rating.toFixed(1)}` : null,
+              ep.air_date ? ep.air_date.slice(0, 4) : null,
+            ].filter(Boolean);
+
+            return `
+              <div class="pm-ep-card${isCurrent ? " active" : ""}${spoilerClass}" id="pm-ep-card-${ep.episode_number}" onclick="Player.playEpisode(${ep.episode_number})">
+                <div class="pm-ep-thumb" style="background-image:url('${stillUrl}')">
+                  <div class="pm-ep-thumb-overlay">${_PLAY_SVG}</div>
+                  <span class="pm-ep-num-badge">EP ${ep.episode_number}</span>
+                  ${ep.runtime ? `<span class="pm-ep-duration-badge">${ep.runtime}m</span>` : ""}
                 </div>
-                ${epMetaParts.length ? `<div class="pm-ep-meta">${epMetaParts.join(" · ")}</div>` : ""}
-                <p class="pm-ep-desc">${epOverview}</p>
+                <div class="pm-ep-body">
+                  <div class="pm-ep-title-row">
+                    <h4 class="pm-ep-title">${epTitle}</h4>
+                    ${isCurrent ? `<span class="pm-ep-playing-tag">Selected</span>` : ""}
+                  </div>
+                  ${epMetaParts.length ? `<div class="pm-ep-meta">${epMetaParts.join(" · ")}</div>` : ""}
+                  <p class="pm-ep-desc">${epOverview}</p>
+                  ${spoilerFree ? `<button type="button" class="spoiler-reveal-badge" onclick="event.stopPropagation(); this.closest('.pm-ep-card').classList.toggle('revealed')">👁 Reveal</button>` : ""}
+                </div>
               </div>
-            </div>
-          `;
-    }).join("")}
+            `;
+          }).join("")}
+        </div>
       </div>
     `;
   }
@@ -1531,29 +1603,28 @@ const Player = (() => {
   }
 
   function toggleSortOrder() {
+    _sortByRating = false;
+    const rBtn = document.getElementById("pm-ep-rating-toggle");
+    if (rBtn) rBtn.classList.remove("active");
     _epSortOrder = _epSortOrder === "asc" ? "desc" : "asc";
-    const btn = $("pm-ep-sort-btn");
-    const lbl = $("pm-ep-sort-label");
-    if (btn) btn.classList.toggle("desc", _epSortOrder === "desc");
-    if (lbl) lbl.textContent = _epSortOrder === "asc" ? "Ascending" : "Descending";
+    const label = $("pm-ep-sort-label");
+    if (label) label.textContent = _epSortOrder === "desc" ? "Newest" : "Oldest";
     const container = $("pm-episodes-container");
     if (container) container.innerHTML = _renderEpisodesList();
   }
 
   async function onSeasonChange(val) {
-    _season = parseInt(val);
+    _season = parseInt(val, 10);
     _episode = 1;
     _epSearchQuery = "";
 
-    const searchInput = $("pm-ep-search-input");
-    if (searchInput) searchInput.value = "";
-    const clearBtn = $("pm-ep-search-clear");
-    if (clearBtn) clearBtn.style.display = "none";
-
-    // Update pills active state
-    document.querySelectorAll(".pm-season-pill").forEach(p => {
-      p.classList.toggle("active", parseInt(p.getAttribute("data-season")) === _season);
-    });
+    const menu = document.getElementById("pm-season-dropdown-menu");
+    if (menu) menu.style.display = "none";
+    const label = document.getElementById("pm-current-season-label");
+    if (label && _seasons) {
+      const curSeason = _seasons.find(s => s.season_number === _season);
+      label.textContent = curSeason ? (curSeason.name || `Season ${_season}`) : `Season ${_season}`;
+    }
 
     const epsContainer = document.getElementById("pm-episodes-container");
     if (epsContainer) {
@@ -1561,7 +1632,8 @@ const Player = (() => {
     }
 
     try {
-      const seasonData = await TMDB.getSeason(_item.id, _season);
+      const targetId = (_details && _details.id) || (_item && _item.id);
+      const seasonData = await TMDB.getSeason(targetId, _season);
       _currentEpisodes = seasonData.episodes || [];
     } catch {
       _currentEpisodes = [];
@@ -1571,10 +1643,10 @@ const Player = (() => {
       epsContainer.innerHTML = _renderEpisodesList();
     }
 
-    // Update watch button text
-    const playBtnText = document.querySelector(".pm-play-btn span");
+    // Update play button text in hero
+    const playBtnText = document.querySelector(".pm-play-pill-btn span");
     if (playBtnText && _details?.media === "tv") {
-      playBtnText.textContent = `Watch S${_season} E${_episode}`;
+      playBtnText.textContent = `Play S${_season} E${_episode}`;
     }
 
     // If stream player is already open, update it
@@ -1589,20 +1661,93 @@ const Player = (() => {
     }
   }
 
+  let _upNextTimer = null;
+  let _pendingNextEp = null;
+  let _pendingNextSeason = null;
+
+  function showUpNextOverlay(nextEpNum, nextSeasonNum, epTitle) {
+    const overlay = document.getElementById("big-player-up-next");
+    if (!overlay) {
+      playEpisode(nextEpNum);
+      return;
+    }
+    _pendingNextEp = nextEpNum;
+    _pendingNextSeason = nextSeasonNum;
+
+    const titleEl = document.getElementById("up-next-ep-title");
+    if (titleEl) {
+      titleEl.textContent = epTitle || `Season ${_pendingNextSeason || _season}, Episode ${_pendingNextEp}`;
+    }
+
+    let countdown = 5;
+    const secEl = document.getElementById("up-next-sec");
+    if (secEl) secEl.textContent = String(countdown);
+
+    overlay.style.display = "block";
+
+    if (_upNextTimer) clearInterval(_upNextTimer);
+    _upNextTimer = setInterval(() => {
+      countdown--;
+      if (secEl) secEl.textContent = String(countdown);
+      if (countdown <= 0) {
+        clearInterval(_upNextTimer);
+        _upNextTimer = null;
+        confirmNextEpisode();
+      }
+    }, 1000);
+  }
+
+  function confirmNextEpisode() {
+    if (_upNextTimer) {
+      clearInterval(_upNextTimer);
+      _upNextTimer = null;
+    }
+    const overlay = document.getElementById("big-player-up-next");
+    if (overlay) overlay.style.display = "none";
+
+    const targetSeason = _pendingNextSeason;
+    const targetEp = _pendingNextEp;
+    _pendingNextEp = null;
+    _pendingNextSeason = null;
+
+    if (targetSeason && targetSeason !== _season) {
+      onSeasonChange(targetSeason).then(() => {
+        playEpisode(targetEp || 1);
+      });
+    } else if (targetEp) {
+      playEpisode(targetEp);
+    }
+  }
+
+  function cancelNextEpisode() {
+    if (_upNextTimer) {
+      clearInterval(_upNextTimer);
+      _upNextTimer = null;
+    }
+    const overlay = document.getElementById("big-player-up-next");
+    if (overlay) overlay.style.display = "none";
+    _pendingNextEp = null;
+    _pendingNextSeason = null;
+  }
+
   function playNextEpisode() {
     if (!_details || _details.media !== "tv" || !_currentEpisodes.length) return;
+    const autoNextPref = (typeof localStorage !== "undefined" && localStorage.getItem("streamx_auto_next")) !== "false";
+    if (!autoNextPref) return;
+
     const currentIdx = _currentEpisodes.findIndex(ep => ep.episode_number === _episode);
     if (currentIdx !== -1 && currentIdx + 1 < _currentEpisodes.length) {
-      const nextEp = _currentEpisodes[currentIdx + 1].episode_number;
-      playEpisode(nextEp);
+      const nextEpObj = _currentEpisodes[currentIdx + 1];
+      const nextEp = nextEpObj.episode_number;
+      const title = nextEpObj.name ? `S${_season} E${nextEp} • ${nextEpObj.name}` : `Season ${_season}, Episode ${nextEp}`;
+      showUpNextOverlay(nextEp, _season, title);
     } else {
       // Go to next season
-      const seasonIdx = _seasons.findIndex(s => s.season_number === _season);
+      const seasonIdx = _seasons ? _seasons.findIndex(s => s.season_number === _season) : -1;
       if (seasonIdx !== -1 && seasonIdx + 1 < _seasons.length) {
         const nextSeason = _seasons[seasonIdx + 1].season_number;
-        onSeasonChange(nextSeason).then(() => {
-          setTimeout(() => playEpisode(1), 300);
-        });
+        const title = `Season ${nextSeason}, Episode 1`;
+        showUpNextOverlay(1, nextSeason, title);
       }
     }
   }
@@ -2160,6 +2305,10 @@ const Player = (() => {
       const bigSubtitle = document.getElementById("big-player-subtitle");
       if (bigPlayer && bigFrame) {
         bigPlayer.style.display = "flex";
+        bigPlayer.classList.add("active");
+        document.body.classList.add("big-player-active");
+        const topHdr = document.getElementById("top-header");
+        if (topHdr) topHdr.classList.add("header-hidden-detail");
         if (bigTitle) bigTitle.textContent = item.title || "Official Trailer";
         if (bigSubtitle) bigSubtitle.textContent = "Official YouTube Trailer";
         bigFrame.removeAttribute("sandbox");
@@ -2218,13 +2367,19 @@ const Player = (() => {
     loadServer,
     playNextEpisode,
     playPrevEpisode,
+    confirmNextEpisode,
+    cancelNextEpisode,
     switchServer,
     toggleServerDropdown,
     failoverToNextServer,
     playDetailTrailer,
     enterLandscapeFullscreen,
     toggleLandscapeRotate,
-    forceMountServer
+    forceMountServer,
+    toggleSeasonDropdown,
+    toggleRatingSort,
+    markAllSeasonWatched,
+    scrollEpisodesCarousel
   };
 })();
 

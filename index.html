@@ -29,32 +29,51 @@
 
   <title>CineJoy — Movies, Series, Dramas &amp; Anime</title>
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function (regs) {
-        for (var i = 0; i < regs.length; i++) {
-          regs[i].update();
-          if (regs[i].waiting) {
-            regs[i].waiting.postMessage({ type: 'SKIP_WAITING' });
-          }
-        }
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then(function (keys) {
-        keys.forEach(function (k) {
-          if (k !== 'cinejoy-v27') {
-            caches.delete(k);
+    // Developer & Localhost Cache Killer — ensure instant hot updates
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          for (var i = 0; i < regs.length; i++) {
+            regs[i].unregister();
           }
         });
-      });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) {
+            caches.delete(k);
+          });
+        });
+      }
+    } else {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          for (var i = 0; i < regs.length; i++) {
+            regs[i].update();
+            if (regs[i].waiting) {
+              regs[i].waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+          }
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) {
+            if (k !== 'nine-cinejoy-v36' && k !== 'cinejoy-v36') {
+              caches.delete(k);
+            }
+          });
+        });
+      }
     }
   </script>
   <link rel="canonical" href="https://cinejoy.pages.dev/">
-  <link rel="stylesheet" href="css/style.css?v=28.0">
-  <link rel="stylesheet" href="css/player-universal.css?v=28.0">
+  <link rel="stylesheet" href="css/style.css?v=38.0">
+  <link rel="stylesheet" href="css/player-universal.css?v=38.0">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <link rel="manifest" href="manifest.json?v=28.0">
+  <link rel="manifest" href="manifest.json?v=38.0">
 </head>
+<body>
 <!-- ── Premium CineJoy Initial Branded Loading Screen ──────── -->
 <div id="cinejoy-loader" class="cinejoy-loader-screen" aria-label="Loading CineJoy" role="status">
   <div class="cinejoy-loader-backdrop"></div>
@@ -860,6 +879,7 @@
               <option value="sapphire">&#x1F535; Sapphire</option>
               <option value="emerald">&#x1F7E2; Emerald</option>
               <option value="crimson">&#x1F534; Crimson</option>
+              <option value="aero">&#x1F4A7; Aero Glass</option>
             </select>
           </div>
         </div>
@@ -884,6 +904,19 @@
             <div class="settings-segmented-pill">
               <button type="button" class="settings-pill settings-pill-detail active" data-val="page" onclick="App.setDetailViewType('page')">Page</button>
               <button type="button" class="settings-pill settings-pill-detail" data-val="modal" onclick="App.setDetailViewType('modal')">Modal</button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-option-row">
+          <div class="option-text">
+            <span class="option-title">Loader GFX Animation</span>
+            <span class="option-desc">Choose stream radar diagnostic animation style.</span>
+          </div>
+          <div class="option-control">
+            <div class="settings-segmented-pill">
+              <button type="button" class="settings-pill settings-pill-loader-gfx active" data-val="cyber" onclick="App.setLoaderGfxStyle('cyber')">Cyber Radar</button>
+              <button type="button" class="settings-pill settings-pill-loader-gfx" data-val="minimal" onclick="App.setLoaderGfxStyle('minimal')">Minimal</button>
+              <button type="button" class="settings-pill settings-pill-loader-gfx" data-val="classic" onclick="App.setLoaderGfxStyle('classic')">Classic</button>
             </div>
           </div>
         </div>
@@ -1099,6 +1132,14 @@
               <input type="checkbox" id="pref-sub-blur" onchange="App.savePlayerPreference('streamx_sub_blur', this.checked)">
               <span class="ios-slider"></span>
             </label>
+          </div>
+        </div>
+        <div class="sub-live-preview-container">
+          <span class="sub-preview-label">Live Subtitle Preview</span>
+          <div class="sub-preview-screen" id="sub-preview-screen">
+            <div class="sub-preview-text-box" id="sub-preview-text">
+              The quick brown fox jumps over the lazy dog.
+            </div>
           </div>
         </div>
       </div>
@@ -1326,24 +1367,29 @@
     </svg>
   </button>
   <div class="watch-loader-content">
-    <div class="watch-loader-logo-wrap">
-      <svg class="cinejoy-brand-mascot" viewBox="0 0 100 100" width="96" height="96" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="5" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <path d="M22 16 C16 16 12 20 12 26 L12 42 C16 42 19 45 19 50 C19 55 16 58 12 58 L12 74 C12 80 16 84 22 84 L78 84 C84 84 88 80 88 74 L88 58 C84 58 81 55 81 50 C81 45 84 42 88 42 L88 26 C88 20 84 16 78 16 Z" fill="#ffffff" filter="url(#logoGlow)"/>
-        <path d="M26 16 L36 30 M46 16 L56 30 M66 16 L76 30" stroke="#090a10" stroke-width="4" stroke-linecap="round"/>
-        <line x1="16" y1="30" x2="84" y2="30" stroke="#090a10" stroke-width="3"/>
-        <polygon points="36,44 36,58 48,51" fill="#090a10"/>
-        <path d="M58 52 Q66 42 74 52" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
-        <path d="M42 66 Q55 76 68 66" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
-      </svg>
+    <div class="watch-loader-radar-wrap">
+      <div class="radar-orbit-ring-1"></div>
+      <div class="radar-orbit-ring-2"></div>
+      <div class="radar-sonar-wave"></div>
+      <div class="watch-loader-logo-wrap">
+        <svg class="cinejoy-brand-mascot" viewBox="0 0 100 100" width="96" height="96" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="5" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <path d="M22 16 C16 16 12 20 12 26 L12 42 C16 42 19 45 19 50 C19 55 16 58 12 58 L12 74 C12 80 16 84 22 84 L78 84 C84 84 88 80 88 74 L88 58 C84 58 81 55 81 50 C81 45 84 42 88 42 L88 26 C88 20 84 16 78 16 Z" fill="#ffffff" filter="url(#logoGlow)"/>
+          <path d="M26 16 L36 30 M46 16 L56 30 M66 16 L76 30" stroke="#090a10" stroke-width="4" stroke-linecap="round"/>
+          <line x1="16" y1="30" x2="84" y2="30" stroke="#090a10" stroke-width="3"/>
+          <polygon points="36,44 36,58 48,51" fill="#090a10"/>
+          <path d="M58 52 Q66 42 74 52" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+          <path d="M42 66 Q55 76 68 66" stroke="#090a10" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        </svg>
+      </div>
     </div>
     <div class="watch-loader-status" id="watch-loader-status">Pinging Solara...</div>
     <div class="watch-loader-servers" id="watch-loader-servers"></div>
@@ -1395,6 +1441,22 @@
     </div>
   </div>
   <div class="big-player-toast" id="big-player-toast" style="display:none;"></div>
+  <!-- Floating Up-Next Countdown Overlay (Movy, 7movies, CineJoy Style) -->
+  <div class="big-player-up-next" id="big-player-up-next" style="display:none;" role="dialog" aria-label="Up Next">
+    <div class="up-next-content">
+      <div class="up-next-badge-row">
+        <span class="up-next-countdown-badge">Next Episode in <span id="up-next-sec">5</span>s</span>
+      </div>
+      <h4 class="up-next-ep-title" id="up-next-ep-title">Season 1, Episode 2</h4>
+      <div class="up-next-btn-group">
+        <button type="button" class="up-next-play-now-btn" onclick="Player.confirmNextEpisode()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <span>Play Now</span>
+        </button>
+        <button type="button" class="up-next-cancel-btn" onclick="Player.cancelNextEpisode()">Cancel</button>
+      </div>
+    </div>
+  </div>
   <div class="big-player-frame-wrap" id="big-player-frame-wrap">
     <video
       id="big-video-player"
@@ -1708,15 +1770,15 @@
 </button>
 
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=28.0"></script>
-<script src="js/tmdb.js?v=28.0"></script>
-<script src="js/anilist.js?v=28.0"></script>
-<script src="js/watchlist.js?v=28.0"></script>
-<script src="js/history.js?v=28.0"></script>
-<script src="js/universalPlayer.js?v=28.0"></script>
-<script src="js/player.js?v=28.0"></script>
-<script src="js/livetv.js?v=28.0"></script>
-<script src="js/app.js?v=28.0"></script>
+<script src="js/config.js?v=38.0"></script>
+<script src="js/tmdb.js?v=38.0"></script>
+<script src="js/anilist.js?v=38.0"></script>
+<script src="js/watchlist.js?v=38.0"></script>
+<script src="js/history.js?v=38.0"></script>
+<script src="js/universalPlayer.js?v=38.0"></script>
+<script src="js/player.js?v=38.0"></script>
+<script src="js/livetv.js?v=38.0"></script>
+<script src="js/app.js?v=38.0"></script>
 
 </body>
 

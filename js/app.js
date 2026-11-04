@@ -73,6 +73,18 @@ const App = (() => {
 
   // ── Boot ──────────────────────────────────────────────────────────────
   async function init() {
+    // 0. Ensure top navigation header is completely visible and clean of stale state
+    document.body.classList.remove("has-modal-open", "big-player-active");
+    const initTopHdr = document.getElementById("top-header");
+    if (initTopHdr) {
+      initTopHdr.classList.remove("header-hidden-detail", "hidden");
+      initTopHdr.style.removeProperty("display");
+      initTopHdr.style.removeProperty("visibility");
+      initTopHdr.style.removeProperty("opacity");
+      initTopHdr.style.removeProperty("pointer-events");
+    }
+    _updateActiveNavLinks("home");
+
     // Show local web server migration warning if page is loaded via file:// protocol
     if (window.location.protocol === "file:") {
       const warningBanner = document.createElement("div");
@@ -782,13 +794,18 @@ const App = (() => {
                     s.revealTimer = null;
                   }
 
-                  // ── FIRST-STATE HIDE GUARD ──────────────────────────────
-                  // When YouTube begins playing, its internal player displays
-                  // an initial large play/pause animation & splash for ~1.0-1.4s.
-                  // We hold the video layer completely hidden (opacity: 0) behind
-                  // the high-res movie poster backdrop during this first state.
-                  // We verify playback has advanced past 1.25s before revealing.
+                  // ── ULTRA-CLEAN SEAMLESS REVEAL GUARD ────────────────────────
+                  // YouTube's internal HTML5 player displays a large circular center
+                  // bezel (play/pause "||" icon) on start, which animates and lingers
+                  // for ~3.0 - 4.2 seconds before fading out completely to display:none.
+                  // To guarantee the user NEVER sees the YouTube pause/play indicator,
+                  // we keep the video layer completely hidden (opacity: 0, visibility: hidden)
+                  // behind the high-res movie poster backdrop until YouTube's internal
+                  // bezel animation has 100% completed its lifecycle.
+                  // We require at least 3.6s elapsed wall time after PLAYING state AND
+                  // actual advancing playback before fading in the video layer.
                   const startTime = Date.now();
+                  let initialTime = -1;
                   const checkAndReveal = () => {
                     if (thisToken !== s.token || !s.isPlaying || _isFullPlayerActive) return;
                     let currTime = 0;
@@ -796,17 +813,26 @@ const App = (() => {
                       currTime = typeof event.target.getCurrentTime === "function" ? event.target.getCurrentTime() : 0;
                     } catch (e) {}
 
+                    if (initialTime < 0 && currTime > 0) {
+                      initialTime = currTime;
+                    }
+
                     const elapsed = Date.now() - startTime;
-                    if (currTime >= 1.25 || elapsed >= 1600) {
+                    const playedSeconds = initialTime >= 0 ? (currTime - initialTime) : currTime;
+
+                    const isBezelFadedOut = elapsed >= 3600;
+                    const isPlaybackRolling = playedSeconds >= 1.5 || elapsed >= 5000;
+
+                    if (isBezelFadedOut && isPlaybackRolling) {
                       const lyr = document.getElementById(s.videoLayerId);
                       if (lyr && s.isPlaying && !_isFullPlayerActive) {
                         lyr.classList.add("is-playing");
                       }
                     } else {
-                      s.revealTimer = setTimeout(checkAndReveal, 150);
+                      s.revealTimer = setTimeout(checkAndReveal, 200);
                     }
                   };
-                  s.revealTimer = setTimeout(checkAndReveal, 700);
+                  s.revealTimer = setTimeout(checkAndReveal, 1000);
                 } else if (event.data === 0) {
                   // Smooth loop without enabling YouTube's playlist controls
                   if (s.revealTimer) {
@@ -863,7 +889,7 @@ const App = (() => {
               targetLayer.classList.add("is-playing");
               updateSoundButtonUI(instanceKey, true, true);
             }
-          }, 1200);
+          }, 4500);
         }
       } catch (err) {
         console.warn(`[HeroTrailer] Exception while mounting trailer:`, err);
@@ -3407,6 +3433,17 @@ const App = (() => {
   }
 
   function goBack() {
+    const modalBg = document.getElementById("player-modal-bg");
+    if (modalBg && modalBg.classList.contains("open")) {
+      if (window.Player && typeof Player.close === "function") {
+        Player.close();
+        return;
+      }
+      if (typeof _closeAnimeDetail === "function") {
+        _closeAnimeDetail();
+        return;
+      }
+    }
     if (window.history.length > 1 && window.location.hash !== "#/" && window.location.hash !== "") {
       window.history.back();
     } else {
@@ -3510,20 +3547,53 @@ const App = (() => {
     }
 
     const isDetailRoute = /^\/(movie|tv|drama|anime|donghua)\//.test(path);
+    const topHdr = document.getElementById("top-header");
+    const backBtn = document.getElementById("header-back-btn");
+
     if (!isDetailRoute && !isWatchRoute) {
       const bg = document.getElementById("player-modal-bg");
       if (bg && bg.classList.contains("open")) {
         if (window.Player && typeof Player.close === "function") Player.close(true);
         if (typeof _closeAnimeDetail === "function") _closeAnimeDetail(true);
       }
+      document.body.classList.remove("has-modal-open", "big-player-active");
+      if (topHdr) {
+        topHdr.classList.remove("header-hidden-detail", "hidden");
+        topHdr.style.removeProperty("display");
+        topHdr.style.removeProperty("visibility");
+        topHdr.style.removeProperty("opacity");
+        topHdr.style.removeProperty("pointer-events");
+      }
+      if (backBtn && (!path || path === "/" || path === "/home")) {
+        backBtn.style.display = "none";
+      }
       document.body.style.overflow = "";
+    } else {
+      document.body.classList.add("has-modal-open");
+      if (topHdr) {
+        topHdr.classList.remove("header-hidden-detail", "hidden");
+        topHdr.style.removeProperty("display");
+        topHdr.style.removeProperty("visibility");
+        topHdr.style.removeProperty("opacity");
+      }
+      if (backBtn) {
+        backBtn.style.display = "inline-flex";
+      }
     }
 
     // Home
     if (!path || path === "/" || path === "/home") {
-      if (_currentPage !== "home") {
-        _showPage("home", true);
+      if (topHdr) {
+        topHdr.classList.remove("header-hidden-detail", "hidden");
+        topHdr.style.removeProperty("display");
+        topHdr.style.removeProperty("visibility");
+        topHdr.style.removeProperty("opacity");
+        topHdr.style.removeProperty("pointer-events");
       }
+      if (backBtn) backBtn.style.display = "none";
+      document.body.classList.remove("has-modal-open", "big-player-active");
+      _showPage("home", true);
+      _updateActiveNavLinks("home");
       if (!document.getElementById("home-rows")?.children.length) {
         await _loadGeneralHomeContent();
       }
@@ -3716,7 +3786,14 @@ const App = (() => {
     const topHeader = document.getElementById("top-header");
     const sidebar = document.getElementById("desktop-sidebar");
 
-    topHeader?.classList.remove("hidden");
+    document.body.classList.remove("has-modal-open", "big-player-active");
+    if (topHeader) {
+      topHeader.classList.remove("hidden", "header-hidden-detail");
+      topHeader.style.removeProperty("display");
+      topHeader.style.removeProperty("visibility");
+      topHeader.style.removeProperty("opacity");
+      topHeader.style.removeProperty("pointer-events");
+    }
     sidebar?.classList.remove("hidden");
     document.body.style.paddingLeft = "";
 
@@ -3892,6 +3969,17 @@ const App = (() => {
     const bg = document.getElementById("player-modal-bg");
     bg.classList.add("open");
     bg.classList.add("has-cinematic-detail");
+    document.body.classList.add("has-modal-open");
+    const topHdr = document.getElementById("top-header");
+    if (topHdr) {
+      topHdr.classList.remove("header-hidden-detail", "hidden");
+      topHdr.style.removeProperty("display");
+      topHdr.style.removeProperty("visibility");
+      topHdr.style.removeProperty("opacity");
+    }
+    const backBtn = document.getElementById("header-back-btn");
+    if (backBtn) backBtn.style.display = "inline-flex";
+    _updateActiveNavLinks("anime");
     document.body.style.overflow = "hidden";
     _activeEpisodeId = null;
     _activeEpisodeNumber = null;
@@ -3920,16 +4008,17 @@ const App = (() => {
       <div class="player-modal cinematic-detail-modal" role="dialog" aria-modal="true" aria-label="${_esc(item.title || "Loading")}">
         <div class="pm-cinematic-hero skeleton-hero" style="background-image:url('${item.backdrop || item.poster || ""}')">
           <div class="pm-hero-vignette"></div>
-          <div class="pm-hero-top-bar">
-            <button class="pm-hero-back-btn" onclick="App._closeAnimeDetail()" aria-label="Go back">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-              <span>Back</span>
-            </button>
-          </div>
-          <div class="pm-hero-content">
-            <div class="skeleton-line w40" style="margin-bottom:12px;height:24px;"></div>
-            <div class="skeleton-line w60" style="height:36px;margin-bottom:16px;"></div>
-            <div class="skeleton-line w40" style="height:16px;"></div>
+          <div class="pm-hero-content pm-hero-split-layout">
+            <div class="pm-hero-left">
+              <h1 class="pm-hero-title">${_esc(item.title || "")}</h1>
+              <div class="skeleton-line" style="width:140px;height:20px;border-radius:6px;margin:6px 0;"></div>
+              <div class="skeleton-line" style="width:240px;height:42px;border-radius:999px;margin:12px 0;"></div>
+              <div class="skeleton-line" style="width:65%;height:16px;border-radius:4px;margin-top:10px;"></div>
+              <div class="skeleton-line" style="width:45%;height:16px;border-radius:4px;margin-top:8px;"></div>
+            </div>
+            <div class="pm-hero-right">
+              <div class="pm-hero-side-card skeleton-side-card" style="width:280px;height:200px;opacity:0.6;"></div>
+            </div>
           </div>
         </div>
         <div class="pm-cinematic-body">
@@ -4253,21 +4342,7 @@ const App = (() => {
           <div class="pm-hero-video-layer" id="pm-hero-video-layer"></div>
           <div class="pm-hero-vignette"></div>
 
-          <!-- Top Controls Bar -->
-          <div class="pm-hero-top-bar">
-            <button class="pm-hero-back-btn" onclick="App._closeAnimeDetail()" aria-label="Go back">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-              <span>Back</span>
-            </button>
-
-            <!-- Working Sound Toggle -->
-            <button class="pm-hero-sound-btn" id="pm-hero-sound-btn" onclick="App.toggleAnimeTrailerSound()" aria-label="Unmute trailer" title="Unmute trailer" style="display:none">
-              <span class="hero-sound-icon">${_VOLUME_X_SVG}</span>
-              <span class="hero-sound-text">Muted</span>
-            </button>
-          </div>
-
-          <div class="pm-hero-content">
+          <div class="pm-hero-content pm-hero-split-layout">
             <div class="pm-hero-badges">
               <span class="badge badge-${d.media}">${badgeLabel}</span>
               ${d.year ? `<span class="badge badge-year">${d.year}</span>` : ""}
@@ -4525,6 +4600,18 @@ const App = (() => {
       bg.innerHTML = "";
       bg._currentAnimeItem = null;
     }
+    document.body.classList.remove("has-modal-open", "big-player-active");
+    const topHdr = document.getElementById("top-header");
+    if (topHdr) {
+      topHdr.classList.remove("header-hidden-detail", "hidden");
+      topHdr.style.removeProperty("display");
+      topHdr.style.removeProperty("visibility");
+      topHdr.style.removeProperty("opacity");
+      topHdr.style.removeProperty("pointer-events");
+    }
+    const backBtn = document.getElementById("header-back-btn");
+    if (backBtn) backBtn.style.display = "none";
+    _updateActiveNavLinks(_currentPage || "home");
     hideActionLoader();
     _activeEpisodeId = null;
     _activeEpisodeNumber = null;
@@ -4773,15 +4860,16 @@ const App = (() => {
   function _updateActiveNavLinks(page, rowId = null) {
     // Subpage back button (cinejoy.pk style)
     const backBtn = document.getElementById("header-back-btn");
+    const isModalOpen = Boolean(document.getElementById("player-modal-bg")?.classList.contains("open"));
     if (backBtn) {
-      backBtn.style.display = (page === "home" || !page) ? "none" : "inline-flex";
+      backBtn.style.display = ((page === "home" || !page) && !isModalOpen) ? "none" : "inline-flex";
     }
 
     // 0. Floating Glass Navbar & Mobile Bottom Nav items (Reference Design)
-    document.querySelectorAll(".glass-nav-item, .mobile-bottom-nav-item").forEach(item => {
+    document.querySelectorAll(".glass-nav-item, .glass-nav-icon-btn, .mobile-bottom-nav-item").forEach(item => {
       item.classList.remove("active");
     });
-    if (page === "home") {
+    if (page === "home" && !isModalOpen) {
       document.getElementById("nav-link-home")?.classList.add("active");
       document.getElementById("mob-nav-home")?.classList.add("active");
     } else if (page === "anime") {
@@ -4798,6 +4886,8 @@ const App = (() => {
       document.getElementById("mob-nav-watchlist")?.classList.add("active");
     } else if (page === "search") {
       document.getElementById("mob-nav-search")?.classList.add("active");
+    } else if (page === "settings-page" || page === "settings") {
+      document.getElementById("nav-settings-btn")?.classList.add("active");
     } else if (page === "movies" || (page === "browse" && rowId && rowId.includes("movie"))) {
       document.getElementById("nav-link-movies")?.classList.add("active");
       document.getElementById("mob-nav-movies")?.classList.add("active");
@@ -6629,11 +6719,47 @@ const App = (() => {
     }
   }
 
+  function _updateSubtitlePreview() {
+    const previewEl = document.getElementById("sub-preview-text");
+    const font = localStorage.getItem("streamx_subtitle_font") || "cinejoy";
+    const size = localStorage.getItem("streamx_subtitle_size") || "100";
+    const color = localStorage.getItem("streamx_subtitle_color") || "#ffffff";
+    const blur = localStorage.getItem("streamx_sub_blur") !== "false";
+
+    let fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    if (font === "netflix") fontFamily = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+    else if (font === "montserrat") fontFamily = '"Montserrat", sans-serif';
+
+    const root = document.documentElement;
+    root.style.setProperty("--sub-font-family", fontFamily);
+    root.style.setProperty("--sub-font-size", `${size}%`);
+    root.style.setProperty("--sub-color", color);
+    root.style.setProperty("--sub-bg", blur ? "rgba(0, 0, 0, 0.75)" : "rgba(0, 0, 0, 0.45)");
+    root.style.setProperty("--sub-text-shadow", blur ? `0 0 10px ${color}88, 0 2px 4px rgba(0,0,0,0.9)` : "0 2px 4px rgba(0,0,0,0.95)");
+
+    if (!previewEl) return;
+    previewEl.className = `sub-preview-text-box sub-font-${font}`;
+    previewEl.style.fontSize = `${Math.round((18 * parseInt(size, 10)) / 100)}px`;
+    previewEl.style.color = color;
+    if (blur) {
+      previewEl.style.textShadow = `0 0 10px ${color}88, 0 2px 4px rgba(0,0,0,0.9)`;
+      previewEl.style.backgroundColor = "rgba(0, 0, 0, 0.75)";
+    } else {
+      previewEl.style.textShadow = "0 2px 4px rgba(0,0,0,0.95)";
+      previewEl.style.backgroundColor = "rgba(0, 0, 0, 0.45)";
+    }
+  }
+
   function setEpisodeViewStyle(style) {
     localStorage.setItem("streamx_episode_view_style", style);
     document.querySelectorAll(".settings-pill-episode").forEach(btn => {
       btn.classList.toggle("active", btn.getAttribute("data-val") === style);
     });
+    const epGrid = document.querySelector(".pm-episodes-grid");
+    if (epGrid) {
+      epGrid.classList.remove("view-carousel", "view-grid");
+      epGrid.classList.add(`view-${style}`);
+    }
     _showToast(`Episode view set to ${style}`);
   }
 
@@ -6642,7 +6768,25 @@ const App = (() => {
     document.querySelectorAll(".settings-pill-detail").forEach(btn => {
       btn.classList.toggle("active", btn.getAttribute("data-val") === type);
     });
+    const modal = document.querySelector(".player-modal.cinematic-detail-modal");
+    if (modal) {
+      modal.classList.remove("view-fullpage", "view-modal");
+      modal.classList.add(type === "modal" ? "view-modal" : "view-fullpage");
+    }
     _showToast(`Detail view set to ${type}`);
+  }
+
+  function setLoaderGfxStyle(style) {
+    localStorage.setItem("streamx_loader_gfx", style);
+    document.querySelectorAll(".settings-pill-loader-gfx").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-val") === style);
+    });
+    const loader = document.getElementById("cinejoy-watch-loader");
+    if (loader) {
+      loader.classList.remove("loader-style-cyber", "loader-style-minimal", "loader-style-classic");
+      loader.classList.add(`loader-style-${style}`);
+    }
+    _showToast(`Loader style set to ${style.toUpperCase()}`);
   }
 
   function setSubtitleFont(font) {
@@ -6650,6 +6794,7 @@ const App = (() => {
     document.querySelectorAll(".settings-pill-sub-font").forEach(btn => {
       btn.classList.toggle("active", btn.getAttribute("data-val") === font);
     });
+    _updateSubtitlePreview();
     _showToast(`Subtitle font set to ${font}`);
   }
 
@@ -6657,6 +6802,7 @@ const App = (() => {
     localStorage.setItem("streamx_subtitle_size", pct);
     const label = document.getElementById("sub-size-text");
     if (label) label.textContent = `${pct}%`;
+    _updateSubtitlePreview();
   }
 
   function setSubtitleColor(color) {
@@ -6664,7 +6810,23 @@ const App = (() => {
     document.querySelectorAll(".sub-color-dot").forEach(dot => {
       dot.classList.toggle("active", dot.getAttribute("data-color") === color);
     });
+    _updateSubtitlePreview();
     _showToast(`Subtitle color updated`);
+  }
+
+  function toggleReduceMotion(enable) {
+    localStorage.setItem("streamx_reduce_motion", enable ? "true" : "false");
+    document.documentElement.setAttribute("data-reduce-motion", enable ? "true" : "false");
+    document.body.classList.toggle("reduce-motion", enable);
+    _showToast(`Reduced motion ${enable ? "enabled" : "disabled"}`);
+  }
+
+  function toggleSpoilers(enable) {
+    localStorage.setItem("streamx_spoiler_free", enable ? "true" : "false");
+    document.querySelectorAll(".pm-ep-card").forEach(c => {
+      c.classList.toggle("spoiler-hidden", enable);
+    });
+    _showToast(`Spoiler-free mode ${enable ? "enabled" : "disabled"}`);
   }
 
   function setDefaultServer(key) {
@@ -6712,6 +6874,11 @@ const App = (() => {
     const detType = localStorage.getItem("streamx_detail_view_type") || "page";
     document.querySelectorAll(".settings-pill-detail").forEach(btn => {
       btn.classList.toggle("active", btn.getAttribute("data-val") === detType);
+    });
+
+    const loaderGfx = localStorage.getItem("streamx_loader_gfx") || "cyber";
+    document.querySelectorAll(".settings-pill-loader-gfx").forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-val") === loaderGfx);
     });
 
     const imgLogos = document.getElementById("pref-image-logos");
@@ -6774,6 +6941,8 @@ const App = (() => {
     const subBlur = document.getElementById("pref-sub-blur");
     if (subBlur) subBlur.checked = localStorage.getItem("streamx_sub_blur") !== "false";
 
+    _updateSubtitlePreview();
+
     // 5. Advertisements & Febbox
     const enableAds = document.getElementById("pref-enable-ads");
     if (enableAds) enableAds.checked = localStorage.getItem("streamx_enable_ads") !== "false";
@@ -6819,6 +6988,22 @@ const App = (() => {
   function savePlayerPreference(key, value) {
     console.log(`[Settings] Saving player preference: ${key} = ${value}`);
     localStorage.setItem(key, typeof value === "boolean" ? String(value) : value);
+    if (key === "streamx_reduce_motion") {
+      document.documentElement.setAttribute("data-reduce-motion", value ? "true" : "false");
+      document.body.classList.toggle("reduce-motion", Boolean(value));
+    } else if (key === "streamx_sub_blur") {
+      _updateSubtitlePreview();
+    } else if (key === "streamx_spoiler_free") {
+      document.querySelectorAll(".pm-ep-card").forEach(c => {
+        c.classList.toggle("spoiler-hidden", Boolean(value));
+      });
+    } else if (key === "streamx_detail_view_type") {
+      const modal = document.querySelector(".player-modal.cinematic-detail-modal");
+      if (modal) {
+        modal.classList.remove("view-fullpage", "view-modal");
+        modal.classList.add(value === "modal" ? "view-modal" : "view-fullpage");
+      }
+    }
     _showToast("Preference saved!");
   }
 
@@ -6961,7 +7146,7 @@ const App = (() => {
 
   function changeTheme(preset) {
     // Clear old theme presets from body
-    document.body.classList.remove("theme-crimson", "theme-sapphire", "theme-emerald", "theme-nordic");
+    document.body.classList.remove("theme-crimson", "theme-sapphire", "theme-emerald", "theme-nordic", "theme-aero");
 
     _activeTheme = preset;
     localStorage.setItem("streamx_theme_preset", preset);
@@ -7369,9 +7554,13 @@ const App = (() => {
     switchSettingsTab,
     setEpisodeViewStyle,
     setDetailViewType,
+    setLoaderGfxStyle,
     setSubtitleFont,
     setSubtitleSize,
     setSubtitleColor,
+    toggleReduceMotion,
+    toggleSpoilers,
+    _updateSubtitlePreview,
     setDefaultServer,
     saveFebboxCookie,
     clearSiteData,
@@ -7462,16 +7651,31 @@ window.toggleMobileSearch = (force) => App.toggleMobileSearch(force);
 // Boot when DOM is ready
 document.addEventListener("DOMContentLoaded", () => App.init());
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("./sw.js?v=16.0")
-      .then(reg => {
-        reg.update();
-        if (reg.waiting) {
-          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      for (const reg of regs) {
+        reg.unregister();
+      }
+    });
+    if ("caches" in window) {
+      caches.keys().then(keys => {
+        for (const k of keys) {
+          caches.delete(k);
         }
-        console.log("✅ Service Worker Registered & Updated", reg);
-      })
-      .catch(err => console.error("❌ Service Worker Error:", err));
-  });
+      });
+    }
+  } else {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("./sw.js?v=37.0")
+        .then(reg => {
+          reg.update();
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
+          console.log("✅ Service Worker Registered & Updated", reg);
+        })
+        .catch(err => console.error("❌ Service Worker Error:", err));
+    });
+  }
 }
