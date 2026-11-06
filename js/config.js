@@ -96,7 +96,10 @@ const PROVIDER_SECURITY_CONFIG = {
   velarium: { tested: true, status: "compatible", sandbox: null },
   stellar: { tested: true, status: "compatible", sandbox: null },
   fmov: { tested: true, status: "compatible", sandbox: null },
-  vidup: { tested: true, status: "compatible", sandbox: null }
+  vidup: { tested: true, status: "compatible", sandbox: null },
+  "viduki-1": { tested: true, status: "compatible", sandbox: null },
+  "viduki-2": { tested: true, status: "compatible", sandbox: null },
+  "viduki-4": { tested: true, status: "compatible", sandbox: null }
 };
 window.PROVIDER_SECURITY_CONFIG = PROVIDER_SECURITY_CONFIG;
 
@@ -179,6 +182,45 @@ const STREAM_SERVERS = [
     movie: (id) => `https://cinesrc.st/embed/movie/${id}?seek=15&autoplay=true&autonext=true&color=%23f59e0b`,
     tv: (id, s, e) => `https://cinesrc.st/embed/tv/${id}?s=${s || 1}&e=${e || 1}&seek=15&autoplay=true&autonext=true&color=%23f59e0b`,
     anime: (id, e) => `https://cinesrc.st/embed/tv/${id}?s=1&e=${e || 1}&seek=15&autoplay=true&autonext=true&color=%23f59e0b`
+  },
+
+  // ── VIDUKI API 1 (MULTI SERVER) ───────────────────────────────────────────
+  {
+    key: "viduki-1",
+    label: "Viduki 1",
+    category: "embed",
+    badge: "Multi-Server",
+    desc: "Viduki API 1 · Multi-Server Auto-Fallback",
+    color: "#ef4444",
+    movie: (id) => `https://viduki.net/1/movie/${id}?color=ff2a6d`,
+    tv: (id, s, e) => `https://viduki.net/1/tv/${id}/${s || 1}/${e || 1}?color=ff2a6d`,
+    anime: (id, e) => `https://viduki.net/1/tv/${id}/1/${e || 1}?color=ff2a6d`
+  },
+
+  // ── VIDUKI API 2 (MULTI LANGUAGE) ─────────────────────────────────────────
+  {
+    key: "viduki-2",
+    label: "Viduki 2",
+    category: "embed",
+    badge: "Multi-Lang",
+    desc: "Viduki API 2 · Multi-Language Audio & Dubs",
+    color: "#f87171",
+    movie: (id) => `https://viduki.net/2/movie/${id}?color=ff2a6d`,
+    tv: (id, s, e) => `https://viduki.net/2/tv/${id}/${s || 1}/${e || 1}?color=ff2a6d`,
+    anime: (id, e) => `https://viduki.net/2/tv/${id}/1/${e || 1}?color=ff2a6d`
+  },
+
+  // ── VIDUKI API 4 (PREMIUM EMBEDS) ─────────────────────────────────────────
+  {
+    key: "viduki-4",
+    label: "Viduki 4",
+    category: "embed",
+    badge: "Premium",
+    desc: "Viduki API 4 · Premium Fast Embeds",
+    color: "#dc2626",
+    movie: (id) => `https://viduki.net/4/movie/${id}?color=ff2a6d`,
+    tv: (id, s, e) => `https://viduki.net/4/tv/${id}/${s || 1}/${e || 1}?color=ff2a6d`,
+    anime: (id, e) => `https://viduki.net/4/tv/${id}/1/${e || 1}?color=ff2a6d`
   },
 
   // ── 3RD PRIORITY: 0VIDADS ──────────────────────────────────────────────────

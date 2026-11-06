@@ -3538,11 +3538,8 @@ const App = (() => {
     // Handle Big Watch player vs Modal/Page transitions cleanly
     const isWatchRoute = path.startsWith("/watch/");
     if (!isWatchRoute) {
-      const bigPlayer = document.getElementById("cinejoy-big-player");
-      if (bigPlayer && bigPlayer.style.display !== "none") {
-        if (window.Player && typeof Player.exitBigWatch === "function") {
-          Player.exitBigWatch(true);
-        }
+      if (window.Player && typeof Player.exitBigWatch === "function") {
+        Player.exitBigWatch(true);
       }
     }
 
@@ -3555,6 +3552,9 @@ const App = (() => {
       if (bg && bg.classList.contains("open")) {
         if (window.Player && typeof Player.close === "function") Player.close(true);
         if (typeof _closeAnimeDetail === "function") _closeAnimeDetail(true);
+      }
+      if (window.Player && typeof Player.exitBigWatch === "function") {
+        Player.exitBigWatch(true);
       }
       document.body.classList.remove("has-modal-open", "big-player-active");
       if (topHdr) {
@@ -4574,22 +4574,45 @@ const App = (() => {
     }
     const video = document.getElementById("anime-video-player");
     if (video) {
-      video.pause();
-      video.src = "";
-      if (video.load) video.load();
+      try {
+        video.pause();
+        video.removeAttribute("src");
+        video.src = "";
+        if (video.load) video.load();
+      } catch (_) {}
       video.classList.add("player-hidden");
       video.classList.remove("player-visible");
       video.style.setProperty("display", "none", "important");
     }
     const iframe = document.getElementById("anime-iframe-player");
     if (iframe) {
-      iframe.src = "";
+      try {
+        iframe.contentWindow?.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+        iframe.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      } catch (_) {}
+      iframe.src = "about:blank";
+      iframe.removeAttribute("src");
       iframe.classList.add("player-hidden");
       iframe.classList.remove("player-visible");
       iframe.style.setProperty("display", "none", "important");
+      if (iframe.parentNode) {
+        const clean = iframe.cloneNode(false);
+        clean.src = "about:blank";
+        clean.removeAttribute("src");
+        clean.classList.add("player-hidden");
+        clean.classList.remove("player-visible");
+        clean.style.setProperty("display", "none", "important");
+        iframe.parentNode.replaceChild(clean, iframe);
+      }
+    }
+    if (window.Player && typeof Player.exitBigWatch === "function") {
+      Player.exitBigWatch(true);
     }
     if (_hlsInstance) {
-      _hlsInstance.destroy();
+      try {
+        _hlsInstance.stopLoad();
+        _hlsInstance.destroy();
+      } catch (_) {}
       _hlsInstance = null;
     }
     window.removeEventListener("keydown", handlePlayerShortcuts);
@@ -4667,7 +4690,15 @@ const App = (() => {
       toggleMobileDrawer();
     }
 
-    // 2. Perform action
+    // 2. Terminate any active big player stream or detail playback
+    if (window.Player && typeof Player.exitBigWatch === "function") {
+      Player.exitBigWatch(true);
+    }
+    if (window.Player && typeof Player.close === "function") {
+      Player.close(true);
+    }
+
+    // 3. Perform action
     if (action === "page") {
       _activeRowId = null;
       if (target === "anime" || itemId === "anime") {

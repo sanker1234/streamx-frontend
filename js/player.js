@@ -156,17 +156,25 @@ const Player = (() => {
     _epSearchQuery = "";
     _epSortOrder = "asc";
 
+    // 1. Immediately terminate any active full-screen or big-player stream and audio threads
+    exitBigWatch(true);
+
     if (window.HeroTrailerController) {
       window.HeroTrailerController.setFullPlayerActive(false);
       window.HeroTrailerController.destroy("detail");
     }
 
     if (window.UniversalPlayer && typeof window.UniversalPlayer.destroy === "function") {
-      window.UniversalPlayer.destroy();
+      try {
+        window.UniversalPlayer.destroy();
+      } catch (_) {}
     }
 
     const frame = document.getElementById("stream-frame");
-    if (frame) frame.src = "";
+    if (frame) {
+      frame.src = "about:blank";
+      frame.removeAttribute("src");
+    }
 
     const bg = $("player-modal-bg");
     if (bg) {
@@ -1314,22 +1322,68 @@ const Player = (() => {
       }
     } catch (_) {}
 
+    // 1. Thoroughly terminate iframe browsing context, audio threads & postMessage receivers
     if (bigFrame) {
-      bigFrame.src = "";
+      try {
+        bigFrame.contentWindow?.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+        bigFrame.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        bigFrame.contentWindow?.postMessage('{"action":"pause"}', '*');
+        bigFrame.contentWindow?.postMessage('{"type":"pause"}', '*');
+      } catch (_) {}
+
+      bigFrame.src = "about:blank";
+      bigFrame.removeAttribute("src");
       bigFrame.classList.remove("player-visible");
       bigFrame.style.setProperty("display", "none", "important");
+
+      // Replace with clean unmounted clone so browser fully terminates external audio/video threads
+      if (bigFrame.parentNode) {
+        const cleanFrame = bigFrame.cloneNode(false);
+        cleanFrame.src = "about:blank";
+        cleanFrame.removeAttribute("src");
+        cleanFrame.classList.remove("player-visible");
+        cleanFrame.style.setProperty("display", "none", "important");
+        bigFrame.parentNode.replaceChild(cleanFrame, bigFrame);
+      }
     }
+
+    // 2. Terminate HTML5 video player
     if (bigVideo) {
-      bigVideo.pause();
-      bigVideo.removeAttribute("src");
-      bigVideo.load();
+      try {
+        bigVideo.pause();
+        bigVideo.removeAttribute("src");
+        bigVideo.src = "";
+        bigVideo.load();
+      } catch (_) {}
       bigVideo.classList.remove("player-visible");
       bigVideo.style.setProperty("display", "none", "important");
     }
+
+    // 3. Terminate HLS instances and UniversalPlayer
     if (_bigHlsInstance) {
-      _bigHlsInstance.destroy();
+      try {
+        _bigHlsInstance.stopLoad();
+        _bigHlsInstance.destroy();
+      } catch (_) {}
       _bigHlsInstance = null;
     }
+
+    if (window.UniversalPlayer && typeof window.UniversalPlayer.destroy === "function") {
+      try {
+        window.UniversalPlayer.destroy();
+      } catch (_) {}
+    }
+
+    // 4. Force-pause any stray video or audio elements in modal containers
+    document.querySelectorAll(".cinematic-detail-modal video, #player-modal-bg video, .sx-player video, #cinejoy-big-player video").forEach(v => {
+      try {
+        v.pause();
+        v.removeAttribute("src");
+        v.src = "";
+        v.load();
+      } catch (_) {}
+    });
+
     if (_bigPlayerMouseMoveTimer) clearTimeout(_bigPlayerMouseMoveTimer);
 
     const loader = document.getElementById("cinejoy-watch-loader");
@@ -2274,8 +2328,22 @@ const Player = (() => {
 
       // Viduki, CineSrc & Multi-server failover triggers
       if (evt === "viduki:all-servers-failed" || evt === "all-servers-failed" || evt === "player_error" || evt === "cinesrc:error") {
-        console.warn("[Player] Multi-server failure reported by embed. Failing over...");
+        console.warn("[Player] Multi-server failure reported by embed (" + (data.stage || evt) + "). Failing over...");
         failoverToNextServer();
+      }
+
+      // Viduki MEDIA_DATA watch progress
+      if ((data.type === "MEDIA_DATA" || evt === "media_data") && data.data) {
+        try {
+          localStorage.setItem("vidukinet-Progress", JSON.stringify(data.data));
+          const item = _details || _item;
+          if (item && item.id && data.data[item.id]) {
+            const prog = data.data[item.id].progress;
+            if (prog && prog.watched && prog.duration && typeof StreamXHistory !== "undefined") {
+              StreamXHistory.recordProgress?.(item, prog.watched, prog.duration);
+            }
+          }
+        } catch (_) {}
       }
 
       // Progress updates (Vidy / VidRift / CineSrc)
