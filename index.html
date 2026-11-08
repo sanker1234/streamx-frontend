@@ -68,10 +68,10 @@
     }
   </script>
   <link rel="canonical" href="https://cinejoy.pages.dev/">
-  <link rel="stylesheet" href="css/style.css?v=39.0">
-  <link rel="stylesheet" href="css/player-universal.css?v=39.0">
+  <link rel="stylesheet" href="css/style.css?v=45.0">
+  <link rel="stylesheet" href="css/player-universal.css?v=45.0">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <link rel="manifest" href="manifest.json?v=39.0">
+  <link rel="manifest" href="manifest.json?v=45.0">
 </head>
 <body>
 <!-- ── Premium CineJoy Initial Branded Loading Screen ──────── -->
@@ -1410,25 +1410,6 @@
       <span class="big-player-subtitle" id="big-player-subtitle">Direct Stream</span>
     </div>
 
-  <!-- Top-Center Floating Server Switcher (7movies.ac style) -->
-    <div class="big-player-center-group" id="big-player-center-group">
-      <div class="big-player-server-bar" id="big-player-server-bar">
-        <div class="server-badge-pill" title="Playback Mode">
-          <span>Direct</span>
-          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="server-select-dropdown-wrap" id="server-select-dropdown-wrap">
-          <button type="button" class="server-active-pill" id="server-active-pill" onclick="Player.toggleServerDropdown(event)" aria-haspopup="true" aria-expanded="false">
-            <span id="current-server-label">NXsha</span>
-            <svg class="dropdown-chevron-svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="server-dropdown-menu" id="server-dropdown-menu" style="display:none;" role="menu"></div>
-        </div>
-      </div>
-
-      <div class="big-player-server-rail" id="big-player-server-rail" role="tablist" aria-label="Streaming Servers"></div>
-    </div>
-
     <div class="big-player-actions">
       <button class="big-player-action-btn" id="big-player-rotate-btn" onclick="Player.toggleLandscapeRotate()" title="Rotate Horizontal" aria-label="Rotate Horizontal">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1480,6 +1461,18 @@
       src="">
     </iframe>
   </div>
+
+  <!-- Middle-Right Floating Episodes & Servers Tab (1Flex-inspired) -->
+  <button id="big-player-side-server-tab" class="big-player-side-server-tab" onclick="Player.toggleSideServerDrawer()" aria-label="Episodes and Servers Menu" title="Episodes & Servers">
+    <span class="side-tab-arrow">‹</span>
+    <span class="side-tab-text" id="side-tab-label">SERVERS</span>
+  </button>
+
+  <!-- Slide-out Right Drawer (1Flex-inspired Episode Navigator & Server Switcher) -->
+  <aside id="big-player-side-server-drawer" class="big-player-side-server-drawer" aria-label="Episodes and Servers" style="display:none;">
+    <div id="side-drawer-content" class="side-drawer-content"></div>
+  </aside>
+
 </div>
 
 <!-- ── MINIMALIST STREAMING FOOTER (Clean cinejoy.pk Style) ─────────────── -->
@@ -1769,16 +1762,55 @@
   </svg>
 </button>
 
+<!-- ── Desktop Card Hover Preview Popover (1Flex-inspired, White Glassmorphism) ── -->
+<div id="card-hover-popover" class="card-hover-popover" style="display:none;" role="dialog" aria-label="Card Preview">
+  <div class="chp-backdrop-wrap">
+    <img id="chp-img" class="chp-backdrop-img" src="" alt="Backdrop">
+    <div class="chp-backdrop-gradient"></div>
+    <div id="chp-title" class="chp-title-badge"></div>
+  </div>
+  <div class="chp-body">
+    <div class="chp-actions-row">
+      <button id="chp-play-btn" class="chp-play-btn" aria-label="Play" title="Play Now">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button id="chp-wl-btn" class="chp-circle-btn" aria-label="Watchlist" title="Add to Watchlist">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+      <button id="chp-like-btn" class="chp-circle-btn" aria-label="Like" title="Like">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+      </button>
+      <button id="chp-dislike-btn" class="chp-circle-btn" aria-label="Dislike" title="Dislike">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/></svg>
+      </button>
+      <button id="chp-down-btn" class="chp-circle-btn chp-down-arrow-btn" aria-label="More Details" title="More Details">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </div>
+    <div id="chp-progress-wrap" class="chp-progress-wrap" style="display:none;">
+      <div class="chp-progress-bar"><div id="chp-progress-fill" class="chp-progress-fill" style="width:0%;"></div></div>
+      <span id="chp-progress-text" class="chp-progress-text"></span>
+    </div>
+    <div class="chp-meta-row">
+      <span id="chp-cert-badge" class="chp-badge">PG-13</span>
+      <span id="chp-runtime" class="chp-runtime-text"></span>
+      <span id="chp-quality-badge" class="chp-badge">HD</span>
+      <span id="chp-rating" class="chp-rating">★ 8.5</span>
+    </div>
+    <div id="chp-genres" class="chp-genres-row"></div>
+  </div>
+</div>
+
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=39.0"></script>
-<script src="js/tmdb.js?v=39.0"></script>
-<script src="js/anilist.js?v=39.0"></script>
-<script src="js/watchlist.js?v=39.0"></script>
-<script src="js/history.js?v=39.0"></script>
-<script src="js/universalPlayer.js?v=39.0"></script>
-<script src="js/player.js?v=39.0"></script>
-<script src="js/livetv.js?v=39.0"></script>
-<script src="js/app.js?v=39.0"></script>
+<script src="js/config.js?v=45.0"></script>
+<script src="js/tmdb.js?v=45.0"></script>
+<script src="js/anilist.js?v=45.0"></script>
+<script src="js/watchlist.js?v=45.0"></script>
+<script src="js/history.js?v=45.0"></script>
+<script src="js/universalPlayer.js?v=45.0"></script>
+<script src="js/player.js?v=45.0"></script>
+<script src="js/livetv.js?v=45.0"></script>
+<script src="js/app.js?v=45.0"></script>
 
 </body>
 

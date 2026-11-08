@@ -30,6 +30,65 @@ const Player = (() => {
   // ── DOM refs ──────────────────────────────────────────────────────────
   const $ = id => document.getElementById(id);
 
+  // ── macOS Window Minimize & Zoom In/Out Transition ─────────────────────
+  function _animateModalZoomIn(modalEl) {
+    if (!modalEl || !window._cinejoyOriginCardRect) return;
+    const r = window._cinejoyOriginCardRect;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cardCenterX = r.left + r.width / 2;
+    const cardCenterY = r.top + r.height / 2;
+    const scaleX = Math.max(0.12, r.width / vw);
+    const scaleY = Math.max(0.12, r.height / vh);
+    const transX = Math.round(cardCenterX - vw / 2);
+    const transY = Math.round(cardCenterY - vh / 2);
+
+    modalEl.style.transformOrigin = "center center";
+    modalEl.style.transform = `translate3d(${transX}px, ${transY}px, 0) scale(${scaleX}, ${scaleY})`;
+    modalEl.style.opacity = "0.2";
+    modalEl.style.borderRadius = "16px";
+    modalEl.style.willChange = "transform, opacity, border-radius";
+    modalEl.style.transition = "none";
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        modalEl.style.transition = "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s ease, border-radius 0.4s ease";
+        modalEl.style.transform = "translate3d(0, 0, 0) scale(1)";
+        modalEl.style.opacity = "1";
+        modalEl.style.borderRadius = "0px";
+        setTimeout(() => {
+          modalEl.style.willChange = "auto";
+        }, 420);
+      });
+    });
+  }
+
+  function _animateModalZoomOut(modalEl, onDone) {
+    if (!modalEl || !window._cinejoyOriginCardRect) {
+      if (onDone) onDone();
+      return;
+    }
+    const r = window._cinejoyOriginCardRect;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const cardCenterX = r.left + r.width / 2;
+    const cardCenterY = r.top + r.height / 2;
+    const scaleX = Math.max(0.12, r.width / vw);
+    const scaleY = Math.max(0.12, r.height / vh);
+    const transX = Math.round(cardCenterX - vw / 2);
+    const transY = Math.round(cardCenterY - vh / 2);
+
+    modalEl.style.willChange = "transform, opacity, border-radius";
+    modalEl.style.transition = "transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.26s ease, border-radius 0.32s ease";
+    modalEl.style.transform = `translate3d(${transX}px, ${transY}px, 0) scale(${scaleX}, ${scaleY})`;
+    modalEl.style.opacity = "0";
+    modalEl.style.borderRadius = "16px";
+
+    setTimeout(() => {
+      if (onDone) onDone();
+    }, 320);
+  }
+
   // ── Open Cinematic Detail Modal ───────────────────────────────────────
   async function open(item, skipHashPush = false) {
     if (!item || !item.id) return;
@@ -57,6 +116,9 @@ const Player = (() => {
       window.HeroTrailerController.destroy("detail");
       window.HeroTrailerController.pause("general");
       window.HeroTrailerController.pause("anime");
+    }
+    if (window.App && typeof window.App.stopAllHeroRotations === "function") {
+      window.App.stopAllHeroRotations();
     }
 
     if (window.UniversalPlayer && typeof window.UniversalPlayer.destroy === "function") {
@@ -93,6 +155,8 @@ const Player = (() => {
     }
     document.body.style.overflow = "hidden";
     _renderSkeleton(item);
+    const skeletonModal = bg ? bg.querySelector(".player-modal") : null;
+    if (skeletonModal) _animateModalZoomIn(skeletonModal);
 
     // Track as recently viewed
     StreamXHistory.recordView(item);
@@ -177,49 +241,62 @@ const Player = (() => {
     }
 
     const bg = $("player-modal-bg");
-    if (bg) {
-      bg.classList.remove("open");
-      bg.classList.remove("has-cinematic-detail");
-      bg.innerHTML = "";
-    }
-    document.body.classList.remove("has-modal-open");
-    document.body.classList.remove("big-player-active");
-    const topHdr = document.getElementById("top-header");
-    if (topHdr) {
-      topHdr.classList.remove("header-hidden-detail");
-      topHdr.classList.remove("hidden");
-      topHdr.style.removeProperty("display");
-      topHdr.style.removeProperty("visibility");
-      topHdr.style.removeProperty("opacity");
-      topHdr.style.removeProperty("pointer-events");
-    }
-    const backBtn = document.getElementById("header-back-btn");
-    if (backBtn) backBtn.style.display = "none";
-    if (window.App && typeof window.App._updateActiveNavLinks === "function") {
-      window.App._updateActiveNavLinks("home");
-    }
-    if (window.App && typeof window.App.hideActionLoader === "function") {
-      window.App.hideActionLoader();
-    }
-    document.body.style.overflow = "";
+    const modalEl = bg ? bg.querySelector(".player-modal") : null;
 
-    _item = null;
-    _details = null;
-    _currentEpisodes = [];
-
-    // Resume homepage trailer if returning to home view
-    if (window.HeroTrailerController) {
-      if (window._currentPage === "home") window.HeroTrailerController.resume("general");
-      else if (window._currentPage === "anime") window.HeroTrailerController.resume("anime");
-    }
-
-    // Cleanly pop history back to origin if pushed by StreamX, else fallback to home
-    if (!skipHashPush) {
-      if (window.history.length > 1 && window.history.state && window.history.state.streamx) {
-        window.history.back();
-      } else if (window.location.hash && window.location.hash !== "#/") {
-        window.location.hash = "#/";
+    const finalizeClose = () => {
+      if (bg) {
+        bg.classList.remove("open");
+        bg.classList.remove("has-cinematic-detail");
+        bg.innerHTML = "";
       }
+      document.body.classList.remove("has-modal-open");
+      document.body.classList.remove("big-player-active");
+      if (window.App && typeof window.App.resumeHeroRotations === "function") {
+        window.App.resumeHeroRotations();
+      }
+      const topHdr = document.getElementById("top-header");
+      if (topHdr) {
+        topHdr.classList.remove("header-hidden-detail");
+        topHdr.classList.remove("hidden");
+        topHdr.style.removeProperty("display");
+        topHdr.style.removeProperty("visibility");
+        topHdr.style.removeProperty("opacity");
+        topHdr.style.removeProperty("pointer-events");
+      }
+      const backBtn = document.getElementById("header-back-btn");
+      if (backBtn) backBtn.style.display = "none";
+      if (window.App && typeof window.App._updateActiveNavLinks === "function") {
+        window.App._updateActiveNavLinks("home");
+      }
+      if (window.App && typeof window.App.hideActionLoader === "function") {
+        window.App.hideActionLoader();
+      }
+      document.body.style.overflow = "";
+
+      _item = null;
+      _details = null;
+      _currentEpisodes = [];
+
+      // Resume homepage trailer if returning to home view
+      if (window.HeroTrailerController) {
+        if (window._currentPage === "home") window.HeroTrailerController.resume("general");
+        else if (window._currentPage === "anime") window.HeroTrailerController.resume("anime");
+      }
+
+      // Cleanly pop history back to origin if pushed by StreamX, else fallback to home
+      if (!skipHashPush) {
+        if (window.history.length > 1 && window.history.state && window.history.state.streamx) {
+          window.history.back();
+        } else if (window.location.hash && window.location.hash !== "#/") {
+          window.location.hash = "#/";
+        }
+      }
+    };
+
+    if (modalEl && window._cinejoyOriginCardRect) {
+      _animateModalZoomOut(modalEl, finalizeClose);
+    } else {
+      finalizeClose();
     }
   }
 
@@ -405,6 +482,9 @@ const Player = (() => {
     $("player-modal-bg").innerHTML = `
       <div class="player-modal cinematic-detail-modal ${detailClass}" role="dialog" aria-modal="true" aria-label="${_esc(d.title)}">
 
+        <!-- Corner Close Button (1Flex-inspired) -->
+        <button type="button" class="pm-modal-close-corner-btn" onclick="Player.close()" aria-label="Close modal" title="Close (Esc)">✕</button>
+
         <!-- 1. Large Cinematic Trailer Hero (Screenshot 8 & 9) -->
         <div class="pm-cinematic-hero" style="background-image:url('${d.backdrop || d.poster || ""}')">
           <!-- Autoplaying Video Trailer Layer -->
@@ -520,6 +600,11 @@ const Player = (() => {
                   <h3 class="pm-section-title" style="margin-bottom:0;">Episodes</h3>
                 </div>
                 <div class="pm-episodes-controls">
+                  <div class="pm-ep-search-wrap">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="pm-ep-search-input" class="pm-ep-search-input" placeholder="Search episode…" value="${_esc(_epSearchQuery)}" oninput="Player.onEpisodeSearch(this.value)" autocomplete="off">
+                    <button type="button" id="pm-ep-search-clear" class="pm-ep-search-clear" onclick="Player.clearEpisodeSearch()" style="display:${_epSearchQuery ? 'flex' : 'none'};" aria-label="Clear search">✕</button>
+                  </div>
                   <button type="button" class="pm-ep-control-pill" id="pm-ep-rating-toggle" onclick="Player.toggleRatingSort()" title="Filter or sort by rating">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                     <span>Ratings</span>
@@ -596,26 +681,576 @@ const Player = (() => {
 
     // 2. Dropdown Menu (for desktop / compatibility)
     const menu = document.getElementById("server-dropdown-menu");
-    if (!menu) return;
+    if (menu) {
+      menu.innerHTML = servers.map(srv => {
+        const isActive = srv.key === activeKey;
+        return `
+          <button type="button" class="server-dropdown-item ${isActive ? 'active' : ''}" onclick="Player.switchServer('${srv.key}')" role="menuitem">
+            <div class="server-item-left">
+              <span>${_esc(srv.label)}</span>
+              ${srv.badge ? `<span class="server-item-badge">${_esc(srv.badge)}</span>` : ''}
+            </div>
+            ${isActive ? `
+              <span class="server-item-check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+            ` : ''}
+          </button>
+        `;
+      }).join("");
+    }
 
-    menu.innerHTML = servers.map(srv => {
-      const isActive = srv.key === activeKey;
+    // 3. Keep Middle-Right Floating Drawer synchronised (1Flex-inspired)
+    _renderSideServerItems();
+    _renderSideServerMediaCard();
+  }
+
+  // ── 1Flex-Inspired Right-Side Episode Navigator & Server Drawer ───────────
+  let _drawerEpSearchQuery = "";
+  let _focusedDrawerEpIndex = 0;
+  let _lastWheelTime = 0;
+  let _touchStartY = 0;
+
+  function _updateSideTabLabel() {
+    const tab = document.getElementById("big-player-side-server-tab");
+    const label = document.getElementById("side-tab-label");
+    if (!tab || !label) return;
+    const d = _details || _item || {};
+    const isTV = d.media === "tv" || d.media === "drama";
+    if (isTV) {
+      label.textContent = `EPISODES S${_season} E${_episode}`;
+      label.className = "side-tab-text side-tab-text-tv";
+    } else {
+      label.textContent = "SERVERS";
+      label.className = "side-tab-text";
+    }
+  }
+
+  let _drawerKeyNavInitialized = false;
+
+  function _setupDrawerKeyboardNav() {
+    if (_drawerKeyNavInitialized) return;
+    _drawerKeyNavInitialized = true;
+
+    window.addEventListener("keydown", (e) => {
+      const drawer = document.getElementById("big-player-side-server-drawer");
+      if (!drawer || !drawer.classList.contains("open")) return;
+
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.id === "drawer-ep-search-input" || activeEl.tagName === "INPUT")) {
+        if (e.key === "Escape") activeEl.blur();
+        return;
+      }
+
+      const cards = Array.from(document.querySelectorAll("#drawer-episodes-scroll .drawer-ep-card"));
+      if (!cards.length) return;
+
+      let currentIdx = cards.findIndex(c => c.classList.contains("is-active-focused") || c.classList.contains("is-zoomed"));
+      if (currentIdx === -1) {
+        currentIdx = cards.findIndex(c => c.classList.contains("is-watching"));
+      }
+      if (currentIdx === -1) currentIdx = _focusedDrawerEpIndex || 0;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const nextIdx = Math.min(cards.length - 1, currentIdx + 1);
+        _setFocusedDrawerEpisode(nextIdx, true);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const prevIdx = Math.max(0, currentIdx - 1);
+        _setFocusedDrawerEpisode(prevIdx, true);
+      } else if (e.key === "Enter" || e.key === " ") {
+        const activeCard = cards[currentIdx];
+        if (activeCard) {
+          e.preventDefault();
+          activeCard.click();
+        }
+      }
+    });
+  }
+
+  function _setFocusedDrawerEpisode(targetIdx, smoothScroll = true) {
+    const scrollEl = document.getElementById("drawer-episodes-scroll");
+    if (!scrollEl) return;
+    const cards = Array.from(scrollEl.querySelectorAll(".drawer-ep-card"));
+    if (!cards.length) return;
+
+    targetIdx = Math.max(0, Math.min(cards.length - 1, targetIdx));
+    _focusedDrawerEpIndex = targetIdx;
+
+    cards.forEach((c, idx) => {
+      c.classList.remove("is-active-focused", "is-prev", "is-next", "is-zoomed");
+      const dist = Math.abs(idx - targetIdx);
+      if (idx === targetIdx) {
+        c.classList.add("is-active-focused", "is-zoomed");
+        c.style.zIndex = "35";
+        if (smoothScroll) {
+          c.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
+      } else if (idx < targetIdx) {
+        c.classList.add("is-prev");
+        c.style.zIndex = String(Math.max(1, 24 - dist));
+      } else {
+        c.classList.add("is-next");
+        c.style.zIndex = String(Math.max(1, 24 - dist));
+      }
+    });
+  }
+
+  function _applyZoomToDrawerCard(card) {
+    if (!card) return;
+    const all = Array.from(document.querySelectorAll("#drawer-episodes-scroll .drawer-ep-card"));
+    const targetIdx = all.indexOf(card);
+    if (targetIdx === -1) return;
+    _setFocusedDrawerEpisode(targetIdx, true);
+  }
+
+  function setHoverZoomEpisode(card) {
+    if (!card) return;
+    const all = Array.from(document.querySelectorAll("#drawer-episodes-scroll .drawer-ep-card"));
+    const targetIdx = all.indexOf(card);
+    if (targetIdx === -1 || targetIdx === _focusedDrawerEpIndex) return;
+    _setFocusedDrawerEpisode(targetIdx, false);
+  }
+
+  function onDrawerCardClick(event, idx, epNum) {
+    if (event) {
+      if (event.target && (event.target.closest(".drawer-reveal-pill") || event.target.closest(".drawer-ep-locked-overlay"))) {
+        return;
+      }
+    }
+    _setFocusedDrawerEpisode(idx, true);
+    Player.playEpisode(epNum);
+  }
+
+  function _setupDrawerScrollCarousel() {
+    const scrollEl = document.getElementById("drawer-episodes-scroll");
+    if (!scrollEl || scrollEl._carouselBound) return;
+    scrollEl._carouselBound = true;
+
+    // Desktop mouse wheel / trackpad scroll
+    scrollEl.addEventListener("wheel", (e) => {
+      const now = Date.now();
+      if (now - _lastWheelTime < 220) {
+        e.preventDefault();
+        return;
+      }
+      if (Math.abs(e.deltaY) > 16) {
+        e.preventDefault();
+        _lastWheelTime = now;
+        const cards = scrollEl.querySelectorAll(".drawer-ep-card");
+        if (!cards.length) return;
+        if (e.deltaY > 0) {
+          if (_focusedDrawerEpIndex < cards.length - 1) {
+            _setFocusedDrawerEpisode(_focusedDrawerEpIndex + 1, true);
+          }
+        } else {
+          if (_focusedDrawerEpIndex > 0) {
+            _setFocusedDrawerEpisode(_focusedDrawerEpIndex - 1, true);
+          }
+        }
+      }
+    }, { passive: false });
+
+    // Mobile / Tablet touch swipe
+    scrollEl.addEventListener("touchstart", (e) => {
+      if (e.touches && e.touches.length) {
+        _touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    scrollEl.addEventListener("touchend", (e) => {
+      if (!e.changedTouches || !e.changedTouches.length) return;
+      const touchEndY = e.changedTouches[0].clientY;
+      const diff = _touchStartY - touchEndY;
+      if (Math.abs(diff) > 35) {
+        const cards = scrollEl.querySelectorAll(".drawer-ep-card");
+        if (!cards.length) return;
+        if (diff > 0) {
+          if (_focusedDrawerEpIndex < cards.length - 1) {
+            _setFocusedDrawerEpisode(_focusedDrawerEpIndex + 1, true);
+          }
+        } else {
+          if (_focusedDrawerEpIndex > 0) {
+            _setFocusedDrawerEpisode(_focusedDrawerEpIndex - 1, true);
+          }
+        }
+      }
+    }, { passive: true });
+  }
+
+  function toggleSideServerDrawer(force) {
+    const drawer = document.getElementById("big-player-side-server-drawer");
+    const tab = document.getElementById("big-player-side-server-tab");
+    if (!drawer) return;
+    const isOpening = force !== undefined ? !!force : !drawer.classList.contains("open");
+    if (isOpening) {
+      drawer.style.display = "flex";
+      _setupDrawerKeyboardNav();
+      _renderSideDrawerContent();
+      requestAnimationFrame(() => {
+        drawer.classList.add("open");
+        if (tab) tab.classList.add("active");
+        _setupDrawerScrollCarousel();
+      });
+    } else {
+      drawer.classList.remove("open");
+      if (tab) tab.classList.remove("active");
+      setTimeout(() => {
+        if (!drawer.classList.contains("open")) drawer.style.display = "none";
+      }, 280);
+    }
+  }
+
+  function toggleDrawerSeasonDropdown(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById("drawer-season-menu");
+    if (!menu) return;
+    const isShown = menu.style.display === "block";
+    menu.style.display = isShown ? "none" : "block";
+    const serverMenu = document.getElementById("drawer-server-menu");
+    if (serverMenu) serverMenu.style.display = "none";
+  }
+
+  function toggleDrawerServerDropdown(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById("drawer-server-menu");
+    if (!menu) return;
+    const isShown = menu.style.display === "block";
+    menu.style.display = isShown ? "none" : "block";
+    const seasonMenu = document.getElementById("drawer-season-menu");
+    if (seasonMenu) seasonMenu.style.display = "none";
+  }
+
+  function onDrawerSeasonChange(sNum) {
+    const sInt = parseInt(sNum, 10);
+    const seasonMenu = document.getElementById("drawer-season-menu");
+    if (seasonMenu) seasonMenu.style.display = "none";
+    _focusedDrawerEpIndex = 0;
+    onSeasonChange(sInt).then(() => {
+      _renderSideDrawerContent();
+      _updateSideTabLabel();
+    });
+  }
+
+  function onDrawerEpisodeSearch(query) {
+    _drawerEpSearchQuery = (query || "").trim().toLowerCase();
+    _focusedDrawerEpIndex = 0;
+    _renderDrawerEpisodesList();
+  }
+
+  function toggleDrawerSpoiler() {
+    const isCurrent = localStorage.getItem("streamx_spoiler_free") === "true";
+    const newVal = !isCurrent;
+    localStorage.setItem("streamx_spoiler_free", newVal ? "true" : "false");
+    const btn = document.getElementById("drawer-spoiler-btn");
+    if (btn) btn.classList.toggle("active", newVal);
+    _renderDrawerEpisodesList();
+  }
+
+  function toggleDrawerAutoNext(checked) {
+    localStorage.setItem("streamx_autonext", checked ? "true" : "false");
+  }
+
+  function _generateToken() {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let t = "";
+    for (let i = 0; i < 16; i++) {
+      t += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return t;
+  }
+
+  function revealDrawerEpisode(el) {
+    if (!el) return;
+    const card = el.closest(".drawer-ep-card");
+    if (card) {
+      card.classList.remove("is-locked");
+      card.classList.add("is-revealed");
+      const desc = card.querySelector(".drawer-ep-desc");
+      if (desc) desc.classList.remove("blurred");
+      const overlay = card.querySelector(".drawer-ep-locked-overlay");
+      if (overlay) overlay.remove();
+    }
+  }
+
+  function _renderDrawerEpisodesList() {
+    const scrollEl = document.getElementById("drawer-episodes-scroll");
+    if (!scrollEl) return;
+
+    const episodes = _currentEpisodes || [];
+    const isSpoilerOn = localStorage.getItem("streamx_spoiler_free") === "true";
+
+    const filtered = episodes.filter(ep => {
+      if (!_drawerEpSearchQuery) return true;
+      const numMatch = String(ep.episode_number) === _drawerEpSearchQuery;
+      const nameMatch = (ep.name || "").toLowerCase().includes(_drawerEpSearchQuery);
+      const descMatch = (ep.overview || "").toLowerCase().includes(_drawerEpSearchQuery);
+      return numMatch || nameMatch || descMatch;
+    });
+
+    if (!filtered.length) {
+      scrollEl.innerHTML = `<div class="drawer-empty-state">No episodes match "${_esc(_drawerEpSearchQuery)}"</div>`;
+      return;
+    }
+
+    const fallbackBackdrop = (_details && (_details.backdrop || _details.poster)) || "";
+
+    // Determine initial focus: currently playing episode or 0
+    let initialFocusIdx = filtered.findIndex(ep => ep.episode_number === _episode);
+    if (initialFocusIdx === -1) initialFocusIdx = 0;
+    _focusedDrawerEpIndex = initialFocusIdx;
+
+    scrollEl.innerHTML = filtered.map((ep, idx) => {
+      const isFocused = idx === initialFocusIdx;
+      const isPrev = idx < initialFocusIdx;
+      const isNext = idx > initialFocusIdx;
+      const isCurrent = ep.episode_number === _episode;
+      const isWatched = (typeof StreamXHistory !== "undefined" && StreamXHistory.hasWatchedEpisode)
+        ? StreamXHistory.hasWatchedEpisode(_details?.id, _season, ep.episode_number)
+        : false;
+      const isLocked = isSpoilerOn && !isCurrent && !isWatched;
+      const stillImg = ep.still_path ? `https://image.tmdb.org/t/p/w400${ep.still_path}` : fallbackBackdrop;
+      const duration = ep.runtime ? `${ep.runtime}m` : "50m";
+      const viewNum = 1200 + ((ep.episode_number * 383 + (_season * 541)) % 2800);
+      const viewsFormatted = viewNum.toLocaleString();
+
+      const stateClass = isFocused ? 'is-active-focused is-zoomed' : (isPrev ? 'is-prev' : 'is-next');
+
       return `
-        <button type="button" class="server-dropdown-item ${isActive ? 'active' : ''}" onclick="Player.switchServer('${srv.key}')" role="menuitem">
-          <div class="server-item-left">
-            <span>${_esc(srv.label)}</span>
-            ${srv.badge ? `<span class="server-item-badge">${_esc(srv.badge)}</span>` : ''}
+        <div class="drawer-ep-card ${stateClass} ${isCurrent ? 'is-watching' : ''} ${isLocked ? 'is-locked' : ''}" 
+             id="drawer-ep-card-${ep.episode_number}" 
+             data-ep-index="${idx}"
+             data-ep-num="${ep.episode_number}"
+             onclick="Player.onDrawerCardClick(event, ${idx}, ${ep.episode_number})" 
+             onmouseenter="Player.setHoverZoomEpisode(this)" 
+             role="button" tabindex="0"
+             aria-label="Episode ${ep.episode_number}: ${_esc(ep.name || '')}">
+          <div class="drawer-ep-card-inner">
+            ${stillImg ? `<div class="drawer-ep-bg" style="background-image: url('${stillImg}');"></div>` : `<div class="drawer-ep-bg fallback"></div>`}
+            <div class="drawer-ep-gradient"></div>
+            
+            <div class="drawer-ep-top-badges">
+              <span class="drawer-ep-view-badge">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>${viewsFormatted}</span>
+              </span>
+              ${isCurrent ? `<span class="drawer-ep-watching-badge"><span class="watching-pulse"></span> WATCHING</span>` : ''}
+            </div>
+
+            <div class="drawer-ep-play-overlay">
+              <button type="button" class="drawer-ep-play-btn" aria-label="Play Episode ${ep.episode_number}">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="7 4 19 12 7 20 7 4"/></svg>
+              </button>
+            </div>
+
+            <div class="drawer-ep-card-body">
+              <div class="drawer-ep-title-line">
+                <span class="drawer-ep-title">${ep.episode_number}. ${_esc(ep.name || `Episode ${ep.episode_number}`)}</span>
+                <span class="drawer-ep-dur">${duration}</span>
+              </div>
+              <p class="drawer-ep-desc ${isLocked ? 'blurred' : ''}">${_esc(ep.overview || "No overview available.")}</p>
+            </div>
+
+            ${isLocked ? `
+              <div class="drawer-ep-locked-overlay" onclick="event.stopPropagation(); Player.revealDrawerEpisode(this)">
+                <div class="drawer-locked-preview">
+                  <span class="drawer-locked-name">${ep.episode_number}. ${_esc(ep.name || `Episode ${ep.episode_number}`)}</span>
+                  <span class="drawer-locked-dur">${duration}</span>
+                </div>
+                <button type="button" class="drawer-reveal-pill" aria-label="Reveal episode details">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>Click to reveal</span>
+                </button>
+              </div>
+            ` : ''}
           </div>
-          ${isActive ? `
-            <span class="server-item-check" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </span>
-          ` : ''}
-        </button>
+        </div>
       `;
     }).join("");
+
+    _setupDrawerScrollCarousel();
+
+    requestAnimationFrame(() => {
+      _setFocusedDrawerEpisode(_focusedDrawerEpIndex, true);
+    });
+  }
+
+  function _renderSideDrawerContent() {
+    const container = document.getElementById("side-drawer-content");
+    if (!container) return;
+
+    const d = _details || _item || {};
+    const isTV = d.media === "tv" || d.media === "drama";
+    const isSpoilerOn = localStorage.getItem("streamx_spoiler_free") === "true";
+    const isAutoNextOn = localStorage.getItem("streamx_autonext") !== "false";
+    const servers = (typeof window.STREAM_SERVERS !== "undefined" && window.STREAM_SERVERS.length) ? window.STREAM_SERVERS : (typeof STREAM_SERVERS !== "undefined" ? STREAM_SERVERS : []);
+    const activeKey = _selectedServer || localStorage.getItem("streamx_server") || (servers[0] && servers[0].key) || "nxsha";
+    const curServerObj = servers.find(s => s.key === activeKey) || servers[0] || { label: "Main 1", key: "nxsha", color: "#22c55e" };
+    const curServerLabel = curServerObj.label || "Main 1";
+
+    if (isTV) {
+      const curSeasonObj = (_seasons || []).find(s => s.season_number === _season) || { name: `Season ${_season}`, overview: d.overview || "" };
+      const curSeasonLabel = curSeasonObj.name || `Season ${_season}`;
+      const epCount = (_currentEpisodes || []).length;
+      const seasonOverview = curSeasonObj.overview || d.overview || "Stream every episode in full HD with intelligent source failover.";
+
+      container.innerHTML = `
+        <div class="drawer-floating-toolbar">
+          <div class="drawer-header-row">
+            <div class="drawer-season-dropdown-wrap">
+              <button type="button" class="drawer-season-btn" onclick="Player.toggleDrawerSeasonDropdown(event)" aria-haspopup="true">
+                <span id="drawer-season-label">${_esc(curSeasonLabel)}</span>
+                <svg class="chevron-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div id="drawer-season-menu" class="drawer-dropdown-menu" style="display:none;" role="menu">
+                ${(_seasons || []).map(s => `
+                  <button type="button" class="drawer-dropdown-option ${s.season_number === _season ? 'active' : ''}" onclick="Player.onDrawerSeasonChange(${s.season_number})" role="menuitem">
+                    <span>${_esc(s.name || `Season ${s.season_number}`)}</span>
+                    ${s.episode_count ? `<span class="drawer-option-badge">${s.episode_count} eps</span>` : ''}
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+
+            <div class="drawer-search-wrap">
+              <svg class="drawer-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="drawer-search-input" id="drawer-ep-search-input" placeholder="Search" value="${_esc(_drawerEpSearchQuery)}" oninput="Player.onDrawerEpisodeSearch(this.value)" autocomplete="off">
+            </div>
+
+            <div class="drawer-autonext-wrap" title="Auto Next Episode">
+              <label class="drawer-toggle-label">
+                <input type="checkbox" id="drawer-autonext-check" onchange="Player.toggleDrawerAutoNext(this.checked)" ${isAutoNextOn ? 'checked' : ''}>
+                <span class="drawer-toggle-slider" title="Auto-next episode">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                </span>
+              </label>
+            </div>
+
+            <button class="drawer-close-btn" onclick="Player.toggleSideServerDrawer(false)" aria-label="Close drawer">✕</button>
+          </div>
+
+          <div class="drawer-server-row">
+            <div class="drawer-server-dropdown-wrap">
+              <span class="drawer-server-prefix">SERVER:</span>
+              <button type="button" class="drawer-server-select-btn" onclick="Player.toggleDrawerServerDropdown(event)" aria-haspopup="true" aria-expanded="false" title="Change Stream Server">
+                <span class="drawer-server-dot" style="background:${curServerObj.color || '#22c55e'}; box-shadow:0 0 8px ${curServerObj.color || '#22c55e'};"></span>
+                <span id="drawer-current-server-name">${_esc(curServerLabel)}</span>
+                <svg class="chevron-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div id="drawer-server-menu" class="drawer-dropdown-menu" style="display:none;" role="menu">
+                ${servers.map(s => `
+                  <button type="button" class="drawer-dropdown-option ${s.key === activeKey ? 'active' : ''}" onclick="Player.switchServer('${s.key}')" role="menuitem">
+                    <div class="drawer-opt-left">
+                      <span class="drawer-opt-dot" style="background:${s.color || '#22c55e'}; box-shadow:0 0 6px ${s.color || '#22c55e'};"></span>
+                      <span>${_esc(s.label)}</span>
+                    </div>
+                    ${s.badge ? `<span class="drawer-option-badge">${_esc(s.badge)}</span>` : ''}
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+
+            <button type="button" class="drawer-spoiler-btn ${isSpoilerOn ? 'active' : ''}" id="drawer-spoiler-btn" onclick="Player.toggleDrawerSpoiler()" title="Toggle Episode Spoiler Protection">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>SPOILER</span>
+            </button>
+          </div>
+
+          <div class="drawer-season-summary">
+            <div class="drawer-season-title">${_esc(curSeasonLabel)} • ${epCount} EPISODES</div>
+            <p class="drawer-season-desc">${_esc(seasonOverview)}</p>
+          </div>
+        </div>
+
+        <div class="drawer-episodes-scroll drawer-episodes-stack" id="drawer-episodes-scroll">
+          <!-- Filled by _renderDrawerEpisodesList() -->
+        </div>
+      `;
+
+      _renderDrawerEpisodesList();
+    } else {
+      // Movie mode
+      const title = d.title || "Cinema Stream";
+      const backdrop = d.backdrop || d.poster || "";
+      const year = d.year || (d.release_date ? d.release_date.slice(0, 4) : "");
+      const ratingVal = (typeof d.rating === "number" && !isNaN(d.rating) && d.rating > 0) ? d.rating.toFixed(1) : "8.5";
+      const runtimeText = d.runtime ? `${d.runtime}m` : "1080p HD";
+      const overview = d.overview || "Stream high-definition playback directly on CineJoy with intelligent stream routing.";
+
+      container.innerHTML = `
+        <div class="drawer-floating-toolbar">
+          <div class="drawer-header-row">
+            <span class="drawer-header-title">CINEMA STREAM</span>
+            <button class="drawer-close-btn" onclick="Player.toggleSideServerDrawer(false)" aria-label="Close drawer">✕</button>
+          </div>
+
+          <div class="drawer-server-row">
+            <div class="drawer-server-dropdown-wrap">
+              <span class="drawer-server-prefix">SERVER:</span>
+              <button type="button" class="drawer-server-select-btn" onclick="Player.toggleDrawerServerDropdown(event)" aria-haspopup="true" aria-expanded="false" title="Change Stream Server">
+                <span class="drawer-server-dot" style="background:${curServerObj.color || '#22c55e'}; box-shadow:0 0 8px ${curServerObj.color || '#22c55e'};"></span>
+                <span id="drawer-current-server-name">${_esc(curServerLabel)}</span>
+                <svg class="chevron-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div id="drawer-server-menu" class="drawer-dropdown-menu" style="display:none;" role="menu">
+                ${servers.map(s => `
+                  <button type="button" class="drawer-dropdown-option ${s.key === activeKey ? 'active' : ''}" onclick="Player.switchServer('${s.key}')" role="menuitem">
+                    <div class="drawer-opt-left">
+                      <span class="drawer-opt-dot" style="background:${s.color || '#22c55e'}; box-shadow:0 0 6px ${s.color || '#22c55e'};"></span>
+                      <span>${_esc(s.label)}</span>
+                    </div>
+                    ${s.badge ? `<span class="drawer-option-badge">${_esc(s.badge)}</span>` : ''}
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-movie-scroll" style="display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding: 4px 6px 40px;">
+          <div class="drawer-movie-card">
+            ${backdrop ? `
+              <div class="drawer-movie-thumb" style="background-image:url('${backdrop}')">
+                <div class="drawer-movie-overlay"></div>
+                <div class="drawer-movie-badge-float">
+                  <span class="drawer-movie-year">${year}</span>
+                  <span class="drawer-movie-rating">★ ${ratingVal}</span>
+                  <span class="drawer-movie-runtime">${runtimeText}</span>
+                </div>
+              </div>
+            ` : ''}
+            <div class="drawer-movie-body">
+              <div class="drawer-movie-title">${_esc(title)}</div>
+              <p class="drawer-movie-overview" style="font-size: 11.5px; line-height: 1.45; color: rgba(255,255,255,0.7); margin-top: 4px;">${_esc(overview)}</p>
+            </div>
+          </div>
+
+          <div class="drawer-movie-head" style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: rgba(255,255,255,0.45); margin: 6px 4px 2px;">ALL AVAILABLE STREAM SERVERS</div>
+          <div class="drawer-server-grid" style="display: flex; flex-direction: column; gap: 8px;">
+            ${servers.map(s => `
+              <button type="button" class="drawer-server-grid-btn ${s.key === activeKey ? 'active' : ''}" onclick="Player.switchServer('${s.key}')">
+                <div class="drawer-btn-left">
+                  <span class="drawer-server-dot" style="background:${s.color || '#22c55e'}; box-shadow:0 0 6px ${s.color || '#22c55e'};"></span>
+                  <span>${_esc(s.label)}</span>
+                </div>
+                ${s.badge ? `<span class="drawer-option-badge">${_esc(s.badge)}</span>` : ''}
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function _renderSideServerItems() {
+    _renderSideDrawerContent();
+  }
+
+  function _renderSideServerMediaCard() {
+    // Delegated to _renderSideDrawerContent()
   }
 
   // ── Auto Landscape Orientation & Fullscreen Helpers ───────────────────────
@@ -782,6 +1417,28 @@ const Player = (() => {
     const label = document.getElementById("current-server-label");
     if (label) label.textContent = target.label;
 
+    const drawerServerName = document.getElementById("drawer-current-server-name");
+    if (drawerServerName) {
+      drawerServerName.textContent = target.label;
+      const dot = drawerServerName.previousElementSibling;
+      if (dot && dot.classList.contains("drawer-server-dot")) {
+        dot.style.background = target.color || "#22c55e";
+        dot.style.boxShadow = `0 0 8px ${target.color || '#22c55e'}`;
+      }
+    }
+    const drawerServerMenu = document.getElementById("drawer-server-menu");
+    if (drawerServerMenu) drawerServerMenu.style.display = "none";
+
+    // Update active highlight on server dropdown items and grid buttons
+    document.querySelectorAll("#drawer-server-menu .drawer-dropdown-option").forEach(btn => {
+      const isCur = btn.getAttribute("onclick")?.includes(`'${target.key}'`);
+      btn.classList.toggle("active", !!isCur);
+    });
+    document.querySelectorAll(".drawer-server-grid-btn").forEach(btn => {
+      const isCur = btn.getAttribute("onclick")?.includes(`'${target.key}'`);
+      btn.classList.toggle("active", !!isCur);
+    });
+
     const menu = document.getElementById("server-dropdown-menu");
     if (menu) {
       menu.style.display = "none";
@@ -831,6 +1488,18 @@ const Player = (() => {
         menu.style.display = "none";
         const pill = document.getElementById("server-active-pill");
         if (pill) pill.setAttribute("aria-expanded", "false");
+      }
+    }
+    const drawerServerMenu = document.getElementById("drawer-server-menu");
+    if (drawerServerMenu && drawerServerMenu.style.display !== "none") {
+      if (!e.target.closest(".drawer-server-dropdown-wrap")) {
+        drawerServerMenu.style.display = "none";
+      }
+    }
+    const drawerSeasonMenu = document.getElementById("drawer-season-menu");
+    if (drawerSeasonMenu && drawerSeasonMenu.style.display !== "none") {
+      if (!e.target.closest(".drawer-season-dropdown-wrap")) {
+        drawerSeasonMenu.style.display = "none";
       }
     }
   });
@@ -904,7 +1573,7 @@ const Player = (() => {
 
     const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : (item.media === "anime" ? "anime" : "movie");
 
-    // Ensure full details (and release_date) are loaded before checking availability
+    // Ensure full details (and release_date/seasons) are loaded before checking availability
     if (cleanMedia === "movie" && (!item.release_date || !_details)) {
       try {
         const full = await TMDB.getDetails("movie", item.id);
@@ -913,6 +1582,27 @@ const Player = (() => {
           item = full;
         }
       } catch (_) {}
+    } else if (cleanMedia === "tv") {
+      if (!_seasons || !_seasons.length || !_details) {
+        try {
+          const full = await TMDB.getDetails("tv", item.id);
+          if (full) {
+            _details = full;
+            item = full;
+            if (full.seasons) {
+              _seasons = full.seasons.filter(s => s.season_number > 0);
+            }
+          }
+        } catch (_) {}
+      }
+      if (!_currentEpisodes || !_currentEpisodes.length) {
+        try {
+          const sData = await TMDB.getSeason(item.id, _season);
+          if (sData && sData.episodes) {
+            _currentEpisodes = sData.episodes;
+          }
+        } catch (_) {}
+      }
     }
 
     const probeToken = ++_activeProbeToken;
@@ -920,8 +1610,10 @@ const Player = (() => {
     // Stop and silence background trailer preview immediately
     if (window.HeroTrailerController) {
       window.HeroTrailerController.setFullPlayerActive(true);
-      window.HeroTrailerController.silenceAll();
-      window.HeroTrailerController.pause("detail");
+      window.HeroTrailerController.destroyAll();
+    }
+    if (window.App && typeof window.App.stopAllHeroRotations === "function") {
+      window.App.stopAllHeroRotations();
     }
 
     const servers = (typeof window.STREAM_SERVERS !== "undefined" && window.STREAM_SERVERS.length) ? window.STREAM_SERVERS : (typeof STREAM_SERVERS !== "undefined" ? STREAM_SERVERS : []);
@@ -1112,8 +1804,8 @@ const Player = (() => {
         : (cleanMedia === "anime" ? `Episode ${_episode || 1}` : `${item.year || ""} • Direct Stream`);
     }
 
-    // Wait some time to let buffer connect cleanly before starting playback
-    await new Promise(r => setTimeout(r, 950));
+    // Quick buffer preparation before smooth transition into cinema player
+    await new Promise(r => setTimeout(r, 120));
     if (probeToken !== _activeProbeToken) return;
 
     // Transition from loader to big cinema player
@@ -1151,13 +1843,21 @@ const Player = (() => {
       // Render horizontal direct server options rail
       _renderServerDropdownItems();
 
-      // Push watch hash so back button exits player cleanly
-      const watchHash = cleanMedia === "tv"
-        ? `#/watch/tv/${item.id}/${_season}/${_episode}`
-        : (cleanMedia === "anime" ? `#/watch/anime/${item.id}/${_episode || 1}` : `#/watch/movie/${item.id}`);
-      if (window.location.hash !== watchHash) {
-        history.pushState({ cinejoy_watch: true }, "", watchHash);
+      // Push watch URL so back button exits player cleanly (production-grade 1Flex query-based URLs with secure token)
+      const token = _generateToken();
+      const queryStr = cleanMedia === "tv"
+        ? `id=${item.id}&season=${_season}&episode=${_episode}&type=tv&token=${token}`
+        : (cleanMedia === "anime" ? `id=${item.id}&episode=${_episode || 1}&type=anime&token=${token}` : `id=${item.id}&type=movie&token=${token}`);
+      const watchUrl = `/play?${queryStr}`;
+      const watchHash = `#/play?${queryStr}`;
+      try {
+        history.pushState({ cinejoy_watch: true, query: queryStr }, "", watchUrl);
+      } catch (_) {
+        history.pushState({ cinejoy_watch: true, query: queryStr }, "", watchHash);
       }
+
+      _updateSideTabLabel();
+      _renderSideDrawerContent();
 
       _setupBigPlayerTopBarEvents();
     }
@@ -1286,16 +1986,15 @@ const Player = (() => {
   function exitBigWatch(skipHistory = false) {
     _activeProbeToken++; // Abort any running probe loop immediately
     cancelNextEpisode();
+    toggleSideServerDrawer(false);
     document.body.classList.remove("big-player-active");
-    const topHdr = document.getElementById("top-header");
-    if (topHdr) {
-      topHdr.classList.remove("header-hidden-detail", "hidden");
-      topHdr.style.removeProperty("display");
-      topHdr.style.removeProperty("visibility");
-      topHdr.style.removeProperty("opacity");
-      topHdr.style.removeProperty("pointer-events");
+    if (window.HeroTrailerController) {
+      window.HeroTrailerController.setFullPlayerActive(false);
     }
     const isModalOpen = document.getElementById("player-modal-bg")?.classList.contains("open");
+    if (!isModalOpen && window.App && typeof window.App.resumeHeroRotations === "function") {
+      window.App.resumeHeroRotations();
+    }
     const backBtn = document.getElementById("header-back-btn");
     if (backBtn) {
       backBtn.style.display = isModalOpen ? "inline-flex" : "none";
@@ -1404,13 +2103,27 @@ const Player = (() => {
           if (id && !isNaN(id)) {
             item = { id, media, title: "Loading…", poster: "", backdrop: "" };
           }
+        } else if (curHash.includes("/play?") || curHash.includes("/watch?")) {
+          const qIdx = curHash.indexOf("?");
+          if (qIdx !== -1) {
+            const params = new URLSearchParams(curHash.slice(qIdx));
+            const id = parseInt(params.get("id"), 10);
+            const type = (params.get("type") || "movie").toLowerCase();
+            const media = (type === "drama" || type === "tv" || type === "series" || type === "show") ? "tv" : (type === "anime" ? "anime" : "movie");
+            if (id && !isNaN(id)) {
+              item = { id, media, title: "Loading…", poster: "", backdrop: "" };
+            }
+          }
         }
       }
 
       if (item && item.id) {
         const cleanMedia = (item.media === "drama" || item.media === "tv") ? "tv" : (item.media === "anime" ? "anime" : "movie");
         const targetHash = `#/${cleanMedia}/${item.id}`;
-        if (window.location.hash.startsWith("#/watch/")) {
+        if (window.location.pathname.startsWith("/play")) {
+          history.replaceState({ streamx: true }, "", "/" + targetHash);
+          window.location.hash = targetHash;
+        } else if (window.location.hash.startsWith("#/watch") || window.location.hash.startsWith("#/play")) {
           history.replaceState({ streamx: true }, "", targetHash);
           window.location.hash = targetHash;
         } else if (window.location.hash !== targetHash) {
@@ -1427,7 +2140,10 @@ const Player = (() => {
           open(item, true);
         }
       } else {
-        if (window.location.hash.startsWith("#/watch/") && window.history.length > 1) {
+        if (window.location.pathname.startsWith("/play")) {
+          history.replaceState(null, "", "/#/");
+          window.location.hash = "#/";
+        } else if ((window.location.hash.startsWith("#/watch") || window.location.hash.startsWith("#/play")) && window.history.length > 1) {
           window.history.back();
         } else {
           window.location.hash = "#/";
@@ -1589,10 +2305,30 @@ const Player = (() => {
     }
 
     const epStyle = (typeof localStorage !== "undefined" && localStorage.getItem("streamx_episode_view_style")) || "carousel";
-    const spoilerFree = (typeof localStorage !== "undefined" && localStorage.getItem("streamx_spoiler_free")) === "true";
-    const spoilerClass = spoilerFree ? " spoiler-hidden" : "";
+    const spoilerFree = (typeof localStorage !== "undefined" && localStorage.getItem("streamx_spoiler_free")) !== "false";
+
+    const curSeason = _seasons ? _seasons.find(s => s.season_number === _season) : null;
+    const seasonLabel = curSeason ? (curSeason.name || `Season ${_season}`) : `Season ${_season}`;
+    const certRating = _details.adult ? "18+" : ((_details.rating && _details.rating >= 7.5) ? "TV-MA" : "TV-14");
 
     return `
+      <!-- Episode Sub-Bar: Season Info & 1Flex-Inspired Spoiler Protection Toggle -->
+      <div class="pm-ep-sub-bar">
+        <div class="pm-ep-sub-left">
+          <span class="pm-ep-season-badge">${_esc(seasonLabel)}: ${certRating}</span>
+        </div>
+        <div class="pm-ep-sub-right">
+          <label class="pm-spoiler-toggle-label" for="pm-spoiler-toggle">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>Spoiler Protection</span>
+          </label>
+          <label class="pm-glass-switch" aria-label="Toggle Spoiler Protection">
+            <input type="checkbox" id="pm-spoiler-toggle" ${spoilerFree ? "checked" : ""} onchange="Player.toggleSpoilerProtection(this.checked)">
+            <span class="pm-glass-slider"></span>
+          </label>
+        </div>
+      </div>
+
       <div class="pm-episodes-wrap">
         ${epStyle === "carousel" ? `
           <button type="button" class="pm-carousel-nav prev" onclick="Player.scrollEpisodesCarousel(-1)" aria-label="Scroll episodes left">
@@ -1614,12 +2350,25 @@ const Player = (() => {
               ep.air_date ? ep.air_date.slice(0, 4) : null,
             ].filter(Boolean);
 
+            const isWatched = (typeof StreamXHistory !== "undefined" && StreamXHistory.hasWatchedEpisode)
+              ? StreamXHistory.hasWatchedEpisode(_details.id, _season, ep.episode_number)
+              : false;
+            // Episode 1 (pilot) or watched episodes are visible; subsequent unwatched are spoiler protected
+            const isSpoilerProtected = spoilerFree && !isWatched && ep.episode_number > 1;
+            const cardClass = `pm-ep-card${isCurrent ? " active" : ""}${isSpoilerProtected ? " is-spoiler-hidden" : ""}`;
+
             return `
-              <div class="pm-ep-card${isCurrent ? " active" : ""}${spoilerClass}" id="pm-ep-card-${ep.episode_number}" onclick="Player.playEpisode(${ep.episode_number})">
+              <div class="${cardClass}" id="pm-ep-card-${ep.episode_number}" onclick="Player.playEpisode(${ep.episode_number})">
                 <div class="pm-ep-thumb" style="background-image:url('${stillUrl}')">
                   <div class="pm-ep-thumb-overlay">${_PLAY_SVG}</div>
                   <span class="pm-ep-num-badge">EP ${ep.episode_number}</span>
                   ${ep.runtime ? `<span class="pm-ep-duration-badge">${ep.runtime}m</span>` : ""}
+                  ${isSpoilerProtected ? `
+                    <button type="button" class="pm-ep-reveal-btn" onclick="event.stopPropagation(); Player.revealEpisode(this, ${ep.episode_number})" aria-label="Reveal episode ${ep.episode_number}">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      <span>Tap to reveal</span>
+                    </button>
+                  ` : ""}
                 </div>
                 <div class="pm-ep-body">
                   <div class="pm-ep-title-row">
@@ -1628,7 +2377,6 @@ const Player = (() => {
                   </div>
                   ${epMetaParts.length ? `<div class="pm-ep-meta">${epMetaParts.join(" · ")}</div>` : ""}
                   <p class="pm-ep-desc">${epOverview}</p>
-                  ${spoilerFree ? `<button type="button" class="spoiler-reveal-badge" onclick="event.stopPropagation(); this.closest('.pm-ep-card').classList.toggle('revealed')">👁 Reveal</button>` : ""}
                 </div>
               </div>
             `;
@@ -1636,6 +2384,22 @@ const Player = (() => {
         </div>
       </div>
     `;
+  }
+
+  function toggleSpoilerProtection(checked) {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("streamx_spoiler_free", checked ? "true" : "false");
+    }
+    const container = $("pm-episodes-container");
+    if (container) container.innerHTML = _renderEpisodesList();
+  }
+
+  function revealEpisode(btn, epNum) {
+    if (!btn) return;
+    const card = btn.closest(".pm-ep-card");
+    if (card) {
+      card.classList.add("is-revealed");
+    }
   }
 
   function onEpisodeSearch(val) {
@@ -2447,7 +3211,22 @@ const Player = (() => {
     toggleSeasonDropdown,
     toggleRatingSort,
     markAllSeasonWatched,
-    scrollEpisodesCarousel
+    scrollEpisodesCarousel,
+    toggleSpoilerProtection,
+    revealEpisode,
+    toggleSideServerDrawer,
+    toggleDrawerSeasonDropdown,
+    toggleDrawerServerDropdown,
+    onDrawerSeasonChange,
+    onDrawerEpisodeSearch,
+    toggleDrawerSpoiler,
+    toggleDrawerAutoNext,
+    revealDrawerEpisode,
+    setHoverZoomEpisode,
+    setFocusedDrawerEpisode: _setFocusedDrawerEpisode,
+    onDrawerCardClick,
+    _animateModalZoomIn,
+    _animateModalZoomOut
   };
 })();
 

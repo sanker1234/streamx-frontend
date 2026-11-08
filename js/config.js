@@ -710,13 +710,15 @@ const STREAMING_PLATFORMS = [
 
 // Home page row configuration — drives what TMDB endpoints are called
 const HOME_ROWS = [
+  { id: "top_10_movies", label: "Top 10 Movies Today", isTop10: true, endpoint: "/trending/movie/day", media: "movie", cardType: "top10", category: "movie" },
+  { id: "top_10_tv", label: "Top 10 TV Shows Today", isTop10: true, endpoint: "/trending/tv/day", media: "tv", cardType: "top10", category: "tv" },
   { id: "upcoming_tv", label: "Current & Upcoming TV Shows", endpoint: "/tv/on_the_air", media: "tv", cardType: "backdrop", category: "tv" },
   { id: "trending_week", label: "Trending This Week", subtitle: "What everyone is watching this week", endpoint: "/trending/all/week", media: "mixed", cardType: "poster", category: "all" },
   { id: "trending_movies", label: "Trending Movies", endpoint: "/trending/movie/week", media: "movie", cardType: "poster", category: "movie" },
   { id: "trending_tv", label: "Trending TV Shows", endpoint: "/trending/tv/week", media: "tv", cardType: "poster", category: "tv" },
   { id: "popular_movies", label: "Popular Movies", endpoint: "/movie/popular", media: "movie", cardType: "poster", category: "movie" },
   { id: "popular_tv", label: "Popular TV Shows", endpoint: "/tv/popular", media: "tv", cardType: "poster", category: "tv" },
-  { id: "top_movies", label: "Top 10 / Most Watched", endpoint: "/movie/top_rated", media: "movie", cardType: "poster", category: "movie" },
+  { id: "top_movies", label: "Top Rated Movies", endpoint: "/movie/top_rated", media: "movie", cardType: "poster", category: "movie" },
   { id: "top_tv", label: "Top Rated TV Shows", endpoint: "/tv/top_rated", media: "tv", cardType: "poster", category: "tv" },
   { id: "now_playing", label: "Now Playing in Theatres", endpoint: "/movie/now_playing", media: "movie", cardType: "poster", category: "movie" },
   { id: "upcoming", label: "Coming Soon", endpoint: "/movie/upcoming", media: "movie", cardType: "poster", category: "movie" },
@@ -866,6 +868,7 @@ const HOME_ROWS = [
 
 // Dedicated Anime & Donghua Rows Configuration
 const ANIME_ROWS = [
+  { id: "top_10_anime", label: "Top 10 Anime Today", isTop10: true, endpoint: "/trending", media: "anime", cardType: "top10" },
   { id: "anime_trending", label: "Trending Anime", endpoint: "/trending", media: "anime" },
   { id: "anime_popular", label: "Popular Anime", endpoint: "/popular", media: "anime" },
   { id: "anime_top", label: "Top Rated Anime", endpoint: "/popular?sort=SCORE_DESC", media: "anime" },
