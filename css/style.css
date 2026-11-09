@@ -12616,13 +12616,20 @@ body:has(#cinejoy-big-player.active) .hero-trailer-iframe-wrap {
   align-items: flex-start;
   text-align: left;
   margin-left: 12px;
-  pointer-events: none;
+  padding: 6px 14px;
+  background: rgba(10, 13, 22, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
   min-width: 0;
   flex-shrink: 1;
 }
 
 .big-player-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
   letter-spacing: 0.3px;
@@ -12631,19 +12638,19 @@ body:has(#cinejoy-big-player.active) .hero-trailer-iframe-wrap {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 220px;
+  max-width: 280px;
 }
 
 .big-player-subtitle {
-  font-size: 12px;
+  font-size: 11.5px;
   color: #94a3b8;
   font-weight: 600;
-  margin-top: 3px;
+  margin-top: 2px;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 220px;
+  max-width: 280px;
 }
 
 /* ── Top-Center Floating Server Switcher (Purged from Top Header per 1Flex spec) ──── */
@@ -16435,6 +16442,7 @@ video::cue {
   opacity: 0.72;
   transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.32s ease, opacity 0.25s ease, border 0.25s ease, background 0.25s ease;
   user-select: none;
+  flex-shrink: 0 !important;
 }
 
 /* Layered Deck Overlap: adjacent cards tuck behind */
@@ -17348,6 +17356,339 @@ video::cue {
   .anime-ep-grid-rich {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 10px;
+  }
+}
+
+/* ── Mobile & Tablet Landscape Drawer Optimization (Horizontal Orientation) ── */
+@media (orientation: landscape) and (max-height: 560px) {
+  /* Floating right-side cinematic panel leaving video visible on left */
+  .big-player-side-server-drawer {
+    right: 12px !important;
+    top: 8px !important;
+    bottom: 8px !important;
+    width: min(440px, 48vw) !important;
+    max-width: 48vw !important;
+    border-radius: 18px !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 120 !important;
+  }
+
+  .side-drawer-content {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* Compact glassmorphic toolbar in landscape */
+  .drawer-floating-toolbar {
+    padding: 7px 10px !important;
+    margin-bottom: 6px !important;
+    border-radius: 14px !important;
+    background: rgba(10, 13, 20, 0.88) !important;
+    backdrop-filter: blur(28px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75) !important;
+    gap: 4px !important;
+  }
+
+  .drawer-header-row {
+    padding: 0 !important;
+    gap: 5px !important;
+  }
+
+  .drawer-season-btn {
+    height: 28px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+  }
+
+  .drawer-search-wrap {
+    height: 28px !important;
+    border-radius: 8px !important;
+  }
+
+  .drawer-search-input {
+    font-size: 11px !important;
+    padding: 0 6px 0 24px !important;
+  }
+
+  .drawer-search-icon {
+    left: 7px !important;
+    width: 11px !important;
+    height: 11px !important;
+  }
+
+  .drawer-toggle-slider {
+    width: 38px !important;
+    height: 22px !important;
+  }
+
+  .drawer-close-btn {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 12px !important;
+  }
+
+  .drawer-server-row {
+    margin-top: 5px !important;
+    gap: 6px !important;
+  }
+
+  .drawer-server-select-btn {
+    height: 26px !important;
+    padding: 0 8px !important;
+    font-size: 10.5px !important;
+    border-radius: 7px !important;
+  }
+
+  .drawer-spoiler-btn {
+    height: 26px !important;
+    padding: 0 8px !important;
+    font-size: 10px !important;
+    border-radius: 7px !important;
+  }
+
+  .drawer-season-summary {
+    margin-top: 5px !important;
+    padding: 3px 0 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .drawer-season-title {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.03em !important;
+  }
+
+  .drawer-season-desc {
+    display: none !important;
+  }
+
+  /* Episode scroll container in landscape */
+  .drawer-episodes-stack,
+  .drawer-episodes-scroll {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 6px 6px 40px !important;
+    gap: 6px !important;
+    perspective: 1200px !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .drawer-ep-card {
+    flex-shrink: 0 !important;
+    border-radius: 12px !important;
+  }
+
+  .drawer-ep-card:not(:first-child) {
+    margin-top: 6px !important;
+  }
+
+  /* BIG CINEMATIC ACTIVE CARD IN LANDSCAPE (Matches Desktop Effects per user request) */
+  .drawer-ep-card.is-active-focused,
+  .drawer-ep-card.is-zoomed {
+    transform: scale(1.02) translateY(-2px) translateZ(8px) !important;
+    opacity: 1 !important;
+    z-index: 35 !important;
+    border: 2px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 16px 42px rgba(0, 0, 0, 0.95), 0 0 28px rgba(255, 255, 255, 0.35) !important;
+    background: rgba(18, 22, 36, 0.96) !important;
+    min-height: 160px !important;
+  }
+
+  .drawer-ep-card.is-active-focused .drawer-ep-card-inner,
+  .drawer-ep-card.is-zoomed .drawer-ep-card-inner {
+    height: auto !important;
+    min-height: 160px !important;
+    aspect-ratio: 16 / 9 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    padding: 0 !important;
+    border-radius: 11px !important;
+  }
+
+  .drawer-ep-card.is-active-focused .drawer-ep-bg,
+  .drawer-ep-card.is-zoomed .drawer-ep-bg {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    display: block !important;
+  }
+
+  .drawer-ep-card.is-active-focused .drawer-ep-gradient,
+  .drawer-ep-card.is-zoomed .drawer-ep-gradient {
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background: linear-gradient(to top, rgba(5, 7, 12, 0.98) 0%, rgba(5, 7, 12, 0.65) 45%, rgba(5, 7, 12, 0.15) 100%) !important;
+  }
+
+  .drawer-ep-card.is-active-focused .drawer-ep-top-badges,
+  .drawer-ep-card.is-zoomed .drawer-ep-top-badges {
+    display: flex !important;
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    gap: 5px !important;
+  }
+
+  .drawer-ep-card.is-active-focused:not(.is-locked) .drawer-ep-play-overlay,
+  .drawer-ep-card.is-zoomed:not(.is-locked) .drawer-ep-play-overlay {
+    display: flex !important;
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+  }
+
+  .drawer-ep-play-btn {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .drawer-ep-card.is-active-focused .drawer-ep-card-body,
+  .drawer-ep-card.is-zoomed .drawer-ep-card-body {
+    position: relative !important;
+    z-index: 3 !important;
+    padding: 8px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+  }
+
+  .drawer-ep-card.is-active-focused .drawer-ep-title,
+  .drawer-ep-card.is-zoomed .drawer-ep-title {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+  }
+
+  .drawer-ep-card.is-active-focused .drawer-ep-dur,
+  .drawer-ep-card.is-zoomed .drawer-ep-dur {
+    font-size: 10px !important;
+  }
+
+  .drawer-ep-card.is-active-focused .drawer-ep-desc,
+  .drawer-ep-card.is-zoomed .drawer-ep-desc {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Compact Inactive Cards in Landscape */
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed) {
+    min-height: 58px !important;
+    opacity: 0.78 !important;
+    transform: scale(0.98) !important;
+  }
+
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed):hover {
+    transform: scale(1.0) !important;
+    opacity: 0.95 !important;
+  }
+
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed) .drawer-ep-card-inner {
+    height: 58px !important;
+    min-height: 58px !important;
+    aspect-ratio: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 5px 10px !important;
+  }
+
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed) .drawer-ep-bg {
+    position: relative !important;
+    inset: auto !important;
+    width: 64px !important;
+    height: 42px !important;
+    border-radius: 6px !important;
+    flex-shrink: 0 !important;
+    display: block !important;
+    transform: none !important;
+  }
+
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed):not(.is-locked) .drawer-ep-card-body {
+    position: relative !important;
+    z-index: 3 !important;
+    padding: 0 0 0 10px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 2px !important;
+  }
+
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed) .drawer-ep-title {
+    font-size: 11.5px !important;
+  }
+
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed) .drawer-ep-dur {
+    font-size: 10px !important;
+  }
+
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed) .drawer-ep-gradient,
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed) .drawer-ep-top-badges,
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed) .drawer-ep-play-overlay,
+  .drawer-ep-card:not(.is-active-focused):not(.is-zoomed) .drawer-ep-desc {
+    display: none !important;
+  }
+
+  /* Locked / Spoiler Cards in Landscape */
+  .drawer-ep-card.is-locked:not(.is-active-focused):not(.is-zoomed) .drawer-ep-card-inner {
+    height: 58px !important;
+    min-height: 58px !important;
+    padding: 6px 10px !important;
+  }
+
+  .drawer-reveal-pill {
+    padding: 3px 8px !important;
+    font-size: 9.5px !important;
+  }
+
+  /* Top Bar in Landscape (Clean Pill Shielding) */
+  .big-player-top-bar {
+    height: 48px !important;
+    padding: 6px 14px !important;
+  }
+
+  .big-player-back-btn {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .big-player-title-wrap {
+    padding: 4px 10px !important;
+    border-radius: 10px !important;
+    max-width: min(280px, 35vw) !important;
+    background: rgba(10, 13, 22, 0.82) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65) !important;
+  }
+
+  .big-player-title {
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+  }
+
+  .big-player-subtitle {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    margin-top: 1px !important;
   }
 }
 
