@@ -16034,7 +16034,7 @@ video::cue {
 /* Floating Glassmorphic Control Panel (Matches 1Flex Screenshot 1) */
 .drawer-floating-toolbar {
   position: relative !important;
-  z-index: 500 !important;
+  z-index: 1000 !important;
   background: rgba(10, 13, 20, 0.82);
   backdrop-filter: blur(28px) saturate(190%);
   -webkit-backdrop-filter: blur(28px) saturate(190%);
@@ -16218,7 +16218,7 @@ video::cue {
 
 .drawer-server-dropdown-wrap {
   position: relative !important;
-  z-index: 520 !important;
+  z-index: 1050 !important;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -16331,7 +16331,7 @@ video::cue {
   border: 1px solid rgba(255, 255, 255, 0.25) !important;
   border-radius: 12px !important;
   padding: 6px !important;
-  z-index: 9999 !important;
+  z-index: 999999 !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 24px rgba(255, 255, 255, 0.18) !important;
 }
 
@@ -16413,6 +16413,8 @@ video::cue {
 /* Floating Overlapping Flash Cards Deck (Matches 1Flex Screenshot 1) */
 .drawer-episodes-stack,
 .drawer-episodes-scroll {
+  position: relative !important;
+  z-index: 10 !important;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden !important;
@@ -16880,34 +16882,46 @@ video::cue {
   inset: 0;
   width: 100%;
   height: 100%;
+  display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 24px;
+  justify-content: space-between;
+  padding: 16px 14px 12px 14px;
   background: rgba(10, 14, 22, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-}
-
-.drawer-ep-card.is-locked.is-zoomed .drawer-locked-preview,
-.drawer-ep-card.is-locked.is-active-focused .drawer-locked-preview {
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 4px;
-}
-
-.drawer-ep-card.is-locked.is-zoomed .drawer-locked-name,
-.drawer-ep-card.is-locked.is-active-focused .drawer-locked-name {
-  font-size: 15px;
-  font-weight: 700;
+  box-sizing: border-box;
 }
 
 .drawer-ep-card.is-locked.is-zoomed .drawer-reveal-pill,
 .drawer-ep-card.is-locked.is-active-focused .drawer-reveal-pill {
+  margin: auto 0;
   padding: 8px 18px;
   font-size: 12px;
+}
+
+.drawer-ep-card.is-locked.is-zoomed .drawer-locked-preview,
+.drawer-ep-card.is-locked.is-active-focused .drawer-locked-preview {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0;
+}
+
+.drawer-ep-card.is-locked.is-zoomed .drawer-locked-name,
+.drawer-ep-card.is-locked.is-active-focused .drawer-locked-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.drawer-ep-card.is-locked.is-zoomed .drawer-locked-dur,
+.drawer-ep-card.is-locked.is-active-focused .drawer-locked-dur {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .drawer-empty-state {
@@ -17360,7 +17374,7 @@ video::cue {
 }
 
 /* ── Mobile & Tablet Landscape Drawer Optimization (Horizontal Orientation) ── */
-@media (orientation: landscape) and (max-height: 560px) {
+@media (orientation: landscape) and (max-height: 640px), (max-width: 950px) and (orientation: landscape) {
   /* Floating right-side cinematic panel leaving video visible on left */
   .big-player-side-server-drawer {
     right: 12px !important;
@@ -17691,5 +17705,3 @@ video::cue {
     margin-top: 1px !important;
   }
 }
-
-

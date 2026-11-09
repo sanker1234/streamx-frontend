@@ -771,6 +771,8 @@ const Player = (() => {
     });
   }
 
+  let _isProgrammaticScrolling = false;
+
   function _setFocusedDrawerEpisode(targetIdx, smoothScroll = true) {
     const scrollEl = document.getElementById("drawer-episodes-scroll");
     if (!scrollEl) return;
@@ -787,7 +789,9 @@ const Player = (() => {
         c.classList.add("is-active-focused", "is-zoomed");
         c.style.zIndex = "35";
         if (smoothScroll) {
+          _isProgrammaticScrolling = true;
           c.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+          setTimeout(() => { _isProgrammaticScrolling = false; }, 360);
         }
       } else if (idx < targetIdx) {
         c.classList.add("is-prev");
@@ -829,6 +833,35 @@ const Player = (() => {
     const scrollEl = document.getElementById("drawer-episodes-scroll");
     if (!scrollEl || scrollEl._carouselBound) return;
     scrollEl._carouselBound = true;
+
+    // Continuous scroll synchronization (touch drag, mouse wheel, or scrollbar)
+    let _scrollRaf = null;
+    scrollEl.addEventListener("scroll", () => {
+      if (_isProgrammaticScrolling) return;
+      if (_scrollRaf) cancelAnimationFrame(_scrollRaf);
+      _scrollRaf = requestAnimationFrame(() => {
+        const cards = Array.from(scrollEl.querySelectorAll(".drawer-ep-card"));
+        if (!cards.length) return;
+        const containerRect = scrollEl.getBoundingClientRect();
+        const centerY = containerRect.top + containerRect.height / 2;
+
+        let closestIdx = 0;
+        let minDiff = Infinity;
+        cards.forEach((c, i) => {
+          const r = c.getBoundingClientRect();
+          const cardCenterY = r.top + r.height / 2;
+          const diff = Math.abs(cardCenterY - centerY);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestIdx = i;
+          }
+        });
+
+        if (closestIdx !== _focusedDrawerEpIndex) {
+          _setFocusedDrawerEpisode(closestIdx, false);
+        }
+      });
+    }, { passive: true });
 
     // Desktop mouse wheel / trackpad scroll
     scrollEl.addEventListener("wheel", (e) => {
@@ -1056,14 +1089,14 @@ const Player = (() => {
 
             ${isLocked ? `
               <div class="drawer-ep-locked-overlay" onclick="event.stopPropagation(); Player.revealDrawerEpisode(this)">
+                <button type="button" class="drawer-reveal-pill" aria-label="Reveal episode details">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>Click to reveal</span>
+                </button>
                 <div class="drawer-locked-preview">
                   <span class="drawer-locked-name">${ep.episode_number}. ${_esc(ep.name || `Episode ${ep.episode_number}`)}</span>
                   <span class="drawer-locked-dur">${duration}</span>
                 </div>
-                <button type="button" class="drawer-reveal-pill" aria-label="Reveal episode details">
-                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  <span>Click to reveal</span>
-                </button>
               </div>
             ` : ''}
           </div>
