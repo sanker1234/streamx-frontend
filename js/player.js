@@ -1169,7 +1169,7 @@ const Player = (() => {
             <div class="drawer-server-dropdown-wrap">
               <span class="drawer-server-prefix">SERVER:</span>
               <button type="button" class="drawer-server-select-btn" onclick="Player.toggleDrawerServerDropdown(event)" aria-haspopup="true" aria-expanded="false" title="Change Stream Server">
-                <span class="drawer-server-dot" style="background:${curServerObj.color || '#22c55e'}; box-shadow:0 0 8px ${curServerObj.color || '#22c55e'};"></span>
+                <span class="drawer-server-dot" style="background:${curServerObj.color || '#22c55e'}; box-shadow:0 1px 3px rgba(0,0,0,0.4);"></span>
                 <span id="drawer-current-server-name">${_esc(curServerLabel)}</span>
                 <svg class="chevron-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
@@ -1177,7 +1177,7 @@ const Player = (() => {
                 ${servers.map(s => `
                   <button type="button" class="drawer-dropdown-option ${s.key === activeKey ? 'active' : ''}" onclick="Player.switchServer('${s.key}')" role="menuitem">
                     <div class="drawer-opt-left">
-                      <span class="drawer-opt-dot" style="background:${s.color || '#22c55e'}; box-shadow:0 0 6px ${s.color || '#22c55e'};"></span>
+                      <span class="drawer-opt-dot" style="background:${s.color || '#22c55e'}; box-shadow:0 1px 3px rgba(0,0,0,0.4);"></span>
                       <span>${_esc(s.label)}</span>
                     </div>
                     ${s.badge ? `<span class="drawer-option-badge">${_esc(s.badge)}</span>` : ''}
@@ -1224,7 +1224,7 @@ const Player = (() => {
             <div class="drawer-server-dropdown-wrap">
               <span class="drawer-server-prefix">SERVER:</span>
               <button type="button" class="drawer-server-select-btn" onclick="Player.toggleDrawerServerDropdown(event)" aria-haspopup="true" aria-expanded="false" title="Change Stream Server">
-                <span class="drawer-server-dot" style="background:${curServerObj.color || '#22c55e'}; box-shadow:0 0 8px ${curServerObj.color || '#22c55e'};"></span>
+                <span class="drawer-server-dot" style="background:${curServerObj.color || '#22c55e'}; box-shadow:0 1px 3px rgba(0,0,0,0.4);"></span>
                 <span id="drawer-current-server-name">${_esc(curServerLabel)}</span>
                 <svg class="chevron-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
@@ -1232,7 +1232,7 @@ const Player = (() => {
                 ${servers.map(s => `
                   <button type="button" class="drawer-dropdown-option ${s.key === activeKey ? 'active' : ''}" onclick="Player.switchServer('${s.key}')" role="menuitem">
                     <div class="drawer-opt-left">
-                      <span class="drawer-opt-dot" style="background:${s.color || '#22c55e'}; box-shadow:0 0 6px ${s.color || '#22c55e'};"></span>
+                      <span class="drawer-opt-dot" style="background:${s.color || '#22c55e'}; box-shadow:0 1px 3px rgba(0,0,0,0.4);"></span>
                       <span>${_esc(s.label)}</span>
                     </div>
                     ${s.badge ? `<span class="drawer-option-badge">${_esc(s.badge)}</span>` : ''}
@@ -1266,7 +1266,7 @@ const Player = (() => {
             ${servers.map(s => `
               <button type="button" class="drawer-server-grid-btn ${s.key === activeKey ? 'active' : ''}" onclick="Player.switchServer('${s.key}')">
                 <div class="drawer-btn-left">
-                  <span class="drawer-server-dot" style="background:${s.color || '#22c55e'}; box-shadow:0 0 6px ${s.color || '#22c55e'};"></span>
+                  <span class="drawer-server-dot" style="background:${s.color || '#22c55e'}; box-shadow:0 1px 3px rgba(0,0,0,0.4);"></span>
                   <span>${_esc(s.label)}</span>
                 </div>
                 ${s.badge ? `<span class="drawer-option-badge">${_esc(s.badge)}</span>` : ''}
@@ -1456,7 +1456,7 @@ const Player = (() => {
       const dot = drawerServerName.previousElementSibling;
       if (dot && dot.classList.contains("drawer-server-dot")) {
         dot.style.background = target.color || "#22c55e";
-        dot.style.boxShadow = `0 0 8px ${target.color || '#22c55e'}`;
+        dot.style.boxShadow = "0 1px 3px rgba(0,0,0,0.4)";
       }
     }
     const drawerServerMenu = document.getElementById("drawer-server-menu");

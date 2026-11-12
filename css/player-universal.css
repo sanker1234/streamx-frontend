@@ -66,10 +66,10 @@
   top: 30px;
   left: 50%;
   transform: translateX(-50%) translateY(-10px);
-  background: rgba(16, 185, 129, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  color: #fff;
+  color: #000000;
   padding: 8px 18px;
   border-radius: 30px;
   font-size: 14px;
@@ -78,7 +78,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4), 0 0 15px rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 #ffffff;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -602,14 +603,14 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: rgba(255, 42, 109, 0.12);
-  border: 1px solid rgba(255, 42, 109, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ff2a6d;
+  color: #ffffff;
   margin-bottom: 16px;
-  box-shadow: 0 0 24px rgba(255, 42, 109, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .sx-no-direct-title {
@@ -775,10 +776,10 @@
 }
 
 .sx-mode-tab.active {
-  background: linear-gradient(135deg, rgba(255, 42, 109, 0.2), rgba(16, 185, 129, 0.15));
-  border: 1px solid rgba(255, 42, 109, 0.4);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   color: #fff;
-  box-shadow: 0 4px 16px rgba(255, 42, 109, 0.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .sx-mode-tab .sx-mode-icon {
@@ -790,7 +791,7 @@
 }
 
 .sx-mode-tab .sx-mode-badge {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   padding: 2px 7px;
@@ -863,10 +864,10 @@
 }
 
 .sx-provider-pill.selected {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(16, 185, 129, 0.08));
-  border-color: rgba(16, 185, 129, 0.6);
-  color: #10b981;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .sx-provider-pill .pill-icon {
@@ -884,12 +885,12 @@
 
 .sx-provider-pill.selected .sx-status-dot {
   background: #10b981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .sx-provider-pill.direct.selected .sx-status-dot {
-  background: #06b6d4;
-  box-shadow: 0 0 8px rgba(6, 182, 212, 0.8);
+  background: #38bdf8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .sx-provider-pill .pill-badge {
@@ -959,10 +960,10 @@
 }
 
 .sx-audio-lang-btn.active {
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(255, 42, 109, 0.35));
-  border-color: #ec4899;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
   color: #fff;
-  box-shadow: 0 2px 10px rgba(236, 72, 153, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* ── Provider Info Bar ── */

@@ -18,22 +18,20 @@
       padding: 0;
     }
     :root {
-      --primary: #ff2a6d;
-      --primary-hover: #ff4785;
-      --bg: #070913;
+      --primary: #ffffff;
+      --primary-hover: #f1f5f9;
+      --bg: #050505;
       --surface: rgba(18, 24, 40, 0.72);
       --border: rgba(255, 255, 255, 0.12);
       --text: #f9fafb;
-      --text2: rgba(249, 250, 251, 0.72);
-      --text3: rgba(249, 250, 251, 0.44);
+      --text2: #cbd5e1;
+      --text3: #94a3b8;
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg);
       background-image: 
-        radial-gradient(900px 500px at 15% 15%, rgba(59, 130, 246, 0.14), transparent 60%),
-        radial-gradient(1000px 600px at 85% 25%, rgba(139, 92, 246, 0.12), transparent 60%),
-        radial-gradient(800px 500px at 50% 85%, rgba(255, 42, 109, 0.08), transparent 65%);
+        radial-gradient(900px 500px at 50% 15%, rgba(255, 255, 255, 0.04), transparent 60%);
       color: var(--text);
       min-height: 100vh;
       display: flex;
@@ -54,7 +52,7 @@
       border-radius: 20px;
       padding: 48px 36px;
       text-align: center;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 24px rgba(255, 42, 109, 0.12);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.18);
       position: relative;
       overflow: hidden;
     }
@@ -65,7 +63,7 @@
       left: 0;
       right: 0;
       height: 2px;
-      background: linear-gradient(90deg, transparent, var(--primary), #8b5cf6, transparent);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
     }
     .brand-header {
       display: inline-flex;
@@ -76,7 +74,7 @@
       color: var(--text);
     }
     .brand-header svg {
-      filter: drop-shadow(0 2px 8px rgba(255, 42, 109, 0.4));
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
     }
     .brand-title {
       font-size: 20px;
@@ -84,19 +82,19 @@
       letter-spacing: -0.02em;
     }
     .brand-nine {
-      color: var(--primary);
+      color: #ffffff;
+      font-weight: 900;
     }
     .brand-accent {
-      color: var(--primary);
+      color: #ffffff;
+      font-weight: 700;
     }
     .hero-404 {
       font-size: clamp(72px, 16vw, 110px);
       font-weight: 900;
       letter-spacing: -0.04em;
       line-height: 1;
-      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 45%, rgba(255, 42, 109, 0.8) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #ffffff;
       margin-bottom: 14px;
       user-select: none;
     }
@@ -107,16 +105,17 @@
       width: 64px;
       height: 64px;
       border-radius: 16px;
-      background: rgba(255, 42, 109, 0.12);
-      border: 1px solid rgba(255, 42, 109, 0.28);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       margin-bottom: 20px;
-      color: var(--primary);
+      color: #ffffff;
     }
     h1 {
       font-size: clamp(22px, 4vw, 28px);
       font-weight: 700;
       margin-bottom: 12px;
       letter-spacing: -0.02em;
+      color: #ffffff;
     }
     p {
       color: var(--text2);
@@ -136,7 +135,7 @@
     .search-input {
       flex: 1;
       height: 44px;
-      background: rgba(0, 0, 0, 0.35);
+      background: rgba(0, 0, 0, 0.45);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 0 16px;
@@ -146,8 +145,8 @@
       transition: border-color 0.2s, box-shadow 0.2s;
     }
     .search-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(255, 42, 109, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
     }
     .search-btn {
       height: 44px;
@@ -166,7 +165,7 @@
       border-color: rgba(255, 255, 255, 0.25);
     }
     .search-btn:focus-visible {
-      outline: 2px solid var(--primary);
+      outline: 2px solid #ffffff;
       outline-offset: 2px;
     }
     .actions {
@@ -196,14 +195,14 @@
       outline-offset: 2px;
     }
     .btn-primary {
-      background: linear-gradient(135deg, var(--primary) 0%, #7928ca 100%);
-      color: #ffffff;
-      border: none;
-      box-shadow: 0 4px 16px rgba(255, 42, 109, 0.35);
+      background: #ffffff;
+      color: #050505;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 #ffffff;
     }
     .btn-primary:hover {
-      background: linear-gradient(135deg, var(--primary-hover) 0%, #9333ea 100%);
-      box-shadow: 0 6px 20px rgba(255, 42, 109, 0.45);
+      background: #f1f5f9;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5);
     }
     .btn-secondary {
       background: rgba(255, 255, 255, 0.06);
@@ -236,9 +235,8 @@
       <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true">
         <defs>
           <linearGradient id="nfGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ff3b65"/>
-            <stop offset="60%" stop-color="#e50914"/>
-            <stop offset="100%" stop-color="#990011"/>
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#cbd5e1"/>
           </linearGradient>
         </defs>
         <path d="M32 8 C18.7 8 8 18.7 8 32 C8 45.3 18.7 56 32 56 C43.2 56 52.4 48.3 55.1 37.8 C55.8 35.3 53.9 33 51.4 33 C49.5 33 47.8 34.4 47.3 36.3 C45.2 43.6 39.1 48.8 32 48.8 C22.7 48.8 15.2 41.3 15.2 32 C15.2 22.7 22.7 15.2 32 15.2 C39.1 15.2 45.2 20.4 47.3 27.7 C47.8 29.6 49.5 31 51.4 31 C53.9 31 55.8 28.7 55.1 26.2 C52.4 15.7 43.2 8 32 8 Z" fill="url(#nfGrad)"/>

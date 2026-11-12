@@ -59,7 +59,7 @@
       if ('caches' in window) {
         caches.keys().then(function (keys) {
           keys.forEach(function (k) {
-            if (k !== 'nine-cinejoy-v36' && k !== 'cinejoy-v36') {
+            if (k !== 'nine-cinejoy-v54' && k !== 'cinejoy-v54') {
               caches.delete(k);
             }
           });
@@ -68,10 +68,10 @@
     }
   </script>
   <link rel="canonical" href="https://cinejoy.pages.dev/">
-  <link rel="stylesheet" href="css/style.css?v=51.0">
-  <link rel="stylesheet" href="css/player-universal.css?v=51.0">
+  <link rel="stylesheet" href="css/style.css?v=57.0">
+  <link rel="stylesheet" href="css/player-universal.css?v=57.0">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <link rel="manifest" href="manifest.json?v=51.0">
+  <link rel="manifest" href="manifest.json?v=57.0">
 </head>
 <body>
 <!-- ── Premium CineJoy Initial Branded Loading Screen ──────── -->
@@ -187,7 +187,7 @@
       </svg>
       <span>My List</span>
     </a>
-    <button class="glass-nav-icon-btn" id="nav-search-btn" onclick="App.toggleSearchModal(true)" aria-label="Search movies and shows" title="Search (⌘K)">
+    <button class="glass-nav-icon-btn" id="nav-search-btn" onclick="App.toggleSearchModal()" aria-label="Search movies and shows" title="Search (⌘K)">
       <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="11" cy="11" r="8" />
         <path d="M21 21l-4.35-4.35" />
@@ -203,7 +203,7 @@
 
   <!-- Mobile Top Header Right Actions (Search & Settings) -->
   <div class="glass-nav-right-mobile" id="glass-nav-right-mobile">
-    <button class="mobile-search-btn" id="mobile-header-search-btn" onclick="App.toggleSearchModal(true)" aria-label="Search" title="Search">
+    <button class="mobile-search-btn" id="mobile-header-search-btn" onclick="App.toggleSearchModal()" aria-label="Search" title="Search">
       <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
     </button>
     <button class="mobile-search-btn mobile-settings-icon-btn" onclick="App.showPage('settings-page')" aria-label="Settings" title="Settings">
@@ -675,7 +675,7 @@
 
 <!-- ── SEARCH PAGE ────────────────────────────────── -->
 <div id="page-search" class="page" style="display:none" role="main" aria-label="Search results">
-  <p id="search-label" style="font-size:13px;color:var(--text3);margin-bottom:16px"></p>
+  <p id="search-label" style="font-size:13px;color:var(--text2);margin-bottom:16px"></p>
   <div id="search-grid" class="search-grid"></div>
 </div>
 
@@ -825,9 +825,9 @@
 
   <div class="settings-container">
     <!-- 1. ACCOUNT CARD -->
-    <div class="settings-card-section" id="settings-card-account" data-section="account">
+    <div class="settings-section" id="settings-card-account" data-section="account">
       <div class="settings-glass-card">
-        <div class="settings-card-header">
+        <div class="settings-header">
           <h2>Account</h2>
           <p>Sign in to sync your settings and watch progress across devices.</p>
         </div>
@@ -862,9 +862,9 @@
     </div>
 
     <!-- 2. APPEARANCE CARD (Screenshot 9) -->
-    <div class="settings-card-section" id="settings-card-appearance" data-section="appearance">
+    <div class="settings-section" id="settings-card-appearance" data-section="appearance">
       <div class="settings-glass-card">
-        <div class="settings-card-header">
+        <div class="settings-header">
           <h2>Appearance</h2>
           <p>Change the look of the site to suit your needs.</p>
         </div>
@@ -972,9 +972,9 @@
     </div>
 
     <!-- 3. PLAYBACK CARD -->
-    <div class="settings-card-section" id="settings-card-playback" data-section="playback">
+    <div class="settings-section" id="settings-card-playback" data-section="playback">
       <div class="settings-glass-card">
-        <div class="settings-card-header">
+        <div class="settings-header">
           <h2>Playback</h2>
           <p>Configure video player behavior and defaults.</p>
         </div>
@@ -1066,9 +1066,9 @@
     </div>
 
     <!-- 4. SERVERS CARD -->
-    <div class="settings-card-section" id="settings-card-servers" data-section="servers">
+    <div class="settings-section" id="settings-card-servers" data-section="servers">
       <div class="settings-glass-card">
-        <div class="settings-card-header">
+        <div class="settings-header">
           <h2>Servers</h2>
           <p>Configure streaming servers and priority.</p>
         </div>
@@ -1079,9 +1079,9 @@
     </div>
 
     <!-- 5. SUBTITLES CARD (Screenshot 10) -->
-    <div class="settings-card-section" id="settings-card-subtitles" data-section="subtitles">
+    <div class="settings-section" id="settings-card-subtitles" data-section="subtitles">
       <div class="settings-glass-card">
-        <div class="settings-card-header">
+        <div class="settings-header">
           <h2>Subtitles</h2>
           <p>Improve readability and customization for subtitles.</p>
         </div>
@@ -1146,9 +1146,9 @@
     </div>
 
     <!-- 6. ADVERTISEMENTS & FEBBOX CARD (Screenshot 10) -->
-    <div class="settings-card-section" id="settings-card-ads" data-section="ads">
+    <div class="settings-section" id="settings-card-ads" data-section="ads">
       <div class="settings-glass-card">
-        <div class="settings-card-header">
+        <div class="settings-header">
           <h2>Advertisements</h2>
           <p>Manage how advertisements are displayed on the site.</p>
         </div>
@@ -1167,7 +1167,7 @@
       </div>
 
       <div class="settings-glass-card" style="margin-top:20px;">
-        <div class="settings-card-header">
+        <div class="settings-header">
           <h2>Febbox Integration <span class="info-bubble" title="Febbox UI token enables 4K streams with no buffering">ⓘ</span></h2>
           <p>Import your UI cookie from febbox to get access to 4K Streams with no buffers and multiple audio tracks.</p>
         </div>
@@ -1178,7 +1178,7 @@
       </div>
 
       <div class="settings-glass-card" style="margin-top:20px;">
-        <div class="settings-card-header">
+        <div class="settings-header">
           <h2>Data &amp; Offline Management</h2>
           <p>Install standalone app, review disclaimer, or reset local storage.</p>
         </div>
@@ -1249,51 +1249,51 @@
   </div>
   <div class="profile-stats-grid">
     <div class="stat-card">
-      <div class="stat-card-icon icon-emerald">
+      <div class="stat-icon icon-emerald">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
           <path
             d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
         </svg>
       </div>
-      <div class="stat-card-data">
-        <div class="stat-card-number" id="prof-stat-watched-count">0</div>
-        <div class="stat-card-label">Titles Watched</div>
+      <div class="stat-data">
+        <div class="stat-number" id="prof-stat-watched-count">0</div>
+        <div class="stat-label">Titles Watched</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-card-icon icon-cyan">
+      <div class="stat-icon icon-cyan">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
           <path
             d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
         </svg>
       </div>
-      <div class="stat-card-data">
-        <div class="stat-card-number" id="prof-stat-anime-count">0</div>
-        <div class="stat-card-label">Anime &amp; Donghua</div>
+      <div class="stat-data">
+        <div class="stat-number" id="prof-stat-anime-count">0</div>
+        <div class="stat-label">Anime &amp; Donghua</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-card-icon icon-violet">
+      <div class="stat-icon icon-slate">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
           <path
             d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
         </svg>
       </div>
-      <div class="stat-card-data">
-        <div class="stat-card-number" id="prof-stat-saved-count">0</div>
-        <div class="stat-card-label">Watchlist Saved</div>
+      <div class="stat-data">
+        <div class="stat-number" id="prof-stat-saved-count">0</div>
+        <div class="stat-label">Watchlist Saved</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-card-icon icon-amber">
+      <div class="stat-icon icon-amber">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
           <path
             d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
         </svg>
       </div>
-      <div class="stat-card-data">
-        <div class="stat-card-number" id="prof-stat-time-val">0h 0m</div>
-        <div class="stat-card-label">Est. Watch Time</div>
+      <div class="stat-data">
+        <div class="stat-number" id="prof-stat-time-val">0h 0m</div>
+        <div class="stat-label">Est. Watch Time</div>
       </div>
     </div>
   </div>
@@ -1428,7 +1428,7 @@
       <div class="up-next-badge-row">
         <span class="up-next-countdown-badge">Next Episode in <span id="up-next-sec">5</span>s</span>
       </div>
-      <h4 class="up-next-ep-title" id="up-next-ep-title">Season 1, Episode 2</h4>
+      <h3 class="up-next-ep-title" id="up-next-ep-title">Season 1, Episode 2</h3>
       <div class="up-next-btn-group">
         <button type="button" class="up-next-play-now-btn" onclick="Player.confirmNextEpisode()">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -1592,8 +1592,8 @@
       <div id="disclaimer-tab-guidelines" class="disclaimer-tab-content" style="display:none;">
         <h4 class="disclaimer-section-title">CineJoy User Guidelines &amp; Recommendations</h4>
 
-        <div class="guideline-card-grid">
-          <div class="guideline-card">
+        <div class="guideline-grid">
+          <div class="guideline-item">
             <div class="guideline-icon">🛡️</div>
             <div class="guideline-title">Use Ad &amp; Popup Blockers</div>
             <p class="guideline-text">External embed servers may display popups or third-party ads. We strongly
@@ -1601,7 +1601,7 @@
               uninterrupted cinema experience.</p>
           </div>
 
-          <div class="guideline-card">
+          <div class="guideline-item">
             <div class="guideline-icon">⚡</div>
             <div class="guideline-title">Multi-Server Switching</div>
             <p class="guideline-text">If you experience slow loading, buffering, or an unavailable stream on Server 1,
@@ -1609,7 +1609,7 @@
               player.</p>
           </div>
 
-          <div class="guideline-card">
+          <div class="guideline-item">
             <div class="guideline-icon">🌐</div>
             <div class="guideline-title">DNS &amp; Connection Optimization</div>
             <p class="guideline-text">For optimal streaming speed and to bypass ISP throttling, consider using
@@ -1617,7 +1617,7 @@
                 (8.8.8.8)</strong>.</p>
           </div>
 
-          <div class="guideline-card">
+          <div class="guideline-item">
             <div class="guideline-icon">📺</div>
             <div class="guideline-title">Personal Non-Commercial Use</div>
             <p class="guideline-text">CineJoy is developed exclusively for personal, private, and educational media
@@ -1765,7 +1765,7 @@
 <!-- ── Desktop Card Hover Preview Popover (1Flex-inspired, White Glassmorphism) ── -->
 <div id="card-hover-popover" class="card-hover-popover" style="display:none;" role="dialog" aria-label="Card Preview">
   <div class="chp-backdrop-wrap">
-    <img id="chp-img" class="chp-backdrop-img" src="" alt="Backdrop">
+    <img id="chp-img" class="chp-backdrop-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Preview Backdrop">
     <div class="chp-backdrop-gradient"></div>
     <div id="chp-title" class="chp-title-badge"></div>
   </div>
@@ -1802,15 +1802,15 @@
 </div>
 
 <!-- ── Scripts — loaded in dependency order ───────── -->
-<script src="js/config.js?v=51.0"></script>
-<script src="js/tmdb.js?v=51.0"></script>
-<script src="js/anilist.js?v=51.0"></script>
-<script src="js/watchlist.js?v=51.0"></script>
-<script src="js/history.js?v=51.0"></script>
-<script src="js/universalPlayer.js?v=51.0"></script>
-<script src="js/player.js?v=51.0"></script>
-<script src="js/livetv.js?v=51.0"></script>
-<script src="js/app.js?v=51.0"></script>
+<script src="js/config.js?v=57.0"></script>
+<script src="js/tmdb.js?v=57.0"></script>
+<script src="js/anilist.js?v=57.0"></script>
+<script src="js/watchlist.js?v=57.0"></script>
+<script src="js/history.js?v=57.0"></script>
+<script src="js/universalPlayer.js?v=57.0"></script>
+<script src="js/player.js?v=57.0"></script>
+<script src="js/livetv.js?v=57.0"></script>
+<script src="js/app.js?v=57.0"></script>
 
 </body>
 

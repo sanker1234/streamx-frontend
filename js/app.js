@@ -2082,10 +2082,10 @@ const App = (() => {
         </button>
         <div class="row-scroll ${isBackdrop ? "row-scroll-backdrop" : ""} ${isTop10 ? "row-scroll-top10" : ""}" id="row-scroll-${row.id}">
           ${Array(8).fill(isTop10
-            ? '<div class="top10-item top10-skeleton"><div class="top10-rank">1</div><div class="top10-card-wrap"><div class="card-poster" style="background:rgba(255,255,255,0.05);"></div><div class="card-info"><div class="skeleton-line" style="height:12px;width:75%;margin-top:8px"></div></div></div></div>'
+            ? '<div class="top10-item top10-skeleton"><div class="top10-rank">1</div><div class="top10-card-wrap"><div class="card-poster" style="background:rgba(255,255,255,0.05);"></div></div></div>'
             : (isBackdrop
-              ? '<div class="card card-backdrop-type card-skeleton"><div class="card-backdrop-poster"></div><div class="card-info"><div class="skeleton-line" style="height:14px;width:70%;margin-top:8px"></div><div class="skeleton-line" style="height:10px;width:40%;margin-top:6px"></div></div></div>'
-              : '<div class="card card-skeleton"><div class="card-poster"></div><div class="card-info"><div class="skeleton-line" style="height:12px;width:75%;margin-top:8px"></div><div class="skeleton-line" style="height:10px;width:40%;margin-top:6px"></div></div></div>')).join("")}
+              ? '<div class="card card-backdrop-type card-skeleton"><div class="card-backdrop-poster"></div></div>'
+              : '<div class="card card-skeleton"><div class="card-poster"></div></div>')).join("")}
         </div>
         <button class="row-arrow row-arrow-next" onclick="App.scrollRow('row-scroll-${row.id}', 1)" aria-label="Scroll right">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
@@ -2206,7 +2206,7 @@ const App = (() => {
         _startHideTimer();
       });
 
-      // Global delegation for .card elements on desktop
+      // Global delegation for .card and .top10-item elements on desktop
       document.addEventListener("mouseover", (e) => {
         if (window.innerWidth < 768) return;
         if (document.body.classList.contains("has-modal-open") || document.body.classList.contains("big-player-active")) {
@@ -2214,7 +2214,7 @@ const App = (() => {
           return;
         }
 
-        const card = e.target.closest(".card");
+        const card = e.target.closest(".card, .top10-item");
         if (!card) return;
 
         if (card === _activeCard) {
@@ -2235,7 +2235,7 @@ const App = (() => {
       });
 
       document.addEventListener("mouseout", (e) => {
-        const card = e.target.closest(".card");
+        const card = e.target.closest(".card, .top10-item");
         if (card && card === _activeCard) {
           const related = e.relatedTarget;
           if (related && (card.contains(related) || (_popoverEl && _popoverEl.contains(related)))) {
@@ -2411,7 +2411,8 @@ const App = (() => {
       _updateWatchlistBtn();
       _updateReactionBtns();
 
-      const rect = card.getBoundingClientRect();
+      const anchorEl = card.querySelector(".top10-card-wrap") || card.querySelector(".card-poster") || card;
+      const rect = anchorEl.getBoundingClientRect();
       const popoverWidth = 324;
       let left = rect.left + (rect.width - popoverWidth) / 2;
       left = Math.max(16, Math.min(window.innerWidth - popoverWidth - 16, left));
@@ -2484,7 +2485,7 @@ const App = (() => {
     const dateStr = item.release_date ? _formatShortDate(item.release_date) : (item.year ? item.year : "");
 
     return `
-      <div class="card card-backdrop-type" id="card-${item.media}-${item.id}" data-card-media="${item.media || 'movie'}" data-card-id="${item.id}" onclick="App.openItem(${_jsonAttr(item)})" role="button" tabindex="0" aria-label="${_esc(item.title)}">
+      <div class="card card-backdrop-type" id="card-${item.media}-${item.id}" data-card-media="${item.media || 'movie'}" data-card-id="${item.id}" onclick="App.openItem(${_jsonAttr(item)})" role="button" tabindex="0" aria-label="${_esc(item.title)}" title="${_esc(item.title)}">
         <div class="card-backdrop-poster">
           <img data-src="${imgUrl}" alt="${_esc(item.title)}" class="card-img lazy" loading="lazy">
           <div class="card-no-img" style="display:${imgUrl ? "none" : "flex"}">${_esc((item.title || "?").charAt(0))}</div>
@@ -2500,14 +2501,6 @@ const App = (() => {
             aria-label="${wl ? "Remove from" : "Add to"} watchlist" title="${wl ? "In Watchlist" : "Save to Watchlist"}">
             ${wl ? _CHECK_SVG : _PLUS_SVG}
           </button>
-        </div>
-        <div class="card-info">
-          <div class="card-title" title="${_esc(item.title)}">${_esc(item.title)}</div>
-          <div class="card-meta backdrop-meta">
-            ${ratingVal ? `<span class="card-rating"><svg class="star-icon" viewBox="0 0 24 24" width="12" height="12" fill="#f59e0b"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> <span>${ratingVal}</span></span>` : ""}
-            ${epCode ? `<span class="card-ep-code">${epCode}</span>` : ""}
-            ${dateStr ? `<span class="card-date">${dateStr}</span>` : ""}
-          </div>
         </div>
       </div>`;
   }
@@ -2528,11 +2521,8 @@ const App = (() => {
       badgeText = mediaLower.toUpperCase() || "MOVIE";
     }
 
-    const ratingVal = typeof item.rating === "number" && !isNaN(item.rating) && item.rating > 0
-      ? item.rating.toFixed(1) : null;
-
     return `
-      <div class="card" id="card-${item.media}-${item.id}" data-card-media="${item.media || 'movie'}" data-card-id="${item.id}" onclick="App.openItem(${_jsonAttr(item)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();App.openItem(${_jsonAttr(item)});} " role="button" tabindex="0" aria-label="${_esc(item.title)}">
+      <div class="card" id="card-${item.media}-${item.id}" data-card-media="${item.media || 'movie'}" data-card-id="${item.id}" onclick="App.openItem(${_jsonAttr(item)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();App.openItem(${_jsonAttr(item)});} " role="button" tabindex="0" aria-label="${_esc(item.title)}" title="${_esc(item.title)}">
         <div class="card-poster">
           <img data-src="${item.poster || ""}" alt="${_esc(item.title)}" class="card-img lazy" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
           <div class="card-no-img" style="display:${item.poster ? "none" : "flex"}">${_esc((item.title || "?").charAt(0))}</div>
@@ -2546,13 +2536,6 @@ const App = (() => {
             ${wl ? _CHECK_SVG : _PLUS_SVG}
           </button>
         </div>
-        <div class="card-info">
-          <div class="card-title" title="${_esc(item.title)}">${_esc(item.title)}</div>
-          <div class="card-meta">
-            ${ratingVal ? `<span class="card-rating"><svg class="star-icon" viewBox="0 0 24 24" width="12" height="12" fill="#f59e0b"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> <span>${ratingVal}</span></span>` : ""}
-            ${item.year ? `<span class="card-year">${item.year}</span>` : ""}
-          </div>
-        </div>
       </div>`;
   }
 
@@ -2560,11 +2543,9 @@ const App = (() => {
   function _top10CardHTML(item, rank) {
     registerCardItem(item);
     const wl = Watchlist.has(item.id, item.media);
-    const ratingVal = typeof item.rating === "number" && !isNaN(item.rating) && item.rating > 0
-      ? item.rating.toFixed(1) : null;
 
     return `
-      <div class="top10-item" id="top10-${item.media}-${item.id}" data-card-media="${item.media || 'movie'}" data-card-id="${item.id}" onclick="App.openItem(${_jsonAttr(item)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();App.openItem(${_jsonAttr(item)});} " role="button" tabindex="0" aria-label="#${rank} ${_esc(item.title)}">
+      <div class="top10-item" id="top10-${item.media}-${item.id}" data-card-media="${item.media || 'movie'}" data-card-id="${item.id}" data-item="${_jsonAttr(item)}" onclick="App.openItem(${_jsonAttr(item)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();App.openItem(${_jsonAttr(item)});} " role="button" tabindex="0" aria-label="#${rank} ${_esc(item.title)}" title="${_esc(item.title)}">
         <div class="top10-rank" aria-hidden="true">${rank}</div>
         <div class="top10-card-wrap">
           <div class="card-poster">
@@ -2579,13 +2560,6 @@ const App = (() => {
               aria-label="${wl ? "Remove from" : "Add to"} watchlist" title="${wl ? "In Watchlist" : "Save to Watchlist"}">
               ${wl ? _CHECK_SVG : _PLUS_SVG}
             </button>
-          </div>
-          <div class="card-info">
-            <div class="card-title" title="${_esc(item.title)}">${_esc(item.title)}</div>
-            <div class="card-meta">
-              ${ratingVal ? `<span class="card-rating"><svg class="star-icon" viewBox="0 0 24 24" width="12" height="12" fill="#f59e0b"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> <span>${ratingVal}</span></span>` : ""}
-              ${item.year ? `<span class="card-year">${item.year}</span>` : ""}
-            </div>
           </div>
         </div>
       </div>`;
@@ -3051,9 +3025,9 @@ const App = (() => {
 
     const grid = document.getElementById("search-grid");
     grid.style.display = "grid";
-    grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(140px, 1fr))";
-    grid.style.gap = "20px";
-    grid.innerHTML = Array(8).fill('<div class="card card-skeleton"><div class="card-poster"></div><div class="card-info"><div class="skeleton-line" style="height:12px;width:75%;margin-top:8px"></div><div class="skeleton-line" style="height:10px;width:40%;margin-top:6px"></div></div></div>').join("");
+    grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(180px, 1fr))";
+    grid.style.gap = "26px 22px";
+    grid.innerHTML = Array(8).fill('<div class="card card-skeleton"><div class="card-poster"></div></div>').join("");
     document.getElementById("search-label").textContent = `Searching for "${query}"…`;
 
     const activeQueryAtLaunch = query;
@@ -3335,7 +3309,7 @@ const App = (() => {
               </h3>
               ${sec.list.length > 12 ? `<button class="row-see-all" onclick="App.setSearchContext('${sec.type}')">View All ${sec.label} (${sec.list.length}) →</button>` : ""}
             </div>
-            <div class="browse-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:16px">
+            <div class="browse-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:26px 22px">
               ${sec.list.slice(0, 18).map(item => _cardHTML(item)).join("")}
             </div>
           </div>
@@ -3369,8 +3343,8 @@ const App = (() => {
     if (!grid) return;
 
     grid.style.display = "grid";
-    grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(140px, 1fr))";
-    grid.style.gap = "20px";
+    grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(180px, 1fr))";
+    grid.style.gap = "26px 22px";
 
     if (!results.length && !append) {
       grid.style.display = "block";
@@ -4015,8 +3989,8 @@ const App = (() => {
       return true;
     }
 
-    // Deprecate manga / manhwa / reader routes cleanly to home
-    if (path.startsWith("/manga") || path.startsWith("/manhwa") || path.startsWith("/manhua") || path.startsWith("/read")) {
+    // Deprecate manga / reader / torrent routes cleanly to home
+    if (path.startsWith("/manga") || path.startsWith("/manhwa") || path.startsWith("/manhua") || path.startsWith("/read") || path.startsWith("/torrent")) {
       window.location.hash = "#/";
       _showPage("home", true);
       return true;
@@ -4334,6 +4308,9 @@ const App = (() => {
   // ── Open item (route to correct detail handler) ───────────────────────
   function openItem(item, e) {
     if (!item) return;
+    if (typeof CardPreview !== "undefined" && typeof CardPreview.hideImmediate === "function") {
+      CardPreview.hideImmediate();
+    }
     try {
       const evt = e || window.event;
       const targetCard = evt && evt.target ? evt.target.closest(".card, .top10-item, .platform-card, .history-card, .rec-card, .upcoming-card, .search-live-item, .hero-slide, .hero-content, .relation-card") : null;
@@ -7212,10 +7189,10 @@ const App = (() => {
     document.querySelectorAll(".settings-tab-btn").forEach(btn => {
       btn.classList.toggle("active", btn.getAttribute("data-tab") === tabKey);
     });
-    document.querySelectorAll(".settings-card-section").forEach(sec => {
+    document.querySelectorAll(".settings-section, .settings-card-section").forEach(sec => {
       sec.style.display = "block";
     });
-    const target = document.querySelector(`.settings-card-section[data-section="${tabKey}"]`) || document.getElementById(`settings-card-${tabKey}`);
+    const target = document.querySelector(`.settings-section[data-section="${tabKey}"], .settings-card-section[data-section="${tabKey}"]`) || document.getElementById(`settings-card-${tabKey}`);
     if (target) {
       const topOffset = 135;
       const targetY = target.getBoundingClientRect().top + window.pageYOffset - topOffset;

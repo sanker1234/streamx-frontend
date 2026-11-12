@@ -1,26 +1,26 @@
-const CACHE_NAME = "nine-cinejoy-v51";
+const CACHE_NAME = "nine-cinejoy-v57";
 
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./404.html",
-  "./manifest.json?v=47.0",
-  "./favicon.ico?v=47.0",
-  "./css/style.css?v=47.0",
-  "./css/player-universal.css?v=47.0",
-  "./js/config.js?v=47.0",
-  "./js/tmdb.js?v=47.0",
-  "./js/anilist.js?v=47.0",
-  "./js/watchlist.js?v=47.0",
-  "./js/history.js?v=47.0",
-  "./js/player.js?v=47.0",
-  "./js/universalPlayer.js?v=47.0",
-  "./js/livetv.js?v=47.0",
-  "./js/app.js?v=47.0",
-  "./icons/cinejoy-icon.svg?v=47.0",
-  "./icons/cinejoy-logo.svg?v=47.0",
-  "./icons/icon-192.png?v=47.0",
-  "./icons/icon-512.png?v=47.0"
+  "./manifest.json?v=57.0",
+  "./favicon.ico?v=57.0",
+  "./css/style.css?v=57.0",
+  "./css/player-universal.css?v=57.0",
+  "./js/config.js?v=57.0",
+  "./js/tmdb.js?v=57.0",
+  "./js/anilist.js?v=57.0",
+  "./js/watchlist.js?v=57.0",
+  "./js/history.js?v=57.0",
+  "./js/player.js?v=57.0",
+  "./js/universalPlayer.js?v=57.0",
+  "./js/livetv.js?v=57.0",
+  "./js/app.js?v=57.0",
+  "./icons/cinejoy-icon.svg?v=57.0",
+  "./icons/cinejoy-logo.svg?v=57.0",
+  "./icons/icon-192.png?v=57.0",
+  "./icons/icon-512.png?v=57.0"
 ];
 
 self.addEventListener("message", event => {
